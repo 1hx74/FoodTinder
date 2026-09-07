@@ -35,6 +35,12 @@ from sqlalchemy.orm import Session, sessionmaker
 load_dotenv()
 
 auth_app = fastapi.FastAPI()
+auth_app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -81,7 +87,7 @@ def _now_utc() -> datetime:
 def create_token(user_id: str, user_name: str | None = "anon"):
     now = _now_utc()
     data = {
-        "iss": "oleg-chat-jwt-vendor",
+        "iss": "food-tinder-jwt-vendor",
         "type": "access",
         "sub": user_id,
         "nam": user_name,
