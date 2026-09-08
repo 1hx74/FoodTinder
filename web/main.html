@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Main</title>
+</head>
+<body>
+
+    <div id="user"></div>
+    <button id="authButton"></button>
+
+    <script>
+        async function checkAuth() {
+            const accessToken = localStorage.getItem("accessToken");
+
+            const response = await fetch("/api/auth/me", {
+                method: "GET",
+                headers: {
+                    "Authorization": `Bearer ${accessToken}`
+                },
+                credentials: "include"
+            });
+
+            const user = document.getElementById("user");
+            const button = document.getElementById("authButton");
+
+            if (response.ok) {
+                const data = await response.json();
+
+                user.textContent = data.name;
+                button.textContent = "Выйти";
+
+                button.onclick = async () => {
+                    await fetch("/api/auth/logout", {
+                        method: "POST",
+                        credentials: "include"
+                    });
+
+                    localStorage.removeItem("accessToken");
+                    location.reload();
+                };
+
+            } else {
+                user.textContent = "";
+                button.textContent = "Войти";
+
+                button.onclick = () => {
+                    location.href = "/authentication";
+                };
+            }
+        }
+
+        checkAuth();
+    </script>
+
+</body>
+</html>

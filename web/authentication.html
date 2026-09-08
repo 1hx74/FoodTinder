@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Авторизация</title>
+</head>
+
+<body>
+
+    <form id="loginForm">
+
+        <input
+            type="email"
+            id="email"
+            placeholder="Email"
+            required
+        >
+
+        <br><br>
+
+        <input
+            type="text"
+            id="username"
+            placeholder="Логин"
+            required
+        >
+
+        <br><br>
+
+        <input
+            type="password"
+            id="password"
+            placeholder="Пароль"
+            required
+        >
+
+        <br><br>
+
+        <button type="submit">
+            Войти
+        </button>
+
+        <button type="button" id="registerButton">
+            Зарегистрироваться
+        </button>
+
+    </form>
+
+    <p id="error"></p>
+
+    <script>
+
+        const form = document.getElementById("loginForm");
+        const registerButton = document.getElementById("registerButton");
+        const error = document.getElementById("error");
+
+
+        function getAuthHeaders() {
+            const accessToken = localStorage.getItem("accessToken");
+
+            return {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${accessToken}`
+            };
+        }
+
+        async function refreshAccessToken() {
+            const response = await fetch("/api/auth/refresh", {
+                method: "POST",
+                credentials: "include"
+            });
+
+            if (!response.ok) {
+                localStorage.removeItem("accessToken");
+                return false;
+            }
+
+            const data = await response.json();
+
+            localStorage.setItem("accessToken", data.access_token);
+
+            return true;
+        }
+
+        form.addEventListener("submit", async (event) => {
+
+            event.preventDefault();
+
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            error.textContent = "";
+
+            try {
+
+                const response = await fetch("api/auth/login", {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    credentials: "include",
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+
+                    const data = await response.json();
+
+                    error.textContent =
+                        data.detail || "Ошибка входа";
+
+                    return;
+                }
+                
+                else {
+                    const data = await response.json();
+
+                    localStorage.setItem("accessToken", data.access_token);
+                    window.location.href = "/";
+                }
+                
+            } catch (e) {
+
+                error.textContent = "Ошибка соединения";
+
+            }
+
+        });
+
+
+        registerButton.addEventListener("click", async () => {
+
+            const email = document.getElementById("email").value;
+            const username = document.getElementById("username").value;
+            const password = document.getElementById("password").value;
+
+            error.textContent = "";
+
+            try {
+
+                const response = await fetch("api/auth/register", {
+                    method: "POST",
+                    headers: getAuthHeaders(),
+                    credentials: "include",
+                    body: JSON.stringify({
+                        email: email,
+                        username: username,
+                        password: password
+                    })
+                });
+
+                if (!response.ok) {
+
+                    const data = await response.json();
+
+                    error.textContent =
+                        data.detail || "Ошибка регистрации";
+
+                    return;
+                }
+
+                else {
+                    const data = await response.json();
+
+                    localStorage.setItem("accessToken", data.access_token);
+                    window.location.href = "/";
+                }
+            } catch (e) {
+
+                error.textContent = "Ошибка соединения";
+
+            }
+
+        });
+
+    </script>
+
+</body>
+
+</html>

@@ -5,8 +5,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./db/.env
-    ports:
-      - "5432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
@@ -25,11 +23,41 @@ services:
     restart: unless-stopped
     env_file:
       - ./auth/.env
-    ports:
-      - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       postgres:
         condition: service_healthy
+    networks:
+      - food-tinder-net
+
+  web:
+    build:
+      context: .
+      dockerfile: ./web/.dockerfile
+    container_name: food-tinder-web
+    restart: unless-stopped
+    env_file:
+      - ./web/.env
+    expose:
+      - "8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - food-tinder-net
+
+  nginx:
+    image: nginx:alpine
+    container_name: food-tinder-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - web
+      - auth
     networks:
       - food-tinder-net
 
