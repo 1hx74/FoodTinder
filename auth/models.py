@@ -26,10 +26,10 @@ class MemberData(Base):
     __tablename__ = "member_data"
 
     id: Mapped[str] = mapped_column(ForeignKey("members.id"), primary_key=True)
-    birthday: Mapped[datetime] = mapped_column(DateTime)
-    height: Mapped[int] = mapped_column(SmallInteger)
-    weight: Mapped[int] = mapped_column(SmallInteger)
-    sex: Mapped[str] = mapped_column(Text)
+    birthday: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    height: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    weight: Mapped[Optional[int]] = mapped_column(SmallInteger)
+    sex: Mapped[Optional[str]] = mapped_column(Text)
     
     __table_args__ = (
         CheckConstraint("sex IN ('male', 'female')", name="ck_chat_member_sex"),

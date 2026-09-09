@@ -187,6 +187,13 @@ async def register(
             created_at=datetime.now(),
         )
     )
+
+    db.add(
+        MemberData(
+            id=user_id
+        )
+    )
+
     db.commit()
 
     response.set_cookie(
@@ -323,7 +330,7 @@ async def logout_all(
     db.commit()
     return {"ok": True}
 
-@auth_app.get("/api/user_database/me")
+@auth_app.get("/api/auth/me")
 async def get_my_data(
     request: fastapi.Request,
     current_user: dict = Depends(get_current_user),
