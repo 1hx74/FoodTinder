@@ -49,134 +49,49 @@
 
     <p id="error"></p>
 
+    <script src="api.js"></script>
     <script>
 
         const form = document.getElementById("loginForm");
         const registerButton = document.getElementById("registerButton");
         const error = document.getElementById("error");
 
-
-        function getAuthHeaders() {
-            const accessToken = localStorage.getItem("accessToken");
-
+        function getFormValues() {
             return {
-                "Content-Type": "application/json",
-                "Authorization": `Bearer ${accessToken}`
+                email: document.getElementById("email").value,
+                username: document.getElementById("username").value,
+                password: document.getElementById("password").value
             };
         }
 
-        async function refreshAccessToken() {
-            const response = await fetch("/api/auth/refresh", {
-                method: "POST",
-                credentials: "include"
-            });
-
-            if (!response.ok) {
-                localStorage.removeItem("accessToken");
-                return false;
-            }
-
-            const data = await response.json();
-
-            localStorage.setItem("accessToken", data.access_token);
-
-            return true;
-        }
-
         form.addEventListener("submit", async (event) => {
-
             event.preventDefault();
-
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-
             error.textContent = "";
 
+            const { username, password } = getFormValues();
+
             try {
-
-                const response = await fetch("api/auth/login", {
-                    method: "POST",
-                    headers: getAuthHeaders(),
-                    credentials: "include",
-                    body: JSON.stringify({
-                        username: username,
-                        password: password
-                    })
-                });
-
-                if (!response.ok) {
-
-                    const data = await response.json();
-
-                    error.textContent =
-                        data.detail || "Ошибка входа";
-
-                    return;
-                }
-                
-                else {
-                    const data = await response.json();
-
-                    localStorage.setItem("accessToken", data.access_token);
-                    window.location.href = "/";
-                }
-                
+                await AuthAPI.login(username, password);
+                window.location.href = "/";
             } catch (e) {
-
-                error.textContent = "Ошибка соединения";
-
+                error.textContent = e.message;
             }
-
         });
 
-
         registerButton.addEventListener("click", async () => {
-
-            const email = document.getElementById("email").value;
-            const username = document.getElementById("username").value;
-            const password = document.getElementById("password").value;
-
             error.textContent = "";
 
+            const { email, username, password } = getFormValues();
+
             try {
-
-                const response = await fetch("api/auth/register", {
-                    method: "POST",
-                    headers: getAuthHeaders(),
-                    credentials: "include",
-                    body: JSON.stringify({
-                        email: email,
-                        username: username,
-                        password: password
-                    })
-                });
-
-                if (!response.ok) {
-
-                    const data = await response.json();
-
-                    error.textContent =
-                        data.detail || "Ошибка регистрации";
-
-                    return;
-                }
-
-                else {
-                    const data = await response.json();
-
-                    localStorage.setItem("accessToken", data.access_token);
-                    window.location.href = "/";
-                }
+                await AuthAPI.register(email, username, password);
+                window.location.href = "/";
             } catch (e) {
-
-                error.textContent = "Ошибка соединения";
-
+                error.textContent = e.message;
             }
-
         });
 
     </script>
 
 </body>
-
 </html>

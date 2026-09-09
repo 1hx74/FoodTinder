@@ -7,7 +7,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -45,6 +45,11 @@ def logout(
     return {
         "message": "Logged out"
     }
+
+# to CND?
+@app.get("/api.js")
+def authentication():
+    return FileResponse("api.js")
 
 
 if __name__ == "__main__":
