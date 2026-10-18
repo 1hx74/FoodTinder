@@ -1,0 +1,111 @@
+:root {
+  --main-font: "Inter-Bold", sans-serif;
+  --primary-color: rgba(120, 27, 27, 0.78);
+  --brand-text: #781b1b;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; 
+}
+
+/* Единый каркас мобильного приложения для ВСЕХ страниц сайта */
+.div {
+  background: #ffffff;
+  width: 100%;
+  min-width: 390px;
+  max-width: 520px; 
+  height: 100vh; 
+  max-height: 880px; 
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden; 
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1); 
+}
+
+/* --- ГЛОБАЛЬНАЯ ШАПКА (ВЫНЕСЕНА ДЛЯ ВСЕХ СТРАНИЦ) --- */
+.header-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center; /* Центрируем всё строго по вертикальной оси шапки */
+  padding: 0 24px;     /* Убрали верхний padding, так как высоту теперь держит сам контейнер */
+  width: 100%;
+  flex-shrink: 0; 
+  height: 64px;        /* Оптимальная фиксированная высота для мобильной шапки */
+  background: #ffffff;
+}
+
+/* Сбрасываем абсолютные фигмовские рамки у обертки логотипа, мешающие флексбоксу */
+.foodtinder {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+}
+
+.foodtinder2 {
+  color: var(--brand-text);
+  font-family: var(--main-font);
+  font-size: 24px;
+  font-weight: 700;
+  text-decoration: none;
+  line-height: 1; /* Убираем невидимые отступы шрифта */
+}
+
+/* Автоматический сдвиг блока входа в правый край */
+.header-wrapper .frame-4 {
+  margin-left: auto;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+
+.frame-4 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  cursor: pointer;
+}
+
+.div4 {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.frame-5 {
+  position: relative;
+  width: 36px;
+  height: 36px;
+}
+
+.ellipse-2 {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.div2 {
+  color: #ffffff;
+  font-family: var(--main-font);
+  font-size: 18px;
+  font-weight: 700;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}

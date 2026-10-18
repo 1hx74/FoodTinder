@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./style.css">
+  
+  <style>
+   a, button, input, select, h1, h2, h3, h4, h5, * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+       border: none;
+       text-decoration: none;
+       background: none;
+       -webkit-font-smoothing: antialiased;
+   }
+   menu, ol, ul {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+   </style>
+  <title>Регистрация</title>
+</head>
+<body>
+  <div class="div">
+    
+    <!-- 1. ГЛОБАЛЬНАЯ ШАПКА (СТИЛИ ИЗ VARS.CSS) -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+    </header>
+
+    <!-- 2. ЦЕНТРАЛЬНЫЙ БЛОК ФОРМЫ -->
+    <main class="main-content">
+      <div class="form-title">Регистрация</div>
+      
+      <form class="form-container" onsubmit="event.preventDefault();">
+        <!-- Поле Email -->
+        <div class="input-group">
+          <label class="input-label">Email</label>
+          <input type="email" class="custom-input" placeholder="Введите Email" />
+        </div>
+
+        <!-- Поле Пароль -->
+        <div class="input-group">
+          <label class="input-label">Пароль</label>
+          <input type="password" class="custom-input" placeholder="Введите пароль" />
+        </div>
+
+        <!-- Поле Подтверждение пароля -->
+        <div class="input-group">
+          <label class="input-label">Подтвердите пароль</label>
+          <input type="password" class="custom-input" placeholder="Введите пароль еще раз" />
+        </div>
+
+        <!-- Кнопка отправки формы -->
+        <button type="submit" class="submit-btn">
+          <span class="div7">Зарегистрироваться</span>
+        </button>
+      </form>
+    </main>
+
+  </div>
+</body>
+</html>

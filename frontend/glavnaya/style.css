@@ -1,0 +1,81 @@
+@import url('../vars.css'); 
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/*     2. ГЛАВНАЯ КАРТИНКА (СБАЛАНСИРОВАННАЯ ПО ЦЕНТРУ)     */
+_1-1 {
+  width: 100%;
+  /* Сохраняем идеальное соотношение сторон: при расширении вширь она сама плавно подрастет в высоту */
+  aspect-ratio: 390 / 265; 
+  object-fit: cover; /* Жестко прижимает изображение к краям без зазоров */
+  
+  display: block;
+  margin: 0 auto; 
+  max-height: 38vh; 
+  flex-shrink: 1;
+}
+
+
+/*     3. КОНТЕНТНАЯ ЧАСТЬ (СДВИГАЕТСЯ ВСЛЕД ЗА КАРТИНКОЙ)     */
+.main-content {
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start !important; 
+  padding: 40px 24px 24px 24px !important; 
+  width: 100%;
+}
+
+.div5 {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+/* АДАПТИВНАЯ СЕТКА КНОПОК */
+.buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr); /* Две колонки */
+  gap: 20px; 
+  width: 100%;
+  max-width: 520px; 
+  width: 90%; 
+}
+
+.btn-frame {
+  width: 100%;
+  height: 76px;
+  position: relative;
+  cursor: pointer;
+}
+
+.btn-rect {
+  background: var(--primary-color);
+  border-radius: 14px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+  box-shadow: 0px 2px 8px rgba(120, 27, 27, 0.2);
+}
+
+.btn-rect:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.btn-text {
+  color: #ffffff;
+  font-family: var(--main-font);
+  font-size: 19px;
+  font-weight: 700;
+  text-align: center;
+}
