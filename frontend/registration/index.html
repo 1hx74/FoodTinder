@@ -38,23 +38,24 @@
     <main class="main-content">
       <div class="form-title">Регистрация</div>
       
-      <form class="form-container" onsubmit="event.preventDefault();">
+      <form class="form-container">
+        
         <!-- Поле Email -->
         <div class="input-group">
           <label class="input-label">Email</label>
-          <input type="email" class="custom-input" placeholder="Введите Email" />
+          <input type="text" id="email" class="custom-input" placeholder="Введите Email" required />
         </div>
 
         <!-- Поле Пароль -->
         <div class="input-group">
           <label class="input-label">Пароль</label>
-          <input type="password" class="custom-input" placeholder="Введите пароль" />
+          <input type="password" id="password" class="custom-input" placeholder="Введите пароль" required />
         </div>
 
         <!-- Поле Подтверждение пароля -->
         <div class="input-group">
           <label class="input-label">Подтвердите пароль</label>
-          <input type="password" class="custom-input" placeholder="Введите пароль еще раз" />
+          <input type="password" id="confirm_password" class="custom-input" placeholder="Введите пароль еще раз" required />
         </div>
 
         <!-- Кнопка отправки формы -->
@@ -65,5 +66,7 @@
     </main>
 
   </div>
+  <script src="../api.js"></script>
+  <script src="./registration.js"></script>
 </body>
 </html>

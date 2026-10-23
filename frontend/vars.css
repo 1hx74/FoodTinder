@@ -30,7 +30,6 @@ html, body {
   overflow: hidden; 
   box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1); 
 }
-
 /* --- ГЛОБАЛЬНАЯ ШАПКА (ВЫНЕСЕНА ДЛЯ ВСЕХ СТРАНИЦ) --- */
 .header-wrapper {
   display: flex;
@@ -71,7 +70,6 @@ html, body {
   top: auto !important;
 }
 
-
 .frame-4 {
   display: flex;
   align-items: center;
@@ -79,18 +77,47 @@ html, body {
   cursor: pointer;
 }
 
-.div4 {
+/* Контейнер для ссылок, чтобы они выстраивались в одну линию со слэшем */
+.div3 {
+  display: flex;
+  align-items: center;
+}
+
+/* Фиксируем идентичный шрифт, размер и жирность для всех состояний ссылок */
+.div4,
+.div4:link,
+.div4:visited,
+.div4:hover,
+.div4:active {
   color: #000000;
   font-family: var(--main-font);
   font-size: 18px;
   font-weight: 700;
   text-decoration: none;
+  white-space: nowrap; /* Защита от случайного переноса слов */
 }
 
+/* Стилизация разделительного слэша из дизайна */
+.slash-separator {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 18px;
+  font-weight: 700;
+  padding: 0 4px; /* Компактные отступы по бокам слэша */
+  cursor: default;
+  user-select: none;
+}
+
+/* Меняем визуальный порядок: аватарка встанет справа от текстового контейнера div3 */
 .frame-5 {
   position: relative;
   width: 36px;
   height: 36px;
+  order: 2; 
+}
+
+.div3 {
+  order: 1;
 }
 
 .ellipse-2 {
