@@ -2,18 +2,22 @@ import asyncio
 import os
 
 import jwt
-from fastapi import Depends, Request
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jwt import PyJWKClient
+from jwt.exceptions import PyJWKClientConnectionError
 
-JWKS_URL = os.environ["JWKS_URL"]  # например https://auth.example.com/.well-known/jwks.json
-JWT_ISSUER = os.getenv("JWT_ISSUER")  # необязательно
-JWT_AUDIENCE = os.getenv("JWT_AUDIENCE")  # необязатльно
-JWT_ALGORITHMS = os.getenv("JWT_ALGORITHMS", "RS256").split(",")
-REFRESH_COOKIE_NAME = os.getenv("REFRESH_COOKIE_NAME", "refresh_token")
+# в compose: http://auth:8000/.well-known/jwks.json
+JWKS_URL = os.environ["JWKS_URL"]
+JWT_ISSUER = os.getenv("JWT_ISSUER", "food-tinder-jwt-vendor")
+JWT_AUDIENCE = os.getenv("JWT_AUDIENCE")  # необязательно, auth его пока не выставляет
+
+# Алгоритм зафиксирован намеренно: не настраивается через env,
+# чтобы случайно не разрешить HS256/none.
+ALGORITHMS = ["RS256"]
 
 # Роль, которой разрешено добавлять/менять/удалять рецепты.
-# Пустое значение (ADMIN_ROLE=) отключает проверку роли: достаточно быть подтверждённым.
+# Пустое значение (ADMIN_ROLE=) отключает проверку роли: достаточно быть авторизованным.
 ADMIN_ROLE = os.getenv("ADMIN_ROLE", "admin")
 ROLES_CLAIM = os.getenv("ROLES_CLAIM", "roles")
 
@@ -21,59 +25,70 @@ ROLES_CLAIM = os.getenv("ROLES_CLAIM", "roles")
 _jwks_client = PyJWKClient(JWKS_URL, cache_keys=True, lifespan=3600)
 _bearer = HTTPBearer(auto_error=False)
 
+_UNAUTHORIZED_HEADERS = {"WWW-Authenticate": "Bearer"}
+
 
 def _decode(token: str) -> dict:
     signing_key = _jwks_client.get_signing_key_from_jwt(token)
     return jwt.decode(
         token,
         signing_key.key,
-        algorithms=JWT_ALGORITHMS,
+        algorithms=ALGORITHMS,
         issuer=JWT_ISSUER,
         audience=JWT_AUDIENCE,
         options={
-            "require": ["exp", "sub"],
+            "require": ["exp", "sub", "iss"],
             "verify_aud": JWT_AUDIENCE is not None,
-            "verify_iss": JWT_ISSUER is not None,
         },
     )
 
 
 async def verify_token(token: str) -> dict:
-    # PyJWKClient синхронный (может ходить в сеть) — уводим в поток
-    return await asyncio.to_thread(_decode, token)
+    """Проверяет подпись/exp/iss и что это именно access-токен."""
+    try:
+        # PyJWKClient синхронный (может ходить в сеть) — уводим в поток
+        claims = await asyncio.to_thread(_decode, token)
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(401, "Token expired", headers=_UNAUTHORIZED_HEADERS)
+    except PyJWKClientConnectionError:
+        # auth недоступен — это не «плохой токен»
+        raise HTTPException(503, "Auth service unavailable")
+    except jwt.PyJWTError:
+        raise HTTPException(401, "Invalid token", headers=_UNAUTHORIZED_HEADERS)
+
+    if claims.get("type") != "access":
+        raise HTTPException(401, "Expected access token", headers=_UNAUTHORIZED_HEADERS)
+    return claims
 
 
 async def get_optional_claims(
-    request: Request,
     creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
 ) -> dict | None:
-    """
-    Claims access-токена, если пользователь подтверждён:
-      - есть валидный access-токен в Authorization: Bearer ...
-      - есть валидный refresh-токен в куке
-      - sub у обоих совпадает
-    Иначе None (неподтверждённый).
-    """
-    refresh = request.cookies.get(REFRESH_COOKIE_NAME)
-    if creds is None or not refresh:
+    """Нет токена -> None (аноним). Токен есть, но плохой/просрочен -> 401,
+    чтобы клиент знал, что нужно сделать /refresh."""
+    if creds is None:
         return None
+    return await verify_token(creds.credentials)
 
-    try:
-        access_claims = await verify_token(creds.credentials)
-        refresh_claims = await verify_token(refresh)
-    except jwt.PyJWTError:
-        return None
 
-    if access_claims["sub"] != refresh_claims["sub"]:
-        return None
-
-    return access_claims
+async def get_required_claims(
+    creds: HTTPAuthorizationCredentials | None = Depends(_bearer),
+) -> dict:
+    if creds is None:
+        raise HTTPException(401, "Authorization header missing", headers=_UNAUTHORIZED_HEADERS)
+    return await verify_token(creds.credentials)
 
 
 async def get_optional_user_id(
     claims: dict | None = Depends(get_optional_claims),
 ) -> str | None:
     return str(claims["sub"]) if claims else None
+
+
+async def get_required_user_id(
+    claims: dict = Depends(get_required_claims),
+) -> str:
+    return str(claims["sub"])
 
 
 def can_manage_recipes(claims: dict) -> bool:
@@ -83,3 +98,12 @@ def can_manage_recipes(claims: dict) -> bool:
     if isinstance(roles, str):
         roles = roles.split()
     return ADMIN_ROLE in roles
+
+
+async def require_recipe_manager(
+    claims: dict = Depends(get_required_claims),
+) -> dict:
+    """Зависимость для POST/PATCH/DELETE рецептов."""
+    if not can_manage_recipes(claims):
+        raise HTTPException(403, "Forbidden")
+    return claims

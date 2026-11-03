@@ -2,7 +2,7 @@ import functools
 import logging
 from typing import Literal
 
-from fastapi import APIRouter, Depends, Header, Query
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.exc import SQLAlchemyError
@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_session
 from models import ReactionAction, Recipe
 from repos import RecipeRepository
-
+from jwks import get_optional_user_id, get_required_user_id
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/db/recipes", tags=["recipes"])
@@ -23,16 +23,6 @@ DEFAULT_USER_ID = "anonymous"
 
 def _error(code: int, state: str) -> JSONResponse:
     return JSONResponse(status_code=code, content={"code": code, "state": state})
-
-
-def get_user_id(x_user_id: str | None = Header(default=None)) -> str | None:
-    """
-    ВРЕМЕННО, пока auth-сервис не готов: идентификатор пользователя берётся
-    из необязательного заголовка X-User-Id. Без заголовка -> None.
-    Когда auth появится, достаточно заменить эту зависимость на
-    get_optional_user_id из jwks.py (и вернуть проверки прав).
-    """
-    return x_user_id or None
 
 
 def handle_db_errors(func):
@@ -111,7 +101,7 @@ class RecipeUpdate(BaseModel):
 @handle_db_errors
 async def get_next_recipe(
     exclude: list[int] = Query(default=[], description="id, которые клиент уже держит в очереди"),
-    user_id: str | None = Depends(get_user_id),
+    user_id: str | None = Depends(get_optional_user_id),
     session: AsyncSession = Depends(get_session),
 ):
     repo = RecipeRepository(session)
@@ -131,12 +121,12 @@ async def get_next_recipe(
 @handle_db_errors
 async def put_reaction(
     body: ReactionRequest,
-    user_id: str | None = Depends(get_user_id),
+    user_id: str | None = Depends(get_required_user_id),
     session: AsyncSession = Depends(get_session),
 ):
     repo = RecipeRepository(session)
     ok = await repo.set_reaction(
-        user_id or DEFAULT_USER_ID, body.recipe_id, ReactionAction(body.action)
+        user_id, body.recipe_id, ReactionAction(body.action)
     )
     if not ok:
         return _error(404, "Not Found")
@@ -148,6 +138,7 @@ async def put_reaction(
 @handle_db_errors
 async def create_recipe(
     body: RecipeCreate,
+    user_id: str | None = Depends(get_required_user_id),
     session: AsyncSession = Depends(get_session),
 ):
     recipe = await RecipeRepository(session).create(body.model_dump())
@@ -171,6 +162,7 @@ async def get_recipe(
 async def update_recipe(
     recipe_id: int,
     body: RecipeUpdate,
+    user_id: str | None = Depends(get_required_user_id),
     session: AsyncSession = Depends(get_session),
 ):
     recipe = await RecipeRepository(session).update(recipe_id, body.model_dump(exclude_unset=True))
@@ -183,6 +175,7 @@ async def update_recipe(
 @handle_db_errors
 async def delete_recipe(
     recipe_id: int,
+    user_id: str | None = Depends(get_required_user_id),
     session: AsyncSession = Depends(get_session),
 ):
     if not await RecipeRepository(session).delete(recipe_id):

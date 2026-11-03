@@ -7,10 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 WORKDIR /app
 
 # context = корень репозитория, поэтому пути от корня
-COPY backend/recipes/requirements.txt .
+COPY requirements.txt .
 RUN pip install -r requirements.txt
 
-COPY backend/recipes/ .
+COPY . .
 
 RUN useradd --create-home appuser
 USER appuser
