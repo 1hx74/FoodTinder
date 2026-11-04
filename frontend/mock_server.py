@@ -1,4 +1,6 @@
 """
+ФАЙЛ: mock_server.py
+-------------------
 НАЗНАЧЕНИЕ:
 Этот файл является центральным сервером симуляции (мокирующим бэкендом),
 написанным на фреймворке FastAPI. Он решает две главные задачи проекта:
@@ -55,12 +57,19 @@ class RegisterRequest(BaseModel):
     username: str
     password: str
 
+class SendCodeRequest(BaseModel):
+    email: str
+
+class VerifyCodeRequest(BaseModel):
+    email: str
+    code: str
+
 
 # ПЕРЕНАПРАВЛЕНИЕ НАВИГАЦИИ ФРОНТЕНДА (ДВИЖОК РЕДИРЕКТОВ)
 @app.get("/")
 def main_page():
     """
-    Перехватывает базовые заходы пользователя на корневой адрес сервера (http://127.0.0)
+    Перехватывает базовые заходы пользователя на корневой адрес сервера (http://127.0.0.1:8000)
     и отправляет браузеру команду мгновенного перенаправления (HTTP 307 Redirect) в папку главной страницы.
     """
     return RedirectResponse(url="/glavnaya/")
@@ -75,34 +84,71 @@ def registration_page():
     return RedirectResponse(url="/registration/")
 
 
+@app.get("/authentication")
+def authentication_page():
+    """Перенаправляет на физический индекс внутри папки authentication"""
+    return RedirectResponse(url="/authentication/")
+
+
 # ОБРАБОТКА ДАННЫХ API (СИМУЛЯЦИЯ БИЗНЕС-ЛОГИКИ БЭКЕНДА)
 @app.post("/api/auth/register")
 def register_user(user: RegisterRequest, response: Response):
     """
-    Принимает полностью проверенные данные от глобального клиентского скрипта (api.js).
-    При успешном получении валидных полей генерирует рабочий симуляционный контракт сессии.
+    Шаг 1: Принимает первичные данные регистрации. Симулирует отправку кода на почту.
     """
-    # Выводим информационные отладочные логи прямо в терминал запущенного сервера
-    logger.info(f"Создаем сессию для: {user.email}")
-    logger.info(f"===> [БЭКЕНД УСПЕХ] Запрос принят! Создаем сессию для: {user.email}")
+    logger.info("========================================")
+    logger.info(f"===> [РЕГИСТРАЦИЯ] Первичные данные получены для: {user.email}")
+    logger.info("========================================")
 
-    # Явно выставляем статус-код успешного создания объекта в веб-среде (201 Created)
+    # Выставляем статус 201 Created — данные успешно кэшированы, ждем код подтверждения
     response.status_code = status.HTTP_201_CREATED
-    
-    # Возвращаем JSON-контракт с JWT-токеном, который ожидает интерфейс авторизации
     return {
-        "access_token": f"jwt.token.for.{user.username}.success",
-        "username": user.username,
         "code": 201,
         "state": "Created",
+        "message": "Verification code sent to email"
     }
+
+
+# --- 8. ЭНДПОИНТЫ ДВУХФАКТОРНОГО ПОДТВЕРЖДЕНИЯ И ВОССТАНОВЛЕНИЯ ---
+
+@app.post("/api/auth/send_code")
+def send_code(payload: SendCodeRequest, response: Response):
+    """Вспомогательный шаг: Повторный запрос проверочного кода на Email"""
+    logger.info(f"===> [ВОССТАНОВЛЕНИЕ] Запрос кода на email: {payload.email}")
+    
+    if "error" in payload.email:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"code": 404, "state": "Not Found", "message": "User not found"}
+        
+    response.status_code = status.HTTP_200_OK
+    return {"code": 200, "state": "OK"}
+
+@app.post("/api/auth/verify_code")
+def verify_code(payload: VerifyCodeRequest, response: Response):
+    logger.info("========================================")
+    logger.info(f"===> [ВЕРИФИКАЦИЯ] Проверка кода {payload.code} для: {payload.email}")
+    logger.info("========================================")
+    
+    # Сервер проверяет код. Если не совпал — шлет ошибку 400
+    if payload.code != "123456":
+        response.status_code = status.HTTP_400_BAD_REQUEST
+        return {"code": 400, "state": "Bad Request", "message": "Invalid code"}
+        
+    response.status_code = status.HTTP_200_OK
+    extracted_username = payload.email.split('@')[0]
+    
+    # Возвращает токен, который api.js перехватит и положит в localStorage
+    return {
+        "code": 200,
+        "state": "OK",
+        "access_token": f"jwt.token.for.{extracted_username}.success",
+        "reset_token": f"temporary-token-for-password-reset-via-{payload.email}"
+    }
+
 
 
 # ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ
 # ВАЖНО: Подключается строго в самом конце файла, выполняя роль фонового перехватчика.
-# Этот метод автоматически сопоставляет запрашиваемые URL-пути с физическими папками на диске.
-# Когда браузер запрашивает `/registration/index.html` или `/api.js`, FastAPI сканирует рабочее
-# пространство проекта, находит нужный файл и передает его клиенту с правильными MIME-типами.
 app.mount(
     "/",
     StaticFiles(directory=str(BASE_DIR), html=True),

@@ -21,6 +21,7 @@ class ApiError extends Error {
 const tokenStorage = {
     get() { return localStorage.getItem("accessToken"); },
     set(token) { localStorage.setItem("accessToken", token); },
+    //Добавлен обязательный вызов localStorage для предотвращения ошибки undefined при очистке сессии
     clear() { localStorage.removeItem("accessToken"); }
 };
 
@@ -48,7 +49,7 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
     try { data = await response.json(); } catch (_) {}
 
     if (!response.ok) {
-        throw new ApiError(data?.message || "Ошибка запроса к серверу", response.status, data);
+        throw new ApiError(data?.message || "Ошибка запроса к server.js", response.status, data);
     }
 
     return data;
@@ -64,15 +65,24 @@ const AuthAPI = {
         });
 
         console.log("[api.js] Ответ регистрации:", data);
+        // МИНИМАЛЬНОЕ ИЗМЕНЕНИЕ: При двухфакторке токен сохраняется на шаге проверки кода, 
+        // поэтому здесь просто возвращаем чистый ответ бэкенда для редиректа.
+        return data;
+    },
 
-        if (data.access_token) {
+    // ДОБАВЛЕНО: Минимальный метод для проверки кода на странице /authentication
+    async verifyRegisterCode(email, code, customEndpoint = "/api/auth/verify_code") {
+        const data = await rawRequest(customEndpoint, {
+            method: "POST",
+            body: { email, code }
+        });
+
+        console.log("[api.js] Ответ верификации кода:", data);
+
+        // Если код верный и бэкенд отдал токен доступа — сохраняем сессию!
+        if (data && data.access_token) {
             localStorage.setItem("accessToken", data.access_token);
-            localStorage.setItem("username", data.username || username);
-
-            console.log("[api.js] Токен сохранён:", localStorage.getItem("accessToken"));
-            console.log("[api.js] Имя сохранено:", localStorage.getItem("username"));
-        } else {
-            console.error("[api.js] Сервер не вернул access_token");
+            console.log("[api.js] Токен успешно сохранён после ввода кода:", localStorage.getItem("accessToken"));
         }
 
         return data;
@@ -82,7 +92,6 @@ const AuthAPI = {
         return !!tokenStorage.get();
     }
 };
-
 
 // Экспортируем в глобальную видимость окна браузера
 window.AuthAPI = AuthAPI;

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Подключаем глобальные стили и локальные стили авторизации -->
+  <link rel="stylesheet" href="../vars.css">
+  <link rel="stylesheet" href="./auth.css">
+  
+  <style>
+   a, button, input, select, h1, h2, h3, h4, h5, * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+       border: none;
+       text-decoration: none;
+       background: none;
+       -webkit-font-smoothing: antialiased;
+   }
+   menu, ol, ul {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+   </style>
+  <title>Подтверждение регистрации</title>
+</head>
+<body>
+  <!-- Глобальный каркас мобильного приложения из vars.css -->
+  <div class="div">
+    
+    <!-- 1. АДАПТИВНАЯ ГЛОБАЛЬНАЯ ШАПКА (ПОЛНОСТЬЮ ИЗ VARS.CSS) -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+      <div class="frame-4">
+        <div class="frame-5">
+          <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Профиль" />
+          <div class="div2" id="profile-letter">Г</div>
+        </div>
+        <div class="div3" id="auth-container">
+           <a href="../vxod/index.html" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="../registration/index.html" class="div4">Регистрация</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. ЦЕНТРАЛЬНЫЙ КОНТЕНТНЫЙ БЛОК ФОРМЫ ВЕРИФИКАЦИИ -->
+    <main class="main-content">
+      <h2 class="form-title">Подтвердите регистрацию</h2>
+      
+      <form class="form-container">
+        <!-- Поле ввода кода подтверждения -->
+        <div class="input-group">
+          <label class="input-label">Код</label>
+          <!-- Обертку убрали, инпут теперь лежит прямо внутри input-group -->
+          <input type="text" id="verification_code" class="custom-input" placeholder="Введите пароль, который прислали на почту" required />
+        </div>
+
+
+        <!-- Кнопка подтверждения -->
+        <button type="submit" class="submit-btn">
+          <span>Зарегистрироваться</span>
+        </button>
+      </form>
+    </main>
+
+  </div>
+
+  <!-- Подключение скрипта управления глобальной сессией (api.js) и локальной логики страницы -->
+  <script src="../api.js"></script>
+  <script src="./auth.js"></script>
+</body>
+</html>
