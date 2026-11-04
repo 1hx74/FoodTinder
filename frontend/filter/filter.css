@@ -1,0 +1,147 @@
+@import url('../vars.css');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* 1. КОНТЕНТНАЯ ЧАСТЬ СТРАНИЦЫ С ПРОКРУТКОЙ */
+.main-content {
+  height: calc(100% - 64px) !important; /* Вычитаем шапку */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  padding: 20px 24px 40px 24px !important; /* Уменьшили нижний отступ, так как кнопка теперь в потоке */
+  overflow-y: auto !important;
+}
+
+/* 2. ЗАГОЛОВКИ КАТЕГОРИЙ */
+.div5, .div6, .div7, .div8 {
+  color: #000000;
+  text-align: left;
+  font-family: var(--main-font);
+  font-size: 16px;
+  font-weight: 700;
+  width: 100%;
+  max-width: 351px;
+  margin-top: 24px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.div5 {
+  margin-top: 10px;
+}
+
+/* 3. УНИВЕРСАЛЬНАЯ СТРОКА ПЕРЕКЛЮЧАТЕЛЯ */
+.profile-row {
+  position: relative;
+  width: 100%;
+  max-width: 351px;
+  height: 41px;
+  margin-bottom: 8px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+.rectangle-18 {
+  background: #f9f3f3;
+  border-radius: 5px;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+.div10, .div13 {
+  color: #000000;
+  text-align: left;
+  font-family: var(--main-font);
+  font-size: 16px;
+  font-weight: 700;
+  position: relative;
+  z-index: 2;
+  margin-left: 11px;
+}
+
+/* 4. АНИМИРОВАННЫЙ ТУМБЛЕР (TOGGLE PLACEMENT) */
+.div11 {
+  background: #d1d8d4;
+  border-radius: 15px;
+  width: 48px;
+  height: 24px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 2;
+  cursor: pointer;
+  transition: background-color 0.25s ease;
+}
+
+.knob {
+  background: #ffffff;
+  border-radius: 50%;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  width: 19px;
+  height: 19px;
+  position: absolute;
+  left: 4px;
+  top: 2px;
+  transition: left 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.div11.active {
+  background: var(--primary-color);
+}
+
+.div11.active .knob {
+  left: 25px;
+}
+
+/* 5. КНОПКА В КОНЦЕ СТРАНИЦЫ */
+.frame-40 {
+  background: var(--primary-color);
+  border-radius: 12px;
+  width: 100%;
+  max-width: 306px;
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* Убираем абсолютное позиционирование, делаем элемент частью потока */
+  position: relative !important;
+  margin-top: 32px !important; /* Отступ сверху от последнего элемента списка */
+  margin-bottom: 20px !important; /* Отступ снизу страницы */
+  bottom: auto !important;
+  left: auto !important;
+  transform: none !important;
+  z-index: 2 !important;
+  
+  box-shadow: 0px 4px 15px rgba(120, 27, 27, 0.3);
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  flex-shrink: 0;
+}
+
+.frame-40:hover { opacity: 0.95; }
+.frame-40:active { transform: scale(0.98); }
+
+.div17 {
+  color: #ffffff;
+  text-align: center;
+  font-family: var(--main-font);
+  font-size: 20px;
+  font-weight: 700;
+}
+
+@media (max-height: 650px) {
+  .main-content { height: calc(100% - 64px) !important; padding-bottom: 20px !important; }
+  .div5, .div6, .div7, .div8 { margin-top: 16px; margin-bottom: 8px; }
+  .frame-40 { height: 48px; margin-top: 24px !important; }
+}

@@ -64,6 +64,14 @@ class VerifyCodeRequest(BaseModel):
     email: str
     code: str
 
+# Контракт строго разделен на 4 независимые категории полей
+class PreferencesRequest(BaseModel):
+    """Контракт валидации для сохранения настроек профиля"""
+    allergies: list[str] = []
+    diets: list[str] = []
+    religions: list[str] = []
+    kitchen_equipment: list[str] = []
+
 
 # ПЕРЕНАПРАВЛЕНИЕ НАВИГАЦИИ ФРОНТЕНДА (ДВИЖОК РЕДИРЕКТОВ)
 @app.get("/")
@@ -145,6 +153,45 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
         "reset_token": f"temporary-token-for-password-reset-via-{payload.email}"
     }
 
+
+#Эндпоинт теперь логирует и обрабатывает ровно 4 массива
+@app.patch("/api/db/me/preferences")
+def update_user_preferences(payload: PreferencesRequest, response: Response):
+    """
+    Принимает массивы выбранных (красных) кнопок с фронтенда по 4 категориям.
+    Если категория пуста, в терминал выведется пустой список [].
+    """
+    logger.info("========================================")
+    logger.info("===> [БЭКЕНД ФИЛТР] Настройки пользователя обновлены!")
+    logger.info(f"Аллергии (allergies): {payload.allergies}")
+    logger.info(f"Диеты (diets): {payload.diets}")
+    logger.info(f"Религия (religions): {payload.religions}")
+    logger.info(f"Оборудование (kitchen_equipment): {payload.kitchen_equipment}")
+    logger.info("========================================")
+
+    response.status_code = status.HTTP_200_OK
+    return {
+        "code": 200,
+        "state": "OK"
+    }
+
+# --- 10. ПОЛУЧЕНИЕ НАСТРОЕК ПРОФИЛЯ ПО КОНТРАКТУ GET ---
+@app.get("/api/db/me/preferences")
+def get_user_preferences(response: Response):
+    """
+    Имитирует получение сохраненных фильтров пользователя из базы данных сессии.
+    Возвращает JSON согласно твоему GET-контракту.
+    """
+    logger.info("===> [БЭКЕНД ФИЛЬТР] Запрос GET /api/db/me/preferences успешно обработан!")
+    
+    response.status_code = status.HTTP_200_OK
+    
+    # Мокаем (симулируем) ответ: пусть по умолчанию будут включены орехи, лактоза, халяль и микроволновка
+    return {
+        "forbidden": ["nuts", "lactose"],
+        "religions": ["halal"],
+        "kitchen_equipment": ["microwave", "oven"]
+    }
 
 
 # ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ

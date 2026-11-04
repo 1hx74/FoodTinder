@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../vars.css" />
+    <link rel="stylesheet" href="./filter.css" />
+    <style>
+      a, button, input, select, h1, h2, h3, h4, h5, * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: none;
+        text-decoration: none;
+        background: none;
+        -webkit-font-smoothing: antialiased;
+      }
+      menu, ol, ul { list-style-type: none; margin: 0; padding: 0; }
+    </style>
+    <title>Настройки профиля</title>
+  </head>
+  <body>
+    <div class="div">
+      
+      <!-- 1. АДАПТИВНАЯ ГЛОБАЛЬНАЯ ШАПКА -->
+      <header class="header-wrapper">
+        <div class="foodtinder">
+          <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+        </div>
+        <div class="frame-4">
+          <div class="frame-5">
+            <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Профиль" />
+            <div class="div2" id="profile-letter">Г</div>
+          </div>
+          <div class="div3" id="auth-container">
+            <a href="../vxod/index.html" class="div4">Вход</a>
+            <span class="slash-separator">/</span>
+            <a href="../registration/index.html" class="div4">Регистрация</a>
+          </div>
+        </div>
+      </header>
+
+      <!-- 2. СЕКЦИЯ КОНТЕНТА С ПРОКРУТКОЙ -->
+      <main class="main-content">
+
+        <!-- === КАТЕГОРИЯ: АЛЛЕРГИИ === -->
+        <div class="div5">Аллергия</div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Орехи</div>
+          <div class="div11" data-type="allergy" data-id="nuts"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Морепродукты</div>
+          <div class="div11" data-type="allergy" data-id="seafood"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Лактоза</div>
+          <div class="div11" data-type="allergy" data-id="lactose"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Рыба</div>
+          <div class="div11" data-type="allergy" data-id="fish"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Куриные яйца</div>
+          <div class="div11" data-type="allergy" data-id="eggs"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Пшеница</div>
+          <div class="div11" data-type="allergy" data-id="wheat"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Цитрусы</div>
+          <div class="div11" data-type="allergy" data-id="citruses"><div class="knob"></div></div>
+        </div>
+
+        <!-- === КАТЕГОРИЯ: ДИЕТЫ === -->
+        <div class="div7">Диета</div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Веганство</div>
+          <div class="div11" data-type="diet" data-id="vegan"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div10">Вегетарианство</div>
+          <div class="div11" data-type="diet" data-id="vegetarian"><div class="knob"></div></div>
+        </div>
+
+        <!-- === КАТЕГОРИЯ: ВЕРОИСПОВЕДАНИЕ === -->
+        <div class="div6">Вероисповедание</div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Халяль</div>
+          <div class="div11" data-type="religion" data-id="halal"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Постное</div>
+          <div class="div11" data-type="religion" data-id="lenten"><div class="knob"></div></div>
+        </div>
+
+        <!-- === КАТЕГОРИЯ: ОБОРУДОВАНИЕ === -->
+        <div class="div8">Оборудование</div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Духовка</div>
+          <div class="div11" data-type="equipment" data-id="oven"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Плита</div>
+          <div class="div11" data-type="equipment" data-id="stove"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Микроволновка</div>
+          <div class="div11" data-type="equipment" data-id="microwave"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Мультиварка</div>
+          <div class="div11" data-type="equipment" data-id="multicooker"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Аэрогриль</div>
+          <div class="div11" data-type="equipment" data-id="air_fryer"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Тостер</div>
+          <div class="div11" data-type="equipment" data-id="toaster"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Вафельница</div>
+          <div class="div11" data-type="equipment" data-id="waffle_maker"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Миксер</div>
+          <div class="div11" data-type="equipment" data-id="mixer"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Блендер</div>
+          <div class="div11" data-type="equipment" data-id="blender"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Мясорубка</div>
+          <div class="div11" data-type="equipment" data-id="meat_grinder"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Форма для запекания</div>
+          <div class="div11" data-type="equipment" data-id="backing_dish"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Противень</div>
+          <div class="div11" data-type="equipment" data-id="backind_sheet"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Терка</div>
+          <div class="div11" data-type="equipment" data-id="grater"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Венчик</div>
+          <div class="div11" data-type="equipment" data-id="wisk"><div class="knob"></div></div>
+        </div>
+        <div class="profile-row">
+          <div class="rectangle-18"></div>
+          <div class="div13">Скалка</div>
+          <div class="div11" data-type="equipment" data-id="rolling_scale"><div class="knob"></div></div>
+        </div>
+
+        <!-- 3. ФИКСИРОВАННАЯ КНОПКА СОХРАНЕНИЯ ВНИЗУ -->
+        <div class="frame-40">
+            <div class="div17">Сохранить</div>
+        </div>
+      </main>
+    </div>
+
+    <script src="../api.js"></script>
+    <script src="./filter.js"></script>
+  </body>
+</html>

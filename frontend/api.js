@@ -88,10 +88,66 @@ const AuthAPI = {
         return data;
     },
 
+    //Метод сохранения настроек профиля (аллергии, диеты, приборы)
+    async updatePreferences(preferencesData, customEndpoint = "/api/db/me/preferences") {
+        const data = await rawRequest(customEndpoint, {
+            method: "PATCH",
+            body: preferencesData
+        });
+
+        console.log("[api.js] Ответ сервера на сохранение настроек:", data);
+        return data;
+    },
+
+    // Получение ранее сохраненных настроек профиля из сессии
+    async getPreferences(customEndpoint = "/api/db/me/preferences") {
+        return await rawRequest(customEndpoint, {
+            method: "GET" // Строго по твоему GET контракту
+        });
+    },
+
+    // Глобальная функция автоматического переключения шапки интерфейса
+    updateHeaderUI() {
+        const authContainer = document.getElementById("auth-container");
+        const profileLetter = document.getElementById("profile-letter");
+
+        const token = localStorage.getItem("accessToken");
+        const username = localStorage.getItem("username");
+
+        // РЕЖИМ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
+        if (token && username) {
+            if (authContainer) {
+                authContainer.innerHTML = `<a href="#" class="div4">${username}</a>`;
+            }
+            if (profileLetter) {
+                profileLetter.innerText = username.charAt(0).toUpperCase();
+            }
+            console.log(`[api.js] Шапка страницы успешно обновлена для пользователя: ${username}`);
+        } 
+        // РЕЖИМ ГОСТЯ
+        else {
+            if (authContainer) {
+                authContainer.innerHTML = `
+                    <a href="../vxod/index.html" class="div4">Вход</a>
+                    <span class="slash-separator">/</span>
+                    <a href="../registration/index.html" class="div4">Регистрация</a>
+                `;
+            }
+            if (profileLetter) {
+                profileLetter.innerText = "Г";
+            }
+        }
+    },
+
     isAuthenticated() {
         return !!tokenStorage.get();
     }
 };
+
+// АВТО-ЗАПУСК: Как только любая страница загрузит api.js, он сам мгновенно перерисует шапку под сессию
+document.addEventListener("DOMContentLoaded", () => {
+    AuthAPI.updateHeaderUI();
+});
 
 // Экспортируем в глобальную видимость окна браузера
 window.AuthAPI = AuthAPI;
