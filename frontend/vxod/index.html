@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="./style.css">
+  
+  <style>
+   a, button, input, select, h1, h2, h3, h4, h5, * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+       border: none;
+       text-decoration: none;
+       background: none;
+       -webkit-font-smoothing: antialiased;
+   }
+   menu, ol, ul {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+
+   /* --- Фиксация и центрирование экрана 412x917 --- */
+   html, body {
+       width: 100%;
+       height: 100%;
+       margin: 0;
+       padding: 0;
+       overflow: hidden;
+       background: #e5e5e5;
+   }
+   body {
+       display: flex;
+       align-items: center;
+       justify-content: center;
+   }
+   /* ------------------------------------------------ */
+   </style>
+  <title>Вход</title>
+</head>
+<body>
+  <div class="div">
+    
+    <!-- 1. ГЛОБАЛЬНАЯ ШАПКА -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+    </header>
+
+    <!-- 2. ЦЕНТРАЛЬНЫЙ БЛОК ФОРМЫ -->
+    <main class="main-content">
+      <div class="form-title">Вход</div>
+      
+      <form class="form-container">
+        
+        <!-- Поле Логин/Email -->
+        <div class="input-group">
+          <label class="input-label">Логин/Email</label>
+          <input type="text" id="email" class="custom-input" placeholder="Введите Логин или Email" required />
+        </div>
+
+        <!-- Поле Пароль -->
+        <div class="input-group">
+          <label class="input-label">Пароль</label>
+          <input type="password" id="password" class="custom-input" placeholder="Введите пароль" required />
+        </div>
+
+        <!-- Кнопка отправки формы -->
+        <button type="submit" class="submit-btn">
+          <span class="div7">Войти</span>
+        </button>
+
+        <!-- Нижние ссылки -->
+        <div class="form-links">
+          <a href="#" class="form-link">Забыли пароль?</a>
+          <a href="#" class="form-link">Регистрация</a>
+        </div>
+      </form>
+    </main>
+
+  </div>
+  <script src="../api.js"></script>
+  <script src="./login.js"></script>
+</body>
+</html>

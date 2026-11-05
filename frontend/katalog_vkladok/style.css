@@ -1,0 +1,385 @@
+/* =========================================================
+   ФИКСИРОВАННЫЙ ЭКРАН 412×917 С ЦЕНТРОВКОЙ
+   ========================================================= */
+html, body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  background: #e8e8e8; /* видимый фон вокруг «экрана» */
+}
+
+.screen-wrapper {
+  display: flex;
+  justify-content: center;   /* центр по горизонтали */
+  align-items: center;       /* центр по вертикали   */
+  min-height: 100vh;
+  width: 100%;
+  padding: 16px;             /* отступ от краёв окна */
+}
+
+/* =========================================================
+   ЛОГОТИП И ТЕКСТОВЫЕ ССЫЛКИ — БЕЗ ОСВЕТЛЕНИЯ (как в эталоне)
+   ========================================================= */
+.foodtinder,
+.div3,
+.div7,
+.div9 {
+  cursor: pointer;
+}
+
+/* =========================================================
+   ИСХОДНЫЙ ЭТАЛОННЫЙ CSS
+   ========================================================= */
+.div,
+.div * {
+  box-sizing: border-box;
+}
+.div {
+  background: #ffffff;
+  width: 412px;
+  height: 917px;
+  position: relative;
+  overflow: hidden;
+  flex-shrink: 0;
+  transform-origin: center center;
+}
+.foodtinder {
+  display: block;
+  width: 163px;
+  height: 31px;
+  position: absolute;
+  left: 15px;
+  top: 14px;
+}
+.foodtinder2 {
+  color: #781b1b;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  position: absolute;
+  right: 0%;
+  left: 0%;
+  width: 100%;
+  bottom: 0%;
+  top: 0%;
+  height: 100%;
+}
+.frame-4 {
+  width: 103px;
+  height: 51px;
+  position: absolute;
+  left: calc(50% - -99px);
+  top: calc(50% - 454.5px);
+  overflow: hidden;
+}
+.frame-5 {
+  width: 50px;
+  height: 50px;
+  position: absolute;
+  left: 53px;
+  top: 1px;
+  overflow: hidden;
+}
+.ellipse-2 {
+  width: 41px;
+  height: 41px;
+  position: absolute;
+  left: 50%;
+  translate: -50% -50%;
+  top: 50%;
+  overflow: visible;
+}
+.div2 {
+  color: #ffffff;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  position: absolute;
+  left: 50%;
+  translate: -50% -50%;
+  top: 50%;
+  width: 14px;
+  height: 24px;
+}
+.div3 {
+  display: block;
+  width: 57px;
+  height: 25px;
+  position: absolute;
+  left: 3px;
+  top: 13px;
+}
+.div4 {
+  color: #000000;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  position: absolute;
+  right: 0%;
+  left: 0%;
+  width: 100%;
+  bottom: 0%;
+  top: 0%;
+  height: 100%;
+}
+.frame-15 {
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  left: 131px;
+  top: 61px;
+  overflow: hidden;
+}
+.ellipse-3 {
+  background: #d9d9d9;
+  border-radius: 50%;
+  width: 150px;
+  height: 150px;
+  position: absolute;
+  left: 50%;
+  translate: -50% -50%;
+  top: 50%;
+}
+.div5 {
+  color: #000000;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  position: absolute;
+  left: 170px;
+  top: 219px;
+  width: 71px;
+  height: 29px;
+}
+.div6 {
+  width: 203px;
+  height: 37px;
+  position: absolute;
+  left: 50%;
+  translate: -50%;
+  top: 256px;
+  overflow: hidden;
+}
+.div7 {
+  display: block;
+  width: 57px;
+  height: 25px;
+  position: absolute;
+  left: 0px;
+  top: 6px;
+}
+.div8 {
+  color: #000000;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  position: absolute;
+  left: 57px;
+  top: 6px;
+  width: 16px;
+  height: 25px;
+}
+.div9 {
+  display: block;
+  width: 138px;
+  height: 25px;
+  position: absolute;
+  left: 73px;
+  top: 6px;
+}
+.div10 {
+  width: 328px;
+  height: 482px;
+  position: absolute;
+  left: 37px;
+  top: 325px;
+  overflow: hidden;
+}
+
+/* =========================================================
+   ВКЛАДКИ — ТОЧНО КАК КНОПКИ НА ГЛАВНОЙ
+   ========================================================= */
+.rectangle-6,
+.rectangle-7,
+.rectangle-8,
+.rectangle-9,
+.rectangle-10,
+.rectangle-11,
+.rectangle-12 {
+  background: rgba(120, 27, 27, 0.78);
+  border-radius: 12px;
+  width: 306px;
+  height: 55px;
+  position: absolute;
+  left: 14px;
+
+  /* как .btn-rect на главной */
+  transition: transform 0.1s ease, opacity 0.2s ease;
+  box-shadow: 0px 2px 8px rgba(120, 27, 27, 0.2);
+  cursor: pointer;
+}
+
+.rectangle-6  { top: 13px;  }
+.rectangle-7  { top: 409px; }
+.rectangle-8  { top: 343px; }
+.rectangle-9  { top: 277px; }
+.rectangle-10 { top: 211px; }
+.rectangle-11 { top: 145px; }
+.rectangle-12 { top: 79px;  }
+
+/* ховер — идентичен главной */
+.rectangle-6:hover,
+.rectangle-7:hover,
+.rectangle-8:hover,
+.rectangle-9:hover,
+.rectangle-10:hover,
+.rectangle-11:hover,
+.rectangle-12:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Ссылки-вкладки: z-index выше, чтобы клик ловился по всей плашке */
+.tab-link {
+  display: block;
+  z-index: 1;
+}
+
+/* Тексты вкладок не перехватывают клики — они просто лежат поверх */
+.div11,
+.div12,
+.div13,
+.div14,
+.div15,
+.div16,
+.div17 {
+  pointer-events: none;
+  z-index: 2;
+}
+
+.div11 {
+  color: #ffffff;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 133px;
+  top: 32px;
+  width: 67px;
+  height: 18px;
+}
+.div12 {
+  color: #ffffff;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 62px;
+  top: 98px;
+  width: 209px;
+  height: 18px;
+}
+.div13 {
+  color: #ffffff;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 49px;
+  top: 164px;
+  width: 229px;
+  height: 18px;
+}
+.div14 {
+  color: #747474;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 72px;
+  top: 232px;
+  width: 189px;
+  height: 18px;
+}
+.div15 {
+  color: #747474;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 120px;
+  top: 296px;
+  width: 93px;
+  height: 18px;
+}
+.div16 {
+  color: #747474;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 78px;
+  top: 362px;
+  width: 178px;
+  height: 18px;
+}
+.div17 {
+  color: #747474;
+  text-align: left;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  position: absolute;
+  left: 100px;
+  top: 428px;
+  width: 134px;
+  height: 18px;
+}
+/* =========================================================
+   АВАТАР: буква имени поверх круга (когда нет avatarUrl)
+   ========================================================= */
+.avatar-initial {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  width: auto;
+  height: auto;
+  color: #ffffff;
+  text-align: center;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* =========================================================
+   ВЫЙТИ: та же типографика, что у «Вход»
+   ========================================================= */
+.logout-link {
+  display: block;
+  width: auto;
+  height: 25px;
+  position: absolute;
+  left: 0;
+  top: 6px;
+  cursor: pointer;
+}
+
+/* =========================================================
+   ЗАБЛОКИРОВАННЫЕ ВКЛАДКИ (гость)
+   ========================================================= */
+.tab-link[aria-disabled="true"] {
+  cursor: not-allowed;
+}
