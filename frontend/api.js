@@ -21,6 +21,7 @@ class ApiError extends Error {
 const tokenStorage = {
     get() { return localStorage.getItem("accessToken"); },
     set(token) { localStorage.setItem("accessToken", token); },
+    //Добавлен обязательный вызов localStorage для предотвращения ошибки undefined при очистке сессии
     clear() { localStorage.removeItem("accessToken"); }
 };
 
@@ -48,7 +49,7 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
     try { data = await response.json(); } catch (_) {}
 
     if (!response.ok) {
-        throw new ApiError(data?.message || "Ошибка запроса к серверу", response.status, data);
+        throw new ApiError(data?.message || "Ошибка запроса к server.js", response.status, data);
     }
 
     return data;
@@ -64,18 +65,78 @@ const AuthAPI = {
         });
 
         console.log("[api.js] Ответ регистрации:", data);
+        // МИНИМАЛЬНОЕ ИЗМЕНЕНИЕ: При двухфакторке токен сохраняется на шаге проверки кода, 
+        // поэтому здесь просто возвращаем чистый ответ бэкенда для редиректа.
+        return data;
+    },
 
-        if (data.access_token) {
+    // ДОБАВЛЕНО: Минимальный метод для проверки кода на странице /authentication
+    async verifyRegisterCode(email, code, customEndpoint = "/api/auth/verify_code") {
+        const data = await rawRequest(customEndpoint, {
+            method: "POST",
+            body: { email, code }
+        });
+
+        console.log("[api.js] Ответ верификации кода:", data);
+
+        // Если код верный и бэкенд отдал токен доступа — сохраняем сессию!
+        if (data && data.access_token) {
             localStorage.setItem("accessToken", data.access_token);
-            localStorage.setItem("username", data.username || username);
-
-            console.log("[api.js] Токен сохранён:", localStorage.getItem("accessToken"));
-            console.log("[api.js] Имя сохранено:", localStorage.getItem("username"));
-        } else {
-            console.error("[api.js] Сервер не вернул access_token");
+            console.log("[api.js] Токен успешно сохранён после ввода кода:", localStorage.getItem("accessToken"));
         }
 
         return data;
+    },
+
+    //Метод сохранения настроек профиля (аллергии, диеты, приборы)
+    async updatePreferences(preferencesData, customEndpoint = "/api/db/me/preferences") {
+        const data = await rawRequest(customEndpoint, {
+            method: "PATCH",
+            body: preferencesData
+        });
+
+        console.log("[api.js] Ответ сервера на сохранение настроек:", data);
+        return data;
+    },
+
+    // Получение ранее сохраненных настроек профиля из сессии
+    async getPreferences(customEndpoint = "/api/db/me/preferences") {
+        return await rawRequest(customEndpoint, {
+            method: "GET" // Строго по твоему GET контракту
+        });
+    },
+
+    // Глобальная функция автоматического переключения шапки интерфейса
+    updateHeaderUI() {
+        const authContainer = document.getElementById("auth-container");
+        const profileLetter = document.getElementById("profile-letter");
+
+        const token = localStorage.getItem("accessToken");
+        const username = localStorage.getItem("username");
+
+        // РЕЖИМ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
+        if (token && username) {
+            if (authContainer) {
+                authContainer.innerHTML = `<a href="#" class="div4">${username}</a>`;
+            }
+            if (profileLetter) {
+                profileLetter.innerText = username.charAt(0).toUpperCase();
+            }
+            console.log(`[api.js] Шапка страницы успешно обновлена для пользователя: ${username}`);
+        } 
+        // РЕЖИМ ГОСТЯ
+        else {
+            if (authContainer) {
+                authContainer.innerHTML = `
+                    <a href="../vxod/index.html" class="div4">Вход</a>
+                    <span class="slash-separator">/</span>
+                    <a href="../registration/index.html" class="div4">Регистрация</a>
+                `;
+            }
+            if (profileLetter) {
+                profileLetter.innerText = "Г";
+            }
+        }
     },
 
     isAuthenticated() {
@@ -83,6 +144,10 @@ const AuthAPI = {
     }
 };
 
+// АВТО-ЗАПУСК: Как только любая страница загрузит api.js, он сам мгновенно перерисует шапку под сессию
+document.addEventListener("DOMContentLoaded", () => {
+    AuthAPI.updateHeaderUI();
+});
 
 // Экспортируем в глобальную видимость окна браузера
 window.AuthAPI = AuthAPI;
