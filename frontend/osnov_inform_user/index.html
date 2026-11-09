@@ -19,12 +19,11 @@
       </div>
       <div class="frame-4">
         <div class="div3">
-          <!-- ИСПРАВЛЕНО: Сюда скрипт динамически подставит имя пользователя вместо слова "Пользователь" -->
-          <span class="user-text" id="header-username">Загрузка...</span>
+          <!-- Скрипт тимлида ищет именно тег с классом .div4 для подстановки имени пользователя -->
+          <span class="div4" id="header-username">Загрузка...</span>
         </div>
         <div class="frame-5">
           <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Аватар">
-          <!-- ИСПРАВЛЕНО: Сюда подставится первая буква имени в кружок -->
           <div class="div2" id="profile-letter">П</div>
         </div>
       </div>
@@ -34,7 +33,12 @@
     <div class="main-content">
       <!-- Секция большого аватара и интерактивного имени из Figma -->
       <div class="avatar-section">
-        <div class="ellipse-3"></div>
+        <!-- Скрытый инпут для вызова загрузочного окна операционной системы -->
+        <input type="file" id="avatar-file-picker" accept="image/*" style="display: none;">
+        
+        <!-- Делаем аватарку кликабельной картинкой. Если файла нет, она будет серой по умолчанию через CSS -->
+        <img class="ellipse-3" id="profile-avatar-img" src="" alt="" style="cursor: pointer; object-fit: cover; background-color: #d9d9d9;">
+        
         <div class="editable-name-wrapper" id="name-wrapper">
           <h2 class="div4" id="name-display">Загрузка...</h2>
           <input type="text" class="name-field-input" id="name-input" style="display: none;">
@@ -42,7 +46,7 @@
       </div>
 
       <!-- Контейнер формы полностью по стилю регистрации -->
-      <form class="form-container" onsubmit="event.preventDefault(); alert('Изменения сохранены!');" autocomplete="off">
+      <form class="form-container" autocomplete="off">
         
         <form class="form-container">
           <div class="input-group">
@@ -75,10 +79,11 @@
           </button>
         </form>
 
-        <script src="osnov_inform_user.js"></script>
 
     </main>
   </div>
 
+  <script src="../api.js"></script>
+  <script src="./osnov_inform_user.js"></script>
 </body>
 </html>

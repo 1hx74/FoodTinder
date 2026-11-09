@@ -106,6 +106,19 @@ const AuthAPI = {
         });
     },
 
+    async getProfile() {
+        return await rawRequest("/api/db/me", {
+            method: "GET"
+        });
+    },
+
+    async updateProfile(profileData) {
+        return await rawRequest("/api/db/me", {
+            method: "PATCH",
+            body: profileData
+        });
+    },
+
     // Глобальная функция автоматического переключения шапки интерфейса
     updateHeaderUI() {
         const authContainer = document.getElementById("auth-container");
