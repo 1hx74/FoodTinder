@@ -18,7 +18,7 @@ html, body {
 }
 
 /* =========================================================
-   ЛОГОТИП И ТЕКСТОВЫЕ ССЫЛКИ — БЕЗ ОСВЕТЛЕНИЯ (как в эталоне)
+   ЛОГОТИП И ТЕКСТОВЫЕ ССЫЛКИ
    ========================================================= */
 .foodtinder,
 .div3,
@@ -73,36 +73,50 @@ html, body {
   top: calc(50% - 454.5px);
   overflow: hidden;
 }
+
+/* =========================================================
+   АВАТАР (Круг + Буква по центру)
+   ========================================================= */
 .frame-5 {
-  width: 50px;
-  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   left: 53px;
   top: 1px;
+  width: 50px;
+  height: 50px;
   overflow: hidden;
+  cursor: pointer;
 }
 .ellipse-2 {
+  position: absolute;
   width: 41px;
   height: 41px;
-  position: absolute;
-  left: 50%;
-  translate: -50% -50%;
   top: 50%;
-  overflow: visible;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
-.div2 {
+
+/* Буква "Г" (и первая буква имени) всегда по центру круга */
+.div2, 
+.avatar-initial {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: #ffffff;
-  text-align: left;
   font-family: "Inter-Bold", sans-serif;
   font-size: 24px;
   font-weight: 700;
-  position: absolute;
-  left: 50%;
-  translate: -50% -50%;
-  top: 50%;
-  width: 14px;
-  height: 24px;
+  text-align: center;
+  pointer-events: none; /* Чтобы клик проходил на ссылку */
+  z-index: 2; /* Поверх картинки круга */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
 .div3 {
   display: block;
   width: 57px;
@@ -202,7 +216,7 @@ html, body {
 }
 
 /* =========================================================
-   ВКЛАДКИ — ТОЧНО КАК КНОПКИ НА ГЛАВНОЙ
+   ВКЛАДКИ
    ========================================================= */
 .rectangle-6,
 .rectangle-7,
@@ -211,28 +225,28 @@ html, body {
 .rectangle-10,
 .rectangle-11,
 .rectangle-12 {
-  background: rgba(120, 27, 27, 0.78);
+  background: #9b5151; /* Сплошной цвет без просвечивания */
   border-radius: 12px;
   width: 306px;
   height: 55px;
   position: absolute;
   left: 14px;
 
-  /* как .btn-rect на главной */
   transition: transform 0.1s ease, opacity 0.2s ease;
   box-shadow: 0px 2px 8px rgba(120, 27, 27, 0.2);
   cursor: pointer;
+  pointer-events: auto; /* По умолчанию кликабельны */
 }
 
 .rectangle-6  { top: 13px;  }
-.rectangle-7  { top: 409px; }
-.rectangle-8  { top: 343px; }
-.rectangle-9  { top: 277px; }
-.rectangle-10 { top: 211px; }
-.rectangle-11 { top: 145px; }
-.rectangle-12 { top: 79px;  }
+.rectangle-7  { top: 79px;  }
+.rectangle-8  { top: 145px; }
+.rectangle-9  { top: 211px; }
+.rectangle-10 { top: 277px; }
+.rectangle-11 { top: 343px; }
+.rectangle-12 { top: 409px; }
 
-/* ховер — идентичен главной */
+/* Ховер */
 .rectangle-6:hover,
 .rectangle-7:hover,
 .rectangle-8:hover,
@@ -244,129 +258,31 @@ html, body {
   transform: translateY(-1px);
 }
 
-/* Ссылки-вкладки: z-index выше, чтобы клик ловился по всей плашке */
-.tab-link {
-  display: block;
-  z-index: 1;
-}
-
-/* Тексты вкладок не перехватывают клики — они просто лежат поверх */
-.div11,
-.div12,
-.div13,
-.div14,
-.div15,
-.div16,
-.div17 {
-  pointer-events: none;
-  z-index: 2;
-}
-
-.div11 {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+/* Тексты внутри вкладок (центрируются внутри кнопки) */
+.tab-text {
   position: absolute;
-  left: 133px;
-  top: 32px;
-  width: 67px;
-  height: 18px;
-}
-.div12 {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 62px;
-  top: 98px;
-  width: 209px;
-  height: 18px;
-}
-.div13 {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 49px;
-  top: 164px;
-  width: 229px;
-  height: 18px;
-}
-.div14 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 72px;
-  top: 232px;
-  width: 189px;
-  height: 18px;
-}
-.div15 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 120px;
-  top: 296px;
-  width: 93px;
-  height: 18px;
-}
-.div16 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 78px;
-  top: 362px;
-  width: 178px;
-  height: 18px;
-}
-.div17 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 100px;
-  top: 428px;
-  width: 134px;
-  height: 18px;
-}
-/* =========================================================
-   АВАТАР: буква имени поверх круга (когда нет avatarUrl)
-   ========================================================= */
-.avatar-initial {
-  position: absolute;
-  left: 50%;
   top: 50%;
-  translate: -50% -50%;
-  width: auto;
-  height: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: #ffffff;
-  text-align: center;
   font-family: "Inter-Bold", sans-serif;
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
-  pointer-events: none;
+  white-space: nowrap;
+  pointer-events: none; /* Чтобы клик проходил на ссылку */
 }
 
 /* =========================================================
-   ВЫЙТИ: та же типографика, что у «Вход»
+   ЗАБЛОКИРОВАННЫЕ КНОПКИ (ДЛЯ ГОСТЯ)
    ========================================================= */
+.tab-link.is-locked {
+  pointer-events: none; /* Отключаем клики */
+  opacity: 0.5;         /* Делаем блеклыми */
+  cursor: not-allowed;
+  filter: grayscale(30%); /* Чуть обесцвечиваем */
+}
+
+/* Стили для "Выйти", чтобы стоял на месте "Входа" */
 .logout-link {
   display: block;
   width: auto;
@@ -375,11 +291,4 @@ html, body {
   left: 0;
   top: 6px;
   cursor: pointer;
-}
-
-/* =========================================================
-   ЗАБЛОКИРОВАННЫЕ ВКЛАДКИ (гость)
-   ========================================================= */
-.tab-link[aria-disabled="true"] {
-  cursor: not-allowed;
 }
