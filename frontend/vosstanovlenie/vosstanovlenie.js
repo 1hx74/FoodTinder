@@ -1,32 +1,28 @@
 /**
  * ДЛЯ ЧЕГО: Изолированный контроллер страницы "Восстановление пароля".
- * 1. Шаг 1: Отправляет Email для получения проверочного кода (POST /api/auth/send_code).
- * 2. Шаг 2: Отправляет введенный Код для верификации (POST /api/auth/verify_code).
- * 3. Сохраняет полученный reset_token в localStorage для следующей страницы (Нового пароля).
+ * Работает строго через глобальный сетевой сервис window.AuthAPI.
+ * 1. Шаг 1: Запрашивает код на введенный Email (POST /api/auth/send_code).
+ * 2. Шаг 2: Проверяет код, отправляя в контракте И код, И сохраненный Email (POST /api/auth/verify_code).
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-    const SERVER_PORT = window.location.port || "8000";
-    const API_BASE = `http://localhost:${SERVER_PORT}`;
-
-    // Ищем инпуты (внутри rectangle-7 и 8 лежат обычные теги <input>)
+    // Находим элементы ввода на странице
     const emailInput = document.querySelector('.rectangle-7 input');
     const codeInput = document.querySelector('.rectangle-8 input');
 
-    // Ищем кнопки-блоки по классам из твоего CSS
+    // Находим интерактивные кнопки по классам из CSS
     const btnGetCode = document.querySelector('.rectangle-72');
     const btnVerifyCode = document.querySelector('.rectangle-9');
 
     // ==========================================
-    // ШАГ 1: ОТПРАВКА EMAIL И ПОЛУЧЕНИЕ КОДА
+    // ШАГ 1: ЗАПРОС КОДА НА EMAIL
     // ==========================================
     if (btnGetCode) {
         btnGetCode.addEventListener('click', async (e) => {
             e.preventDefault();
-
             const email = emailInput ? emailInput.value.trim() : "";
 
-            // Быстрая валидация формата почты в браузере
+            // Валидация регулярным выражением
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 alert("Ошибка: Некорректный формат Email! Проверьте адрес.");
@@ -34,44 +30,34 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                let result;
-                const response = await fetch(`${API_BASE}/api/auth/send_code`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: email })
-                });
-
-                if (response.ok) {
-                    result = await response.json();
-                } else {
-                    throw new Error(`Код ${response.status}`);
-                }
-            } catch (networkError) {
-                console.warn("[MOCK SYSTEM]: Метод send_code не ответил, включаем локальный успех.");
-                // Имитируем успешный RESPONSE из контракта
-                result = { "code": 200, "state": "OK" };
-            }
-
-            if (result.code === 200 || result.state === "OK") {
-                // Сохраняем email во временную память сессии
+                // Вызываем метод из api.js
+                await window.AuthAPI.sendRecoveryCode(email);
+                
+                // Сохраняем в память сессии для Шага 2
                 sessionStorage.setItem("pendingEmail", email);
-                alert("Код успешно отправлен на вашу почту! Проверьте ящик");
-            } else {
-                alert(`Ошибка: ${result.state || "Не удалось отправить код"}`);
+                alert("✨ Проверочный код отправлен на вашу почту! ✨");
+            } catch (error) {
+                alert(`Ошибка отправки: ${error.message}`);
+                console.error(error);
             }
         });
     }
 
     // ==========================================
-    // ШАГ 2: ПРОВЕРКА КОДА И ПЕРЕХОД К НОВОМУ ПАРОЛЮ
+    // ШАГ 2: ПРОВЕРКА КОДА И ПЕРЕХОД
     // ==========================================
     if (btnVerifyCode) {
         btnVerifyCode.addEventListener('click', async (e) => {
             e.preventDefault();
-
             const code = codeInput ? codeInput.value.trim() : "";
-            // Извлекаем сохраненный на Шаге 1 или Шаге Регистрации email
-            const email = sessionStorage.getItem("pendingEmail") || "user@example.com";
+            
+            // Извлекаем общую почту из сессии
+            const savedEmail = sessionStorage.getItem("pendingEmail");
+
+            if (!savedEmail) {
+                alert("Ошибка: Сначала запросите код на Шаге 1!");
+                return;
+            }
 
             if (code.length === 0) {
                 alert("Ошибка: Введите проверочный код!");
@@ -79,38 +65,21 @@ document.addEventListener("DOMContentLoaded", () => {
             }
 
             try {
-                let result;
-                const response = await fetch(`${API_BASE}/api/auth/verify_code`, {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ email: email, code: code })
-                });
-
-                if (response.ok) {
-                    result = await response.json();
-                } else {
-                    throw new Error(`Код ${response.status}`);
+                // Отправляем данные на верификацию через api.js
+                const result = await window.AuthAPI.verifyRecoveryCode(savedEmail, code);
+                
+                // Сохраняем полученный токен сброса в localStorage для страницы установки нового пароля
+                if (result && result.reset_token) {
+                    localStorage.setItem("resetToken", result.reset_token);
                 }
-            } catch (networkError) {
-                console.warn("[MOCK SYSTEM]: Метод verify_code не ответил, применяем локальный успех контракта.");
-                // Идеальное воссоздание успешного ответа из твоего контракта
-                result = {
-                    "code": 200,
-                    "state": "OK",
-                    "reset_token": "temporary-token-for-password-reset"
-                };
-            }
-
-            if (result.code === 200 || result.state === "OK") {
-                // Сохраняем токен сброса в память, его прочитает страница установки нового пароля!
-                localStorage.setItem("resetToken", result.reset_token || "temporary-token-for-password-reset");
                 
-                alert("✨ Код подтвержден успешно! Переходим к созданию нового пароля. ✨");
+                alert("Код подтвержден успешно! Переходим к созданию нового пароля.");
                 
-                // Перенаправляем пользователя на твою готовую страницу Нового Пароля
-                window.location.href = '../newpassword/new-password.html';
-            } else {
-                alert(`Ошибка проверки кода: ${result.message || "Неверный код"}`);
+                // Чистый фронтенд-переход на страницу нового пароля
+                window.location.href = '../newpassword/index.html';
+            } catch (error) {
+                alert(`Ошибка проверки кода: ${error.message}`);
+                console.error(error);
             }
         });
     }

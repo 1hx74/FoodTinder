@@ -106,18 +106,48 @@ const AuthAPI = {
         });
     },
 
+    //Получение данных текущего профиля пользователя
     async getProfile() {
         return await rawRequest("/api/db/me", {
             method: "GET"
         });
     },
 
+    //Частичное обновление данных профиля и загруженной аватарки
     async updateProfile(profileData) {
         return await rawRequest("/api/db/me", {
             method: "PATCH",
             body: profileData
         });
     },
+
+    //Запрос проверочного кода на Email (восстановление пароля)
+    async sendRecoveryCode(email) {
+        return await rawRequest("/api/auth/send_code", {
+            method: "POST",
+            body: { email }
+        });
+    },
+
+    //Верификация кода с почты
+    async verifyRecoveryCode(email, code) {
+        return await rawRequest("/api/auth/verify_code", {
+            method: "POST",
+            body: { email, code }
+        });
+    },
+
+    //Отправка нового пароля на сервер по выданному токену сброса
+    async resetPassword(resetToken, newPassword) {
+        return await rawRequest("/api/auth/new_pswd", {
+            method: "POST",
+            body: { 
+                reset_token: resetToken, 
+                new_password: newPassword 
+            }
+        });
+    },
+
 
     // Глобальная функция автоматического переключения шапки интерфейса
     updateHeaderUI() {

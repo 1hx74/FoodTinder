@@ -76,6 +76,10 @@ class UpdateProfileRequest(BaseModel):
     weight: int
     avatar_url: str | None = None
 
+class NewPasswordRequest(BaseModel):
+    reset_token: str
+    new_password: str
+
 # Контракт строго разделен на 4 независимые категории полей
 class PreferencesRequest(BaseModel):
     """Контракт валидации для сохранения настроек профиля"""
@@ -244,6 +248,20 @@ def update_my_profile(payload: UpdateProfileRequest, response: Response):
         "code": 200,
         "state": "OK"
     }
+
+@app.post("/api/auth/new_pswd")
+def change_password(data: NewPasswordRequest, response: Response):
+    """Принимает запрос на установку нового пароля по токену сброса"""
+    logger.info("========================================")
+    logger.info(f"===> [БЭКЕНД] Запрос на смену пароля успешно получен.")
+    logger.info("========================================")
+    
+    response.status_code = status.HTTP_200_OK
+    return {
+        "code": 200,
+        "state": "OK"
+    }
+
 
 
 # ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ
