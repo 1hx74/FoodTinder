@@ -4,3 +4,4 @@ pydantic
 python-multipart
 aioboto3
 botocore
+boto3
