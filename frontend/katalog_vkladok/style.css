@@ -1,315 +1,135 @@
-/* =========================================================
-   ФИКСИРОВАННЫЙ ЭКРАН 412×917 С ЦЕНТРОВКОЙ
-   ========================================================= */
-html, body {
-  margin: 0;
-  padding: 0;
-  min-height: 100vh;
-  background: #e8e8e8; /* видимый фон вокруг «экрана» */
-}
+@import url('../vars.css');
 
-.screen-wrapper {
-  display: flex;
-  justify-content: center;   /* центр по горизонтали */
-  align-items: center;       /* центр по вертикали   */
-  min-height: 100vh;
-  width: 100%;
-  padding: 16px;             /* отступ от краёв окна */
-}
-
-/* =========================================================
-   ЛОГОТИП И ТЕКСТОВЫЕ ССЫЛКИ
-   ========================================================= */
-.foodtinder,
-.div3,
-.div7,
-.div9,
-.logout-link {
-  cursor: pointer;
-}
-
-/* =========================================================
-   ИСХОДНЫЙ ЭТАЛОННЫЙ CSS
-   ========================================================= */
-.div,
-.div * {
-  box-sizing: border-box;
-}
+/* Основной контейнер */
 .div {
+  width: 100%;
+  height: 100%;
   background: #ffffff;
-  width: 412px;
-  height: 917px;
-  position: relative;
-  overflow: hidden;
-  flex-shrink: 0;
-  transform-origin: center center;
-}
-.foodtinder {
-  display: block;
-  width: 163px;
-  height: 31px;
-  position: absolute;
-  left: 15px;
-  top: 14px;
-}
-.foodtinder2 {
-  color: #781b1b;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  position: absolute;
-  right: 0%;
-  left: 0%;
-  width: 100%;
-  bottom: 0%;
-  top: 0%;
-  height: 100%;
-}
-.frame-4 {
-  width: 103px;
-  height: 51px;
-  position: absolute;
-  left: calc(50% - -99px);
-  top: calc(50% - 454.5px);
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
 }
 
 /* =========================================================
-   АВАТАР (Круг + Буква по центру)
-   ========================================================= */
-.frame-5 {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: absolute;
-  left: 53px;
-  top: 1px;
-  width: 50px;
-  height: 50px;
-  overflow: hidden;
-  cursor: pointer;
-}
-.ellipse-2 {
-  position: absolute;
-  width: 41px;
-  height: 41px;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-/* Буква "Г" (и первая буква имени) всегда по центру круга */
-.div2, 
-.avatar-initial {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  color: #ffffff;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 24px;
-  font-weight: 700;
-  text-align: center;
-  pointer-events: none; /* Чтобы клик проходил на ссылку */
-  z-index: 2; /* Поверх картинки круга */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-/* Вход в шапке (правый верхний угол) */
-.div3 {
-  display: block;
-  width: 57px;
-  height: 25px;
-  position: absolute;
-  left: 3px;
-  top: 13px;
-}
-.div4 {
-  color: #000000;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  position: absolute;
-  right: 0%;
-  left: 0%;
-  width: 100%;
-  bottom: 0%;
-  top: 0%;
-  height: 100%;
-}
-
-/* =========================================================
-   ЦЕНТРАЛЬНЫЙ БОЛЬШОЙ КРУГ
+   ЦЕНТРАЛЬНЫЙ КРУГ (Адаптивный, не сплющивается)
    ========================================================= */
 .frame-15 {
-  width: 150px;
-  height: 150px;
-  position: absolute;
-  left: 131px;
-  top: 61px;
-  overflow: hidden;
+  width: clamp(100px, 20vh, 150px); 
+  aspect-ratio: 1 / 1; /* Сохраняет идеальный круг */
+  position: relative;
+  margin: 3vh auto 2vh auto; /* Центрирование и отступы */
+  flex-shrink: 0; 
 }
+
 .ellipse-3 {
   background: #d9d9d9;
   border-radius: 50%;
-  width: 150px;
-  height: 150px;
-  position: absolute;
-  left: 50%;
-  translate: -50% -50%;
-  top: 50%;
+  width: 100%;
+  height: 100%;
 }
 
 /* =========================================================
-   ИМЯ ПОЛЬЗОВАТЕЛЯ И ВХОД/ВЫЙТИ (ЦЕНТРИРОВАННЫЕ)
+   ИМЯ ПОЛЬЗОВАТЕЛЯ И ВХОД/ВЫЙТИ (ЦЕНТРАЛЬНЫЙ БЛОК)
    ========================================================= */
 
-/* Блок с именем (Гость / Имя пользователя) */
+/* Имя */
 .div5 {
-  display: flex;
-  justify-content: center;
-  align-items: center;
   text-align: center;
-  width: 100%; 
-  left: 0;     
-  top: 219px;  
-  position: absolute;
-  
-  /* Возвращаем исходный шрифт и размер */
-  font-family: "Inter-Bold", sans-serif;
+  font-family: var(--main-font);
   font-size: 24px;
   font-weight: 700;
   color: #000000;
+  margin-bottom: 1.5vh;
+  flex-shrink: 0;
 }
 
-/* Блок со ссылками Вход/Регистрация или кнопкой Выйти */
+/* Контейнер для ссылок и слэша */
 .div6 {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 100%;       
-  left: 0;           
-  top: 256px;        
-  position: absolute; 
-  gap: 8px;          
-  height: auto;
-  overflow: visible; 
+  gap: 8px; /* Расстояние между Вход, Слэшем и Регистрацией */
+  margin-bottom: 3vh; 
+  flex-shrink: 0;
 }
 
-/* Стили для ссылок Вход / Регистрация / Выйти */
-.div7, 
-.div9, 
-.logout-link {
-  position: relative; 
-  left: auto;
-  top: auto;
+/* Ссылки Вход / Регистрация / Выйти */
+.div7, .div9, .logout-link {
   display: flex;
-  justify-content: center;
   align-items: center;
+  text-decoration: none;
 }
 
-/* Текст внутри ссылок */
-.div7 .div4,
-.div9 .div4,
+/* Текст внутри ссылок (Вход / Регистрация / Выйти) */
+.div7 .div4, 
+.div9 .div4, 
 .logout-link .div4 {
-  position: relative;
-  text-align: center;
-  left: auto;
-  top: auto;
-  width: auto;
-  height: auto;
+  color: #000000;
+  font-family: var(--main-font); /* Жирный Inter-Bold */
+  font-size: 20px;               /* Размер как в макете */
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-/* Слэш между Вход и Регистрация */
+/* Слэш (/) между Вход и Регистрация */
 .div8 {
-  position: relative;
-  left: auto;
-  top: auto;
+  color: #000000;
+  font-family: var(--main-font); /* Жирный Inter-Bold */
+  font-size: 20px;               /* Такой же размер, как у слов */
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* =========================================================
    БЛОК С КНОПКАМИ-ВКЛАДКАМИ
    ========================================================= */
 .div10 {
-  width: 328px;
-  height: 482px;
-  position: absolute;
-  left: 37px;
-  top: 325px;
-  overflow: hidden;
+  flex: 1; /* Занимает все оставшееся место */
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 328px;
+  margin: 0 auto;
+  padding: 0 14px 20px 14px;
+  gap: 2vh; /* Отступы между кнопками */
 }
 
-/* =========================================================
-   ВКЛАДКИ (8 ШТУК)
-   ========================================================= */
-.rectangle-6,
-.rectangle-7,
-.rectangle-8,
-.rectangle-9,
-.rectangle-10,
-.rectangle-11,
-.rectangle-12,
-.rectangle-13 {
-  background: #9b5151; /* Сплошной цвет без просвечивания */
+/* Кнопки */
+.rectangle-6, .rectangle-7, .rectangle-8, .rectangle-9,
+.rectangle-10, .rectangle-11, .rectangle-12, .rectangle-13 {
+  background: var(--primary-color);
   border-radius: 12px;
-  width: 306px;
-  height: 48px; /* Уменьшили высоту, чтобы влезла 8-я кнопка */
-  position: absolute;
-  left: 14px;
-
+  flex: 1; /* Равномерно распределяют высоту */
+  min-height: 44px; /* Минимальная высота для текста */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
   transition: transform 0.1s ease, opacity 0.2s ease;
   box-shadow: 0px 2px 8px rgba(120, 27, 27, 0.2);
-  cursor: pointer;
-  pointer-events: auto; /* По умолчанию кликабельны */
 }
 
-/* Пересчитанные координаты */
-.rectangle-6  { top: 5px;  }
-.rectangle-7  { top: 63px;  }
-.rectangle-8  { top: 121px; }
-.rectangle-9  { top: 179px; }
-.rectangle-10 { top: 237px; }
-.rectangle-13 { top: 295px; } /* Достижения */
-.rectangle-11 { top: 353px; }
-.rectangle-12 { top: 411px; }
-
-/* Ховер */
-.rectangle-6:hover,
-.rectangle-7:hover,
-.rectangle-8:hover,
-.rectangle-9:hover,
-.rectangle-10:hover,
-.rectangle-11:hover,
-.rectangle-12:hover,
-.rectangle-13:hover {
+.rectangle-6:hover, .rectangle-7:hover, .rectangle-8:hover, .rectangle-9:hover,
+.rectangle-10:hover, .rectangle-11:hover, .rectangle-12:hover, .rectangle-13:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }
 
-/* Тексты внутри вкладок (центрируются внутри кнопки) */
+/* Текст внутри кнопок */
 .tab-text {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
   color: #ffffff;
-  font-family: "Inter-Bold", sans-serif;
+  font-family: var(--main-font);
   font-size: 16px;
   font-weight: 700;
   white-space: nowrap;
-  pointer-events: none; /* Чтобы клик проходил на ссылку */
 }
 
-/* =========================================================
-   ЗАБЛОКИРОВАННЫЕ КНОПКИ (ДЛЯ ГОСТЯ)
-   ========================================================= */
+/* Заблокированные кнопки (для гостя) */
 .tab-link.is-locked {
-  pointer-events: none; /* Отключаем клики */
-  opacity: 0.5;         /* Делаем блеклыми */
+  pointer-events: none;
+  opacity: 0.5;
   cursor: not-allowed;
-  filter: grayscale(30%); /* Чуть обесцвечиваем */
+  filter: grayscale(30%);
 }

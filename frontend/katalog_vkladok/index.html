@@ -25,58 +25,63 @@
   <title>FOODTINDER</title>
 </head>
 <body>
-  <div class="screen-wrapper">
-    <div class="div">
-
-      <!-- Название сайта → главная -->
-      <a href="../glavnaya/index.html" class="foodtinder">
-        <div class="foodtinder2">FOODTINDER</div>
-      </a>
-
+  <div class="div">
+    
+    <!-- ГЛОБАЛЬНАЯ ШАПКА -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+      
       <div class="frame-4">
-        <!-- Круг с буквой «Г» (или имени) → профиль -->
-        <a href="../katalog_vkladok/index.html" class="frame-5">
-          <img class="ellipse-2" src="ellipse-20.svg" alt="Профиль" />
-          <div class="div2">Г</div>
-        </a>
-        <!-- Вход в шапке -->
-        <a href="../vxod/index.html" class="div3">
-          <div class="div4">Вход</div>
-        </a>
-      </div>
-
-      <div class="frame-15">
-        <div class="ellipse-3"></div>
-      </div>
-      <div class="div5">Гость</div>
-
-      <div class="div6">
-        <a href="../vxod/index.html" class="div7">
-          <div class="div4">Вход</div>
-        </a>
-        <div class="div8">/</div>
-        <a href="../registration/index.html" class="div9">
-          <div class="div4">Регистрация</div>
-        </a>
-      </div>
-
-      <div class="div10">
-        <!-- Вкладки (строго сверху вниз) -->
-        <a href="../filtry/index.html" class="tab-link rectangle-6"><span class="tab-text div11">Фильтр</span></a>
-        <a href="../ponravivshiesya/index.html" class="tab-link rectangle-7"><span class="tab-text div12">Понравившиеся рецепты</span></a>
-        <a href="../neponravivshiesya/index.html" class="tab-link rectangle-8"><span class="tab-text div13">Непонравившиеся рецепты</span></a>
-        <a href="../osnovnaya-informaciya/index.html" class="tab-link rectangle-9"><span class="tab-text div14">Основная информация</span></a>
-        <a href="../izbrannoe/index.html" class="tab-link rectangle-10"><span class="tab-text div15">Избранное</span></a>
+        <div class="div3" id="auth-container">
+           <a href="../vxod/index.html" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="../registration/index.html" class="div4">Регистрация</a>
+        </div>
         
-        <!-- НОВАЯ КНОПКА: Достижения -->
-        <a href="../dostizheniya/index.html" class="tab-link rectangle-13"><span class="tab-text div18">Достижения</span></a>
-
-        <a href="../planirovshchik/index.html" class="tab-link rectangle-11"><span class="tab-text div16">Планировщик недели</span></a>
-        <a href="../spisok-pokupok/index.html" class="tab-link rectangle-12"><span class="tab-text div17">Список покупок</span></a>
+        <!-- Аватар (ссылка ведет на страницу каталога, чтобы стили vars.css применились) -->
+        <a href="../katalog_vkladok/index.html" class="frame-5">
+          <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Профиль" />
+          <div class="div2" id="profile-letter">Г</div>
+        </a>
       </div>
+    </header>
 
+    <!-- ЦЕНТРАЛЬНЫЙ КРУГ -->
+    <div class="frame-15">
+      <div class="ellipse-3"></div>
     </div>
+
+    <!-- ИМЯ И ВХОД/ВЫЙТИ -->
+    <div class="div5" id="profile-name">Гость</div>
+    
+    <div class="div6" id="auth-links">
+      <a href="../vxod/index.html" class="div7">
+        <div class="div4">Вход</div>
+      </a>
+      <div class="div8">/</div>
+      <a href="../registration/index.html" class="div9">
+        <div class="div4">Регистрация</div>
+      </a>
+    </div>
+
+    <!-- БЛОК С КНОПКАМИ-ВКЛАДКАМИ -->
+    <div class="div10">
+      <a href="../filtry/index.html" class="tab-link rectangle-6"><span class="tab-text">Фильтр</span></a>
+      <a href="../ponravivshiesya/index.html" class="tab-link rectangle-7"><span class="tab-text">Понравившиеся рецепты</span></a>
+      <a href="../neponravivshiesya/index.html" class="tab-link rectangle-8"><span class="tab-text">Непонравившиеся рецепты</span></a>
+      <a href="../osnovnaya-informaciya/index.html" class="tab-link rectangle-9"><span class="tab-text">Основная информация</span></a>
+      <a href="../izbrannoe/index.html" class="tab-link rectangle-10"><span class="tab-text">Избранное</span></a>
+      
+      <a href="../dostizheniya/index.html" class="tab-link rectangle-13"><span class="tab-text">Достижения</span></a>
+
+      <a href="../planirovshchik/index.html" class="tab-link rectangle-11"><span class="tab-text">Планировщик недели</span></a>
+      <a href="../spisok-pokupok/index.html" class="tab-link rectangle-12"><span class="tab-text">Список покупок</span></a>
+    </div>
+
   </div>
+  
   <script src="../../web/api.js"></script>
   <script src="./katalog_vkladok.js"></script>
 </body>
