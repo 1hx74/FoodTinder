@@ -40,11 +40,15 @@ document.querySelector('.form-container').addEventListener('submit', async (even
     // ОБРАЩАЕМСЯ К ГЛОБАЛЬНОМУ МЕНЕДЖЕРУ СЕССИЙ ИЗ API.JS
     await window.AuthAPI.register(email, username, password);
     
+    // Cохраняем email во временную память, чтобы его прочитала страница ввода кода
+    sessionStorage.setItem("pendingEmail", email);
+    localStorage.setItem("username", username); 
+
     // РЕАКЦИЯ НА УСПЕШНОЕ СОЗДАНИЕ СЕССИИ
-    alert("✨ Поздравляем! Вы успешно зарегистрированы в FOODTINDER! ✨");
+    alert("Переход на аутентификацию, ожидайте код на почте✨");
     
-    // Чистый фронтенд-переход на главную страницу приложения
-    window.location.href = '../glavnaya/index.html'; 
+    // ИСПРАВЛЕНИЕ ПУТИ: сетевой адрес нашей папки подтверждения
+    window.location.href = '/authentication'; 
 
   } catch (error) {
     // Выводим текст ошибки, который сгенерировал и выбросил нам api.js

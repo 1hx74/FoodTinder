@@ -1,0 +1,127 @@
+@import url('../vars.css');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Главный контентный контейнер страницы (высота распределяется динамически) */
+.recovery-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex-grow: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding-top: 22vh;
+}
+
+/* Вертикальная форма-обертка */
+.recovery-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* 
+  ПОЛНОСТЬЮ АДАПТИВНЫЙ ЗАГОЛОВОК:
+  Вырван из потока формы, зафиксирован на высоте 8% от экрана и отцентрирован в процентах
+*/
+.div2 {
+  position: absolute !important;
+  top: 8vh !important;       /* Высота положения заголовка плавно меняется в зависимости от экрана телефона */
+  left: 50% !important;
+  transform: translateX(-50%) !important; /* Строгое адаптивное центрирование по горизонтали */
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 5% !important;
+  color: #000000;
+  text-align: center;
+  font-family: "Inter-Bold", sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;
+  z-index: 10;
+}
+
+/* Группа поля ввода (ширина в процентах с ограничением под макет) */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  max-width: 306px; 
+  margin-bottom: 3vh; /* Гибкий отступ между полями ввода */
+}
+
+/* Текстовые подписи над инпутами (Пароль, Подтвердите пароль) */
+.div2-label, .div3-label {
+  color: #000000;
+  font-family: var(--main-font, "Inter-Bold", sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 1vh;
+  padding-left: 2px;
+}
+
+/* Внешние рамки полей ввода */
+.rectangle-6, .rectangle-7 {
+  background: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  width: 100%;
+  height: 55px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+}
+
+/* Настройки текста внутри полей ввода */
+.rectangle-6 input, .rectangle-7 input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  font-family: "Inter-Medium", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+}
+
+/* Стилизация подсказок (плейсхолдеров) внутри полей */
+.rectangle-6 input::placeholder, 
+.rectangle-7 input::placeholder {
+  color: #cccccc;
+}
+
+/* Общие стили для кнопки "Подтвердить" */
+.rectangle-10 {
+  background: var(--primary-color, rgba(120, 27, 27, 0.78));
+  border-radius: 12px;
+  width: 100%;
+  max-width: 303px; 
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s ease;
+  margin-top: 3vh; /* Динамический зазор до кнопки */
+}
+
+/* Эффект наведения мыши на кнопку */
+.rectangle-10:hover {
+  opacity: 0.9;
+}
+
+/* Белый текст внутри кнопки */
+.div4 {
+  color: #ffffff;
+  font-family: var(--main-font, "Inter-Bold", sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}

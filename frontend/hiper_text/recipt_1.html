@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Полный рецепт</title>
+  
+  <style>
+    @import url('../vars.css'); 
+
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Inter-Bold", sans-serif;
+      background: #f9f9f9;
+      display: flex;
+      justify-content: center;
+    }
+
+    /* Компактный контейнер рецепта под размеры формы регистрации */
+    .recipe-box {
+      width: 100%;
+      max-width: 360px; 
+      margin: 40px 16px;
+      padding: 24px 20px;
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .recipe-block {
+      margin-bottom: 28px;
+    }
+
+    .recipe-title {
+      color: #000000;
+      font-size: 18px;
+      font-weight: 700;
+      margin: 0 0 14px 0;
+    }
+
+    /* Сводка: Время и Стоимость */
+    .recipe-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #eeeeee;
+      font-size: 14px;
+    }
+
+    .meta-item {
+      display: flex;
+      gap: 6px;
+    }
+
+    .meta-lbl {
+      color: #666666;
+    }
+
+    .meta-val {
+      color: #000000;
+      font-weight: 700;
+    }
+
+    /* Овалы оборудования */
+    .eq-group {
+      display: flex;
+      flex-wrap: wrap; 
+      gap: 8px;        
+    }
+
+    .eq-item {
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 700;
+      padding: 6px 14px;
+      border-radius: 12px; 
+      background: #cccccc; 
+      white-space: nowrap;
+    }
+
+    /* Статусы для бэка */
+    .eq-item.available { background-color: #27782b; } /* Есть */
+    .eq-item.missing { background-color: #781b1b; }   /* Нет */
+
+    /* Таблица ингредиентов с точками */
+    .ing-group {
+      display: flex;
+      flex-direction: column;
+      gap: 12px; 
+    }
+
+    .ing-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline; 
+      font-size: 14px;
+      font-weight: 700;
+      color: #000000;
+    }
+
+    .ing-name {
+      background: #ffffff;
+      padding-right: 4px; 
+    }
+
+    .ing-dots {
+      flex-grow: 1; 
+      border-bottom: 2px dotted #cccccc; 
+      margin: 0 4px;
+      position: relative;
+      top: -4px; 
+    }
+
+    .ing-val {
+      background: #ffffff;
+      padding-left: 4px; 
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    /* Шаги приготовления */
+    .step-group {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .step-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .step-num {
+      color: var(--brand-text, #781b1b);
+      font-size: 15px;
+      font-weight: 700;
+    }
+
+    .step-text {
+      color: #333333;
+      font-size: 14px;
+      line-height: 1.4;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <main class="recipe-box">
+    
+    <!-- Время и Стоимость -->
+    <div class="recipe-meta">
+      <div class="meta-item">
+        <span class="meta-lbl">Время:</span>
+        <span class="meta-val">15 мин.</span>
+      </div>
+      <div class="meta-item">
+        <span class="meta-lbl">Стоимость:</span>
+        <span class="meta-val">450 руб.</span>
+      </div>
+    </div>
+
+    <!-- Оборудование -->
+    <div class="recipe-block">
+      <h2 class="recipe-title">Оборудование</h2>
+      <div class="eq-group">
+        <div class="eq-item available">Плита</div>
+        <div class="eq-item available">Сковорода</div>
+        <div class="eq-item missing">Духовка</div>
+        <div class="eq-item missing">Терка</div>
+        <div class="eq-item available">Лопатка</div>
+      </div>
+    </div>
+
+    <!-- Ингредиенты -->
+    <div class="recipe-block">
+      <h2 class="recipe-title">Ингредиенты</h2>
+      <div class="ing-group">
+        
+        <div class="ing-row">
+          <span class="ing-name">Яйца</span>
+          <div class="ing-dots"></div>
+          <span class="ing-val">3 шт.</span>
+        </div>
+
+        <div class="ing-row">
+          <span class="ing-name">Масло подсолнечное</span>
+          <div class="ing-dots"></div>
+          <span class="ing-val">1 ст.л.</span>
+        </div>
+
+        <div class="ing-row">
+          <span class="ing-name">Масло сливочное</span>
+          <div class="ing-dots"></div>
+          <span class="ing-val">10 г</span>
+        </div>
+
+        <div class="ing-row">
+          <span class="ing-name">Помидоры</span>
+          <div class="ing-dots"></div>
+          <span class="ing-val">1 шт.</span>
+        </div>
+
+        <div class="ing-row">
+          <span class="ing-name">Соль</span>
+          <div class="ing-dots"></div>
+          <span class="ing-val">по вкусу</span>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Приготовление -->
+    <div class="recipe-block">
+      <h2 class="recipe-title">Приготовление</h2>
+      <div class="step-group">
+        
+        <div class="step-item">
+          <span class="step-num">Шаг 1.</span>
+          <p class="step-text">Невероятное описание приготовления: нарежьте помидоры дольками.</p>
+        </div>
+
+        <div class="step-item">
+          <span class="step-num">Шаг 2.</span>
+          <p class="step-text">Ещё более невероятное приготовление: обжарьте на сковороде со сливочным маслом и залейте яйцами.</p>
+        </div>
+
+        <div class="step-item">
+          <span class="step-num">Шаг 3.</span>
+          <p class="step-text">Добавьте зелень</p>
+        </div>
+
+      </div>
+    </div>
+
+  </main>
+
+</body>
+</html>

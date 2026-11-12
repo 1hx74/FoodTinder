@@ -1,0 +1,276 @@
+@import url('../vars.css');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* ==========================================================================
+   БАЗОВЫЕ ГЛОБАЛЬНЫЕ СТИЛИ (ПОЛНАЯ КОПИЯ СТРАНИЦЫ РЕГИСТРАЦИИ)
+   ========================================================================== */
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background-color: #f5f5f5; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  overflow: hidden; 
+}
+
+/* Единый каркас мобильного приложения для ВСЕХ страниц сайта */
+.div {
+  background: #ffffff;
+  width: 100%;
+  min-width: 390px;
+  max-width: 520px; 
+  height: 100vh; 
+  max-height: 880px; 
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden; 
+  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1); 
+}
+
+/* --- ГЛОБАЛЬНАЯ ШАПКА (ВЫНЕСЕНА ДЛЯ ВСЕХ СТРАНИЦ) --- */
+.header-wrapper {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center; /* Центрируем всё строго по вертикальной оси шапки */
+  padding: 0 24px;     
+  width: 100%;
+  flex-shrink: 0; 
+  height: 64px;        
+  background: #ffffff;
+  position: relative;
+  z-index: 10; /* Поднимаем над формой, чтобы ссылки кликались */
+}
+
+/* Сбрасываем абсолютные фигмовские рамки у обертки логотипа */
+.foodtinder {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: auto !important;
+  height: auto !important;
+  display: flex;
+  align-items: center;
+}
+
+.foodtinder2 {
+  color: var(--brand-text);
+  font-family: var(--main-font);
+  font-size: 24px;
+  font-weight: 700;
+  text-decoration: none;
+  line-height: 1; 
+}
+
+/* Автоматический сдвиг блока входа в правый край */
+.header-wrapper .frame-4 {
+  margin-left: auto;
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+.frame-4 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.user-text {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 18px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.frame-5 {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ellipse-2 {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.div2 {
+  color: #ffffff;
+  font-family: var(--main-font);
+  font-size: 18px;
+  font-weight: 700;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+/* ==========================================================================
+   ЦЕНТРАЛЬНЫЙ БЛОК ФОРМЫ ПРОФИЛЯ
+   ========================================================================== */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; 
+  padding: 1.5vh 24px;
+  width: 100%;
+  overflow-y: auto; 
+}
+
+/* Секция большого аватара */
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 1.5vh; 
+  flex-shrink: 0;
+}
+
+.ellipse-3 {
+  background: #d9d9d9;
+  border-radius: 50%;
+  width: 100px; 
+  height: 100px;
+  margin-bottom: 0.8vh;
+}
+
+.div4 {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0;
+}
+
+/* Интерактивное имя */
+.editable-name-wrapper {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  justify-content: center;
+  min-height: 32px;
+  cursor: pointer;
+}
+
+.editable-name-wrapper:hover .div4 {
+  opacity: 0.75;
+  text-decoration: underline dotted #000000;
+}
+
+.name-field-input {
+  width: 100%;
+  background: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  padding: 4px 12px;
+  font-family: var(--main-font);
+  font-size: 22px;
+  font-weight: 700;
+  text-align: center;
+  outline: none;
+}
+
+/* Контейнер для формы ввода */
+.form-container {
+  width: 100%;
+  max-width: 320px; 
+  display: flex;
+  flex-direction: column;
+  gap: 1.2vh; 
+}
+
+/* Блок одного поля (Текст-метка + Поле ввода) */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+}
+
+/* Название поля (Email, Пароль и т.д.) */
+.input-label {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 14px;
+  font-weight: 700;
+  padding-left: 4px;
+}
+
+/* Интерактивные адаптивные инпуты */
+.custom-input {
+  width: 100%;
+  height: 55px;
+  background: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-family: var(--main-font);
+  font-size: 14px;
+  color: #000000;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.custom-input::placeholder {
+  color: #cccccc;
+}
+
+.custom-input:focus {
+  border-color: var(--brand-text);
+  border-width: 2px;
+}
+
+/* КНОПКА СОХРАНИТЬ */
+.submit-btn {
+  width: 100%;
+  height: 55px;
+  background: var(--primary-color);
+  border: none;
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1vh;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: opacity 0.2s ease, transform 0.1s ease;
+  box-shadow: 0px 4px 10px rgba(120, 27, 27, 0.15);
+}
+
+.submit-btn:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+.submit-btn:active {
+  transform: scale(0.99);
+}
+
+.div7 {
+  color: #ffffff;
+  font-family: var(--main-font);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* КОРРЕКЦИЯ ДЛЯ НИЗКИХ ЭКРАНОВ */
+@media (max-height: 750px) {
+  .custom-input, .submit-btn { height: 46px; }
+  .ellipse-3 { width: 80px; height: 80px; }
+}
