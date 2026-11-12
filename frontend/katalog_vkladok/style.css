@@ -23,7 +23,8 @@ html, body {
 .foodtinder,
 .div3,
 .div7,
-.div9 {
+.div9,
+.logout-link {
   cursor: pointer;
 }
 
@@ -117,6 +118,7 @@ html, body {
   justify-content: center;
 }
 
+/* Вход в шапке (правый верхний угол) */
 .div3 {
   display: block;
   width: 57px;
@@ -139,6 +141,10 @@ html, body {
   top: 0%;
   height: 100%;
 }
+
+/* =========================================================
+   ЦЕНТРАЛЬНЫЙ БОЛЬШОЙ КРУГ
+   ========================================================= */
 .frame-15 {
   width: 150px;
   height: 150px;
@@ -157,55 +163,77 @@ html, body {
   translate: -50% -50%;
   top: 50%;
 }
+
+/* =========================================================
+   ИМЯ ПОЛЬЗОВАТЕЛЯ И ВХОД/ВЫЙТИ (ЦЕНТРИРОВАННЫЕ)
+   ========================================================= */
+
+/* Блок с именем (Гость / Имя пользователя) */
 .div5 {
-  color: #000000;
-  text-align: left;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%; 
+  left: 0;     
+  top: 219px;  
+  position: absolute;
+  
+  /* Возвращаем исходный шрифт и размер */
   font-family: "Inter-Bold", sans-serif;
   font-size: 24px;
   font-weight: 700;
-  position: absolute;
-  left: 170px;
-  top: 219px;
-  width: 71px;
-  height: 29px;
-}
-.div6 {
-  width: 203px;
-  height: 37px;
-  position: absolute;
-  left: 50%;
-  translate: -50%;
-  top: 256px;
-  overflow: hidden;
-}
-.div7 {
-  display: block;
-  width: 57px;
-  height: 25px;
-  position: absolute;
-  left: 0px;
-  top: 6px;
-}
-.div8 {
   color: #000000;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  position: absolute;
-  left: 57px;
-  top: 6px;
-  width: 16px;
-  height: 25px;
 }
-.div9 {
-  display: block;
-  width: 138px;
-  height: 25px;
-  position: absolute;
-  left: 73px;
-  top: 6px;
+
+/* Блок со ссылками Вход/Регистрация или кнопкой Выйти */
+.div6 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;       
+  left: 0;           
+  top: 256px;        
+  position: absolute; 
+  gap: 8px;          
+  height: auto;
+  overflow: visible; 
 }
+
+/* Стили для ссылок Вход / Регистрация / Выйти */
+.div7, 
+.div9, 
+.logout-link {
+  position: relative; 
+  left: auto;
+  top: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Текст внутри ссылок */
+.div7 .div4,
+.div9 .div4,
+.logout-link .div4 {
+  position: relative;
+  text-align: center;
+  left: auto;
+  top: auto;
+  width: auto;
+  height: auto;
+}
+
+/* Слэш между Вход и Регистрация */
+.div8 {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
+/* =========================================================
+   БЛОК С КНОПКАМИ-ВКЛАДКАМИ
+   ========================================================= */
 .div10 {
   width: 328px;
   height: 482px;
@@ -216,7 +244,7 @@ html, body {
 }
 
 /* =========================================================
-   ВКЛАДКИ
+   ВКЛАДКИ (8 ШТУК)
    ========================================================= */
 .rectangle-6,
 .rectangle-7,
@@ -224,11 +252,12 @@ html, body {
 .rectangle-9,
 .rectangle-10,
 .rectangle-11,
-.rectangle-12 {
+.rectangle-12,
+.rectangle-13 {
   background: #9b5151; /* Сплошной цвет без просвечивания */
   border-radius: 12px;
   width: 306px;
-  height: 55px;
+  height: 48px; /* Уменьшили высоту, чтобы влезла 8-я кнопка */
   position: absolute;
   left: 14px;
 
@@ -238,13 +267,15 @@ html, body {
   pointer-events: auto; /* По умолчанию кликабельны */
 }
 
-.rectangle-6  { top: 13px;  }
-.rectangle-7  { top: 79px;  }
-.rectangle-8  { top: 145px; }
-.rectangle-9  { top: 211px; }
-.rectangle-10 { top: 277px; }
-.rectangle-11 { top: 343px; }
-.rectangle-12 { top: 409px; }
+/* Пересчитанные координаты */
+.rectangle-6  { top: 5px;  }
+.rectangle-7  { top: 63px;  }
+.rectangle-8  { top: 121px; }
+.rectangle-9  { top: 179px; }
+.rectangle-10 { top: 237px; }
+.rectangle-13 { top: 295px; } /* Достижения */
+.rectangle-11 { top: 353px; }
+.rectangle-12 { top: 411px; }
 
 /* Ховер */
 .rectangle-6:hover,
@@ -253,7 +284,8 @@ html, body {
 .rectangle-9:hover,
 .rectangle-10:hover,
 .rectangle-11:hover,
-.rectangle-12:hover {
+.rectangle-12:hover,
+.rectangle-13:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }
@@ -280,15 +312,4 @@ html, body {
   opacity: 0.5;         /* Делаем блеклыми */
   cursor: not-allowed;
   filter: grayscale(30%); /* Чуть обесцвечиваем */
-}
-
-/* Стили для "Выйти", чтобы стоял на месте "Входа" */
-.logout-link {
-  display: block;
-  width: auto;
-  height: 25px;
-  position: absolute;
-  left: 0;
-  top: 6px;
-  cursor: pointer;
 }

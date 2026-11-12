@@ -1,12 +1,3 @@
-/**
- * katalog_vkladok.js — логика страницы каталога вкладок.
- * 
- * Для гостя:
- *  - Доступно: Фильтр, Понравившиеся, Непонравившиеся.
- *  - Недоступно: Основная информация, Избранное, Планировщик, Список покупок.
- *  - Вместо буквы «Г» — пустой круг.
- */
-
 (function () {
   "use strict";
 
@@ -23,12 +14,13 @@
   const avatarImg = profileLink ? profileLink.querySelector(".ellipse-2") : null;
   const avatarLetter = profileLink ? profileLink.querySelector(".div2") : null;
 
+  // Берем все ссылки-вкладки
   const tabLinks = document.querySelectorAll(".tab-link");
   
   // Первые 3 кнопки (Фильтр, Понравившиеся, Непонравившиеся) — ДОСТУПНЫ ГОСТЮ
   const guestAllowedTabs = Array.from(tabLinks).slice(0, 3);
   
-  // Последние 4 кнопки (Инфо, Избранное, Планировщик, Список) — ЗАБЛОКИРОВАНЫ ГОСТЮ
+  // Последние 5 кнопок (Инфо, Избранное, Достижения, Планировщик, Список) — ЗАБЛОКИРОВАНЫ ГОСТЮ
   const guestLockedTabs = Array.from(tabLinks).slice(3);
 
   function isAuthenticated() {
@@ -132,13 +124,11 @@
       avatarImg.alt = `Аватар ${username}`;
     }
     
-    // Используем ТУ ЖЕ букву .div2, просто меняем текст
     if (avatarLetter) {
       avatarLetter.textContent = getInitial(username);
       avatarLetter.style.display = "";
     }
 
-    // Убираем лишний элемент, если он создавался ранее
     const initialEl = profileLink ? profileLink.querySelector(".avatar-initial") : null;
     if (initialEl) initialEl.style.display = "none";
 
@@ -150,7 +140,9 @@
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
     localStorage.removeItem("avatarUrl");
-    renderGuestState();
+    
+    // Перекидываем на главную при выходе (или на страницу входа, если нужно)
+    window.location.href = "../glavnaya/index.html"; 
   }
 
   function init() {
