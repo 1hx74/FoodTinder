@@ -1,218 +1,83 @@
-/**
- * vxod.js — логика страницы входа.
- *
- * Зависимости:
- *  - ../api.js  (глобальный объект AuthAPI, функция rawRequest, токен-хранилище)
- *
- * Контракт эндпоинта:
- *  POST /api/auth/login
- *  Тело: { email, password }
- *  Успех (200): { user_id, access_token, code: 200, state: "OK" }
- *  Ошибка (422): { code: 422, state: "Unprocessable Entity", message: "..." }
- */
-
 (function () {
   "use strict";
 
-  const LOGIN_ENDPOINT = "/api/auth/login";
-  const REDIRECT_AFTER_LOGIN = "../glavnaya/index.html"; // куда вести после успеха
-
-  // --- DOM ---
   const form = document.querySelector(".form-container");
-  const emailInput = document.getElementById("email");
+  if (!form) {
+    console.error("❌ ОШИБКА: Форма .form-container не найдена на странице!");
+    return;
+  }
+
+  const loginInput = document.getElementById("email"); // Поле "Логин/Email"
   const passwordInput = document.getElementById("password");
   const submitBtn = document.querySelector(".submit-btn");
   const submitLabel = submitBtn ? submitBtn.querySelector(".div7") : null;
 
-  if (!form || !emailInput || !passwordInput || !submitBtn) {
-    console.error("[vxod.js] Не найдены элементы формы входа");
-    return;
+  // Создаем блок для вывода ошибок прямо под формой
+  let errorBox = document.createElement("div");
+  errorBox.style.cssText = "color: red; font-size: 14px; text-align: center; margin-top: 10px; font-weight: bold;";
+  form.appendChild(errorBox);
+
+  function showError(msg) {
+    errorBox.textContent = msg;
   }
 
-  // --- Блок для вывода ошибок/статуса ---
-  // Создаём один раз, чтобы не дублировать при повторных ошибках.
-  let messageBox = form.querySelector(".form-message");
-  if (!messageBox) {
-    messageBox = document.createElement("div");
-    messageBox.className = "form-message";
-    // Вставляем перед кнопкой, чтобы сообщение было видно над ней.
-    form.insertBefore(messageBox, submitBtn);
-  }
-
-  // Минимальные стили, чтобы сообщение было читаемым (можно вынести в CSS).
-  messageBox.style.cssText = [
-    "font-family: var(--main-font, sans-serif)",
-    "font-size: 13px",
-    "line-height: 1.4",
-    "text-align: center",
-    "display: none",
-    "padding: 8px 10px",
-    "border-radius: 8px"
-  ].join(";");
-
-  /**
-   * Показать сообщение пользователю.
-   * @param {string} text
-   * @param {"error"|"info"|"success"} [type="error"]
-   */
-  function showMessage(text, type = "error") {
-    messageBox.textContent = text;
-    messageBox.style.display = "block";
-
-    const palette = {
-      error: { color: "#b00020", background: "#fdecea" },
-      info: { color: "#333333", background: "#f2f2f2" },
-      success: { color: "#1b5e20", background: "#e8f5e9" }
-    };
-    const style = palette[type] || palette.error;
-    messageBox.style.color = style.color;
-    messageBox.style.background = style.background;
-  }
-
-  function hideMessage() {
-    messageBox.style.display = "none";
-    messageBox.textContent = "";
-  }
-
-  /**
-   * Блокировка/разблокировка кнопки на время запроса.
-   * @param {boolean} loading
-   */
-  function setLoading(loading) {
-    submitBtn.disabled = loading;
-    submitBtn.style.opacity = loading ? "0.6" : "";
-    submitBtn.style.cursor = loading ? "not-allowed" : "";
-    if (submitLabel) {
-      submitLabel.textContent = loading ? "Вход..." : "Войти";
-    }
-  }
-
-  /**
-   * Валидация полей на клиенте.
-   * @returns {string|null} текст ошибки или null, если всё ок
-   */
-  function validate(email, password) {
-    if (!email || !email.trim()) {
-      return "Введите логин или Email";
-    }
-    if (!password) {
-      return "Введите пароль";
-    }
-    if (password.length < 6) {
-      return "Пароль должен содержать минимум 6 символов";
-    }
-    return null;
-  }
-
-  /**
-   * Разбор ошибки от api.js (ApiError) в понятный текст.
-   * @param {unknown} err
-   * @returns {string}
-   */
-  function resolveErrorMessage(err) {
-    if (!err) return "Неизвестная ошибка";
-
-    // ApiError из api.js
-    if (err.name === "ApiError") {
-      if (err.status === 0) {
-        return "Сервер недоступен. Проверьте соединение и попробуйте снова.";
-      }
-      if (err.status === 422) {
-        // Бэк может прислать message с реальной причиной
-        return err.data?.message || err.message || "Неверный логин или пароль";
-      }
-      if (err.status === 401) {
-        return err.data?.message || "Неверный логин или пароль";
-      }
-      if (err.status === 429) {
-        return "Слишком много попыток. Попробуйте позже.";
-      }
-      if (err.status >= 500) {
-        return "Ошибка на сервере. Попробуйте позже.";
-      }
-      return err.data?.message || err.message || "Ошибка запроса к серверу";
-    }
-
-    // Сетевые ошибки fetch
-    if (err instanceof TypeError) {
-      return "Не удалось связаться с сервером. Проверьте соединение.";
-    }
-
-    return err.message || "Произошла неизвестная ошибка";
-  }
-
-  /**
-   * Сохраняет данные успешного входа.
-   * Кладём в те же ключи, что использует api.js: accessToken, username.
-   * @param {{user_id:number, access_token:string, ...}} data
-   * @param {string} emailFallback
-   */
-  function persistSession(data, emailFallback) {
-    if (!data || !data.access_token) {
-      throw new Error("Сервер не вернул access_token");
-    }
-    localStorage.setItem("accessToken", data.access_token);
-
-    const displayName = data.username || data.login || emailFallback;
-    if (displayName) {
-      localStorage.setItem("username", displayName);
-    }
-    if (data.user_id != null) {
-      localStorage.setItem("userId", String(data.user_id));
-    }
-  }
-
-  // --- Основной обработчик отправки ---
+  // --- ОТПРАВКА ФОРМЫ ---
   form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    hideMessage();
+    event.preventDefault(); // Останавливаем обычную перезагрузку страницы
+    errorBox.textContent = "";
+    
+    console.log("1. Нажата кнопка 'Войти'");
 
-    const email = emailInput.value.trim();
+    const loginValue = loginInput.value.trim();
     const password = passwordInput.value;
 
-    const validationError = validate(email, password);
-    if (validationError) {
-      showMessage(validationError, "error");
+    if (!loginValue || !password) {
+      showError("Заполните все поля");
       return;
     }
 
-    setLoading(true);
+    console.log("2. Данные введены:", { login: loginValue, password: "***" });
+
+    if (submitLabel) submitLabel.textContent = "Вход...";
+    if (submitBtn) submitBtn.disabled = true;
 
     try {
-      // rawRequest доступен глобально (объявлен в api.js через function).
-      if (typeof rawRequest !== "function") {
-        throw new Error("Сетевой клиент rawRequest не загружен (api.js)");
+      // Проверяем, загрузился ли api.js
+      if (!window.AuthAPI || typeof window.AuthAPI.login !== "function") {
+        throw new Error("api.js не загружен или AuthAPI не найден.");
       }
 
-      const data = await rawRequest(LOGIN_ENDPOINT, {
-        method: "POST",
-        body: { email, password }
-      });
+      console.log("3. Вызываем AuthAPI.login...");
+      
+      // ОТПРАВЛЯЕМ ЗАПРОС
+      const data = await window.AuthAPI.login(loginValue, password);
+      
+      console.log("4. УСПЕХ! Ответ от сервера:", data);
 
-      if (!data || !data.access_token) {
-        throw new Error("Сервер не вернул токен авторизации");
+      // Сохраняем имя пользователя (api.js сохраняет только токен)
+      localStorage.setItem("username", data.username || loginValue);
+      
+      console.log("5. Имя сохранено. Переадресация...");
+
+      // Переход на главную
+      window.location.href = "../glavnaya/index.html";
+
+    } catch (error) {
+      console.error("❌ ОШИБКА ПРИ ВХОДЕ:", error);
+      
+      // Выводим понятную ошибку на экран
+      let errorMsg = "Не удалось войти";
+      if (error.message) errorMsg = error.message;
+      if (error.status === 401) errorMsg = "Неверный логин или пароль";
+      if (error.name === "TypeError" && error.message.includes("fetch")) {
+         errorMsg = "Сервер недоступен. Запущен ли mock-server.js?";
       }
-
-      persistSession(data, email);
-
-      showMessage("Вход выполнен. Перенаправляем...", "success");
-
-      window.setTimeout(() => {
-        window.location.href = REDIRECT_AFTER_LOGIN;
-      }, 400);
-
-    } catch (err) {
-      console.error("[vxod.js] Ошибка входа:", err);
-      showMessage(resolveErrorMessage(err), "error");
-      setLoading(false);
-      return;
+      
+      showError(errorMsg);
+      
+      // Возвращаем кнопку в исходное состояние
+      if (submitLabel) submitLabel.textContent = "Войти";
+      if (submitBtn) submitBtn.disabled = false;
     }
-  });
-
-  // Сброс сообщений при вводе — чтобы не висела старая ошибка.
-  [emailInput, passwordInput].forEach((el) => {
-    el.addEventListener("input", () => {
-      if (messageBox.style.display === "block") hideMessage();
-    });
   });
 })();
