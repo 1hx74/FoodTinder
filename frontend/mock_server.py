@@ -25,6 +25,10 @@ from fastapi.responses import RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
+# Глобальная переменная для хранения аватарки в памяти сервера (мок-база данных)
+SAVED_AVATAR_DATA = None
+SAVED_USERNAME_DATA = "Валерия"
+
 # Подключаемся напрямую к логгеру запущенного воркера Uvicorn,
 # чтобы системные обработчики не перехватывали наши сообщения.
 logger = logging.getLogger("uvicorn.error")
@@ -63,6 +67,18 @@ class SendCodeRequest(BaseModel):
 class VerifyCodeRequest(BaseModel):
     email: str
     code: str
+
+class UpdateProfileRequest(BaseModel):
+    username: str
+    birth_date: str
+    gender: str
+    height: int
+    weight: int
+    avatar_url: str | None = None
+
+class NewPasswordRequest(BaseModel):
+    reset_token: str
+    new_password: str
 
 # Контракт строго разделен на 4 независимые категории полей
 class PreferencesRequest(BaseModel):
@@ -192,6 +208,60 @@ def get_user_preferences(response: Response):
         "religions": ["halal"],
         "kitchen_equipment": ["microwave", "oven"]
     }
+
+# --- ЭНДПОИНТЫ ЛИЧНОГО КАБИНЕТА ПОЛЬЗОВАТЕЛЯ ---
+
+@app.get("/api/db/me")
+def get_my_profile(response: Response):
+    """Возвращает данные текущего профиля с учетом сохраненной аватарки"""
+    global SAVED_AVATAR_DATA, SAVED_USERNAME_DATA
+    logger.info("===> [БЭКЕНД] Запрос GET /api/db/me")
+    
+    response.status_code = status.HTTP_200_OK
+    return {
+        "user_id": 123,
+        "username": SAVED_USERNAME_DATA,
+        "avatar_url": SAVED_AVATAR_DATA,  # Возвращаем сохраненную картинку (или None)
+        "email": "valeria@example.com",
+        "birth_date": "15.06.1995",
+        "gender": "Ж",
+        "height": 180,
+        "weight": 75,
+        "code": 200,
+        "state": "OK"
+    }
+
+@app.patch("/api/db/me")
+def update_my_profile(payload: UpdateProfileRequest, response: Response):
+    """Обновляет параметры пользователя и аватарку на сервере"""
+    global SAVED_AVATAR_DATA, SAVED_USERNAME_DATA
+    logger.info("===> [БЭКЕНД] Профиль и аватарка успешно обновлены!")
+    
+    # Сохраняем измененные фронтендом данные в память сервера
+    SAVED_USERNAME_DATA = payload.username
+    if payload.avatar_url:
+        SAVED_AVATAR_DATA = payload.avatar_url
+        logger.info("===> [БЭКЕНД] Новая аватарка успешно бинаризирована и сохранена в кэш сервера.")
+    
+    response.status_code = status.HTTP_200_OK
+    return {
+        "code": 200,
+        "state": "OK"
+    }
+
+@app.post("/api/auth/new_pswd")
+def change_password(data: NewPasswordRequest, response: Response):
+    """Принимает запрос на установку нового пароля по токену сброса"""
+    logger.info("========================================")
+    logger.info(f"===> [БЭКЕНД] Запрос на смену пароля успешно получен.")
+    logger.info("========================================")
+    
+    response.status_code = status.HTTP_200_OK
+    return {
+        "code": 200,
+        "state": "OK"
+    }
+
 
 
 # ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ

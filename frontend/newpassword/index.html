@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Новый пароль — FOODTINDER</title>
+  <title>FOODTINDER - Новый пароль</title>
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
@@ -28,22 +28,22 @@
 
         <!-- Блок поля "Пароль" -->
         <div class="input-group">
-          <label class="div2-label" for="password-input">Пароль</label>
+          <span class="div2-label">Пароль</span>
           <div class="rectangle-6">
-            <input type="password" id="password-input" class="div5" placeholder="Введите пароль" required>
+            <input type="password" placeholder="Введите пароль" required>
           </div>
         </div>
 
         <!-- Блок поля "Подтвердите пароль" -->
         <div class="input-group">
-          <label class="div3-label" for="password-confirm-input">Подтвердите пароль</label>
+          <span class="div3-label">Подтвердите пароль</span>
           <div class="rectangle-7">
-            <input type="password" id="password-confirm-input" class="div6" placeholder="Введите пароль еще раз" required>
+            <input type="password" placeholder="Введите пароль еще раз" required>
           </div>
         </div>
 
         <!-- Кнопка "Подтвердить" -->
-        <button type="submit" class="rectangle-10">
+        <button type="submit" class="rectangle-10" style="border: none; width: 100%;">
           <span class="div4">Подтвердить</span>
         </button>
 
@@ -52,5 +52,7 @@
     </main>
   </div>
 
+  <script src="../api.js"></script>
+  <script src="./new-password.js"></script>
 </body>
 </html>

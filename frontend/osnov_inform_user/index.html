@@ -13,75 +13,77 @@
   <div class="div">
     
     <!-- Глобальная шапка сайта -->
-    <header class="header-wrapper">
+    <div class="header-wrapper">
       <div class="foodtinder">
-        <!-- Укажите вместо ../glavnaya/index.html точный путь к файлу вашей главной страницы -->
         <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
       </div>
-      <a href="#" class="frame-4">
-        <span class="user-text">Пользователь</span>
-        <div class="frame-5">
-          <img class="ellipse-2" src="./ellipse-20.svg" alt="Профиль">
-          <span class="div2">П</span>
+      <div class="frame-4">
+        <div class="div3">
+          <!-- Скрипт тимлида ищет именно тег с классом .div4 для подстановки имени пользователя -->
+          <span class="div4" id="header-username">Загрузка...</span>
         </div>
-      </a>
-    </header>
+        <div class="frame-5">
+          <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Аватар">
+          <div class="div2" id="profile-letter">П</div>
+        </div>
+      </div>
+    </div>
 
     <!-- Центральный блок формы (Полная аналогия main-content из регистрации) -->
-    <main class="main-content">
-
-      <!-- Блок большого аватара и редактирования имени -->
-      <section class="avatar-section">
-        <div class="ellipse-3"></div>
-        <div class="editable-name-wrapper" onclick="if(document.getElementById('nameInput').style.display!=='block'){document.getElementById('nameText').style.display='none'; document.getElementById('nameInput').style.display='block'; document.getElementById('nameInput').focus(); document.getElementById('nameInput').select();}">
-          <h2 class="div4" id="nameText">Имя</h2>
-          <input type="text" id="nameInput" class="name-field-input" value="Имя" maxlength="20" style="display: none;" 
-                 onblur="if(this.value.trim()) document.getElementById('nameText').textContent=this.value; this.style.display='none'; document.getElementById('nameText').style.display='block';"
-                 onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+    <div class="main-content">
+      <!-- Секция большого аватара и интерактивного имени из Figma -->
+      <div class="avatar-section">
+        <!-- Скрытый инпут для вызова загрузочного окна операционной системы -->
+        <input type="file" id="avatar-file-picker" accept="image/*" style="display: none;">
+        
+        <!-- Делаем аватарку кликабельной картинкой. Если файла нет, она будет серой по умолчанию через CSS -->
+        <img class="ellipse-3" id="profile-avatar-img" src="" alt="" style="cursor: pointer; object-fit: cover; background-color: #d9d9d9;">
+        
+        <div class="editable-name-wrapper" id="name-wrapper">
+          <h2 class="div4" id="name-display">Загрузка...</h2>
+          <input type="text" class="name-field-input" id="name-input" style="display: none;">
         </div>
-      </section>
+      </div>
 
       <!-- Контейнер формы полностью по стилю регистрации -->
-      <form class="form-container" onsubmit="event.preventDefault(); alert('Изменения сохранены!');" autocomplete="off">
+      <form class="form-container" autocomplete="off">
         
-        <div class="input-group">
-          <label class="input-label">Email</label>
-          <input type="email" class="custom-input" placeholder="example@mail.com" required>
-        </div>
+        <form class="form-container">
+          <div class="input-group">
+            <span class="input-label">Email</span>
+            <input type="email" id="email" class="custom-input">
+          </div>
 
-        <div class="input-group">
-          <label class="input-label">Пароль</label>
-          <input type="password" class="custom-input" placeholder="••••••••" required>
-        </div>
+          <div class="input-group">
+            <span class="input-label">День рождения</span>
+            <input type="text" id="birth_date" class="custom-input" placeholder="ДД.ММ.ГГГГ">
+          </div>
 
-        <div class="input-group">
-          <label class="input-label">День рождения</label>
-          <input type="text" class="custom-input" placeholder="ДД.ММ.ГГГГ">
-        </div>
+          <div class="input-group">
+            <span class="input-label">Пол</span>
+            <input type="text" id="gender" class="custom-input" placeholder="men / women">
+          </div>
 
-        <div class="input-group">
-          <label class="input-label">Пол</label>
-          <input type="text" class="custom-input" placeholder="Мужской / Женский">
-        </div>
+          <div class="input-group">
+            <span class="input-label">Рост</span>
+            <input type="number" id="height" class="custom-input">
+          </div>
 
-        <div class="input-group">
-          <label class="input-label">Рост</label>
-          <input type="text" class="custom-input" placeholder="см">
-        </div>
+          <div class="input-group">
+            <span class="input-label">Вес</span>
+            <input type="number" id="weight" class="custom-input">
+          </div>
 
-        <div class="input-group">
-          <label class="input-label">Вес</label>
-          <input type="text" class="custom-input" placeholder="кг">
-        </div>
+          <button type="submit" class="submit-btn">
+            <span class="div7">Сохранить</span>
+          </button>
+        </form>
 
-        <!-- Кнопка полностью из страницы регистрации -->
-        <button type="submit" class="submit-btn">
-          <span class="div7">Сохранить</span>
-        </button>
-      </form>
 
     </main>
   </div>
 
+  <script src="../api.js"></script>
+  <script src="./osnov_inform_user.js"></script>
 </body>
 </html>
