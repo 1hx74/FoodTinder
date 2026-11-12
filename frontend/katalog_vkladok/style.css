@@ -18,12 +18,13 @@ html, body {
 }
 
 /* =========================================================
-   ЛОГОТИП И ТЕКСТОВЫЕ ССЫЛКИ — БЕЗ ОСВЕТЛЕНИЯ (как в эталоне)
+   ЛОГОТИП И ТЕКСТОВЫЕ ССЫЛКИ
    ========================================================= */
 .foodtinder,
 .div3,
 .div7,
-.div9 {
+.div9,
+.logout-link {
   cursor: pointer;
 }
 
@@ -73,36 +74,51 @@ html, body {
   top: calc(50% - 454.5px);
   overflow: hidden;
 }
+
+/* =========================================================
+   АВАТАР (Круг + Буква по центру)
+   ========================================================= */
 .frame-5 {
-  width: 50px;
-  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   position: absolute;
   left: 53px;
   top: 1px;
+  width: 50px;
+  height: 50px;
   overflow: hidden;
+  cursor: pointer;
 }
 .ellipse-2 {
+  position: absolute;
   width: 41px;
   height: 41px;
-  position: absolute;
-  left: 50%;
-  translate: -50% -50%;
   top: 50%;
-  overflow: visible;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
-.div2 {
+
+/* Буква "Г" (и первая буква имени) всегда по центру круга */
+.div2, 
+.avatar-initial {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: #ffffff;
-  text-align: left;
   font-family: "Inter-Bold", sans-serif;
   font-size: 24px;
   font-weight: 700;
-  position: absolute;
-  left: 50%;
-  translate: -50% -50%;
-  top: 50%;
-  width: 14px;
-  height: 24px;
+  text-align: center;
+  pointer-events: none; /* Чтобы клик проходил на ссылку */
+  z-index: 2; /* Поверх картинки круга */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
+
+/* Вход в шапке (правый верхний угол) */
 .div3 {
   display: block;
   width: 57px;
@@ -125,6 +141,10 @@ html, body {
   top: 0%;
   height: 100%;
 }
+
+/* =========================================================
+   ЦЕНТРАЛЬНЫЙ БОЛЬШОЙ КРУГ
+   ========================================================= */
 .frame-15 {
   width: 150px;
   height: 150px;
@@ -143,55 +163,77 @@ html, body {
   translate: -50% -50%;
   top: 50%;
 }
+
+/* =========================================================
+   ИМЯ ПОЛЬЗОВАТЕЛЯ И ВХОД/ВЫЙТИ (ЦЕНТРИРОВАННЫЕ)
+   ========================================================= */
+
+/* Блок с именем (Гость / Имя пользователя) */
 .div5 {
-  color: #000000;
-  text-align: left;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  width: 100%; 
+  left: 0;     
+  top: 219px;  
+  position: absolute;
+  
+  /* Возвращаем исходный шрифт и размер */
   font-family: "Inter-Bold", sans-serif;
   font-size: 24px;
   font-weight: 700;
-  position: absolute;
-  left: 170px;
-  top: 219px;
-  width: 71px;
-  height: 29px;
-}
-.div6 {
-  width: 203px;
-  height: 37px;
-  position: absolute;
-  left: 50%;
-  translate: -50%;
-  top: 256px;
-  overflow: hidden;
-}
-.div7 {
-  display: block;
-  width: 57px;
-  height: 25px;
-  position: absolute;
-  left: 0px;
-  top: 6px;
-}
-.div8 {
   color: #000000;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 20px;
-  font-weight: 700;
-  position: absolute;
-  left: 57px;
-  top: 6px;
-  width: 16px;
-  height: 25px;
 }
-.div9 {
-  display: block;
-  width: 138px;
-  height: 25px;
-  position: absolute;
-  left: 73px;
-  top: 6px;
+
+/* Блок со ссылками Вход/Регистрация или кнопкой Выйти */
+.div6 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;       
+  left: 0;           
+  top: 256px;        
+  position: absolute; 
+  gap: 8px;          
+  height: auto;
+  overflow: visible; 
 }
+
+/* Стили для ссылок Вход / Регистрация / Выйти */
+.div7, 
+.div9, 
+.logout-link {
+  position: relative; 
+  left: auto;
+  top: auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Текст внутри ссылок */
+.div7 .div4,
+.div9 .div4,
+.logout-link .div4 {
+  position: relative;
+  text-align: center;
+  left: auto;
+  top: auto;
+  width: auto;
+  height: auto;
+}
+
+/* Слэш между Вход и Регистрация */
+.div8 {
+  position: relative;
+  left: auto;
+  top: auto;
+}
+
+/* =========================================================
+   БЛОК С КНОПКАМИ-ВКЛАДКАМИ
+   ========================================================= */
 .div10 {
   width: 328px;
   height: 482px;
@@ -202,7 +244,7 @@ html, body {
 }
 
 /* =========================================================
-   ВКЛАДКИ — ТОЧНО КАК КНОПКИ НА ГЛАВНОЙ
+   ВКЛАДКИ (8 ШТУК)
    ========================================================= */
 .rectangle-6,
 .rectangle-7,
@@ -210,176 +252,64 @@ html, body {
 .rectangle-9,
 .rectangle-10,
 .rectangle-11,
-.rectangle-12 {
-  background: rgba(120, 27, 27, 0.78);
+.rectangle-12,
+.rectangle-13 {
+  background: #9b5151; /* Сплошной цвет без просвечивания */
   border-radius: 12px;
   width: 306px;
-  height: 55px;
+  height: 48px; /* Уменьшили высоту, чтобы влезла 8-я кнопка */
   position: absolute;
   left: 14px;
 
-  /* как .btn-rect на главной */
   transition: transform 0.1s ease, opacity 0.2s ease;
   box-shadow: 0px 2px 8px rgba(120, 27, 27, 0.2);
   cursor: pointer;
+  pointer-events: auto; /* По умолчанию кликабельны */
 }
 
-.rectangle-6  { top: 13px;  }
-.rectangle-7  { top: 409px; }
-.rectangle-8  { top: 343px; }
-.rectangle-9  { top: 277px; }
-.rectangle-10 { top: 211px; }
-.rectangle-11 { top: 145px; }
-.rectangle-12 { top: 79px;  }
+/* Пересчитанные координаты */
+.rectangle-6  { top: 5px;  }
+.rectangle-7  { top: 63px;  }
+.rectangle-8  { top: 121px; }
+.rectangle-9  { top: 179px; }
+.rectangle-10 { top: 237px; }
+.rectangle-13 { top: 295px; } /* Достижения */
+.rectangle-11 { top: 353px; }
+.rectangle-12 { top: 411px; }
 
-/* ховер — идентичен главной */
+/* Ховер */
 .rectangle-6:hover,
 .rectangle-7:hover,
 .rectangle-8:hover,
 .rectangle-9:hover,
 .rectangle-10:hover,
 .rectangle-11:hover,
-.rectangle-12:hover {
+.rectangle-12:hover,
+.rectangle-13:hover {
   opacity: 0.9;
   transform: translateY(-1px);
 }
 
-/* Ссылки-вкладки: z-index выше, чтобы клик ловился по всей плашке */
-.tab-link {
-  display: block;
-  z-index: 1;
-}
-
-/* Тексты вкладок не перехватывают клики — они просто лежат поверх */
-.div11,
-.div12,
-.div13,
-.div14,
-.div15,
-.div16,
-.div17 {
-  pointer-events: none;
-  z-index: 2;
-}
-
-.div11 {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
+/* Тексты внутри вкладок (центрируются внутри кнопки) */
+.tab-text {
   position: absolute;
-  left: 133px;
-  top: 32px;
-  width: 67px;
-  height: 18px;
-}
-.div12 {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 62px;
-  top: 98px;
-  width: 209px;
-  height: 18px;
-}
-.div13 {
-  color: #ffffff;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 49px;
-  top: 164px;
-  width: 229px;
-  height: 18px;
-}
-.div14 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 72px;
-  top: 232px;
-  width: 189px;
-  height: 18px;
-}
-.div15 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 120px;
-  top: 296px;
-  width: 93px;
-  height: 18px;
-}
-.div16 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 78px;
-  top: 362px;
-  width: 178px;
-  height: 18px;
-}
-.div17 {
-  color: #747474;
-  text-align: left;
-  font-family: "Inter-Bold", sans-serif;
-  font-size: 16px;
-  font-weight: 700;
-  position: absolute;
-  left: 100px;
-  top: 428px;
-  width: 134px;
-  height: 18px;
-}
-/* =========================================================
-   АВАТАР: буква имени поверх круга (когда нет avatarUrl)
-   ========================================================= */
-.avatar-initial {
-  position: absolute;
-  left: 50%;
   top: 50%;
-  translate: -50% -50%;
-  width: auto;
-  height: auto;
+  left: 50%;
+  transform: translate(-50%, -50%);
   color: #ffffff;
-  text-align: center;
   font-family: "Inter-Bold", sans-serif;
-  font-size: 24px;
+  font-size: 16px;
   font-weight: 700;
-  pointer-events: none;
+  white-space: nowrap;
+  pointer-events: none; /* Чтобы клик проходил на ссылку */
 }
 
 /* =========================================================
-   ВЫЙТИ: та же типографика, что у «Вход»
+   ЗАБЛОКИРОВАННЫЕ КНОПКИ (ДЛЯ ГОСТЯ)
    ========================================================= */
-.logout-link {
-  display: block;
-  width: auto;
-  height: 25px;
-  position: absolute;
-  left: 0;
-  top: 6px;
-  cursor: pointer;
-}
-
-/* =========================================================
-   ЗАБЛОКИРОВАННЫЕ ВКЛАДКИ (гость)
-   ========================================================= */
-.tab-link[aria-disabled="true"] {
+.tab-link.is-locked {
+  pointer-events: none; /* Отключаем клики */
+  opacity: 0.5;         /* Делаем блеклыми */
   cursor: not-allowed;
+  filter: grayscale(30%); /* Чуть обесцвечиваем */
 }
