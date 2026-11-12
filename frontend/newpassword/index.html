@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Новый пароль — FOODTINDER</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <div class="div">
+    
+    <!-- ГЛОБАЛЬНАЯ ШАПКА -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+    </header>
+
+    <!-- ЦЕНТРАЛЬНЫЙ КОНТЕНТ СТРАНИЦЫ -->
+    <main class="recovery-container">
+      
+      <!-- ФОРМА УСТАНОВКИ НОВОГО ПАРОЛЯ -->
+      <form class="recovery-form" onsubmit="return false;">
+        
+        <!-- Заголовок страницы -->
+        <h1 class="div2">Новый пароль</h1>
+
+        <!-- Блок поля "Пароль" -->
+        <div class="input-group">
+          <label class="div2-label" for="password-input">Пароль</label>
+          <div class="rectangle-6">
+            <input type="password" id="password-input" class="div5" placeholder="Введите пароль" required>
+          </div>
+        </div>
+
+        <!-- Блок поля "Подтвердите пароль" -->
+        <div class="input-group">
+          <label class="div3-label" for="password-confirm-input">Подтвердите пароль</label>
+          <div class="rectangle-7">
+            <input type="password" id="password-confirm-input" class="div6" placeholder="Введите пароль еще раз" required>
+          </div>
+        </div>
+
+        <!-- Кнопка "Подтвердить" -->
+        <button type="submit" class="rectangle-10">
+          <span class="div4">Подтвердить</span>
+        </button>
+
+      </form>
+
+    </main>
+  </div>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+/* Подгружаем общие адаптивные рамки приложения, шапку, цвета и шрифты */
+@import url('../vars.css');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Главный контентный контейнер страницы*/
+.recovery-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  flex-grow: 1;
+  width: 100%;
+  position: relative; 
+  padding-top: 130px; 
+}
+
+/* Вертикальная форма-обертка */
+.recovery-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* "Восстановление" намертво привязан к верху экрана */
+.div2 {
+  position: absolute !important;
+  top: 35px !important;    
+  left: 50% !important;
+  transform: translateX(-50%) !important;
+  width: 100% !important;
+  margin: 0 !important;
+  padding: 0 20px !important;
+  color: #000000;
+  text-align: center;
+  font-family: var(--main-font, "Inter-Bold", sans-serif);
+  font-size: 24px;
+  font-weight: 700;
+  white-space: nowrap;    
+  z-index: 10;
+}
+
+/* Группа поля ввода */
+.input-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 306px; 
+  margin-bottom: 24px; 
+}
+
+/* Текстовые подписи над инпутами (Email, Код) */
+.email, .div8 {
+  color: #000000;
+  font-family: var(--main-font, "Inter-Bold", sans-serif);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 6px;
+  padding-left: 2px;
+}
+
+/* Внешние рамки полей ввода */
+.rectangle-7, .rectangle-8 {
+  background: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  width: 100%;
+  height: 55px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+}
+
+/* Настройки текста и скрытие дефолтных стилей внутри полей ввода */
+.rectangle-7 input, .rectangle-8 input {
+  border: none;
+  outline: none;
+  width: 100%;
+  background: transparent;
+  font-family: "Inter-Medium", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  color: #000000;
+}
+
+/* Стилизация подсказок внутри полей */
+.rectangle-7 input::placeholder, 
+.rectangle-8 input::placeholder {
+  color: #cccccc;
+}
+
+/* Общие стили для кнопок "Получить код" и "Подтвердить" */
+.rectangle-72, .rectangle-9 {
+  background: var(--primary-color, rgba(120, 27, 27, 0.78));
+  border-radius: 12px;
+  width: 303px; 
+  height: 55px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border: none;
+  transition: opacity 0.2s ease;
+}
+
+/* Отступ снизу конкретно для первой кнопки */
+.rectangle-72 {
+  margin-bottom: 32px;
+}
+
+/* Эффект наведения мыши на кнопки */
+.rectangle-72:hover, .rectangle-9:hover {
+  opacity: 0.9;
+}
+
+/* Белый текст внутри кнопок */
+.div10, .div11 {
+  color: #ffffff;
+  font-family: var(--main-font, "Inter-Bold", sans-serif);
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+}

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FOODTINDER — Профиль</title>
+  <link rel="stylesheet" href="../glavnaya/vars.css">
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+
+  <!-- Глобальный адаптивный каркас приложения из vars.css -->
+  <div class="div">
+    
+    <!-- Глобальная шапка сайта -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <!-- Укажите вместо ../glavnaya/index.html точный путь к файлу вашей главной страницы -->
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+      <a href="#" class="frame-4">
+        <span class="user-text">Пользователь</span>
+        <div class="frame-5">
+          <img class="ellipse-2" src="./ellipse-20.svg" alt="Профиль">
+          <span class="div2">П</span>
+        </div>
+      </a>
+    </header>
+
+    <!-- Центральный блок формы (Полная аналогия main-content из регистрации) -->
+    <main class="main-content">
+
+      <!-- Блок большого аватара и редактирования имени -->
+      <section class="avatar-section">
+        <div class="ellipse-3"></div>
+        <div class="editable-name-wrapper" onclick="if(document.getElementById('nameInput').style.display!=='block'){document.getElementById('nameText').style.display='none'; document.getElementById('nameInput').style.display='block'; document.getElementById('nameInput').focus(); document.getElementById('nameInput').select();}">
+          <h2 class="div4" id="nameText">Имя</h2>
+          <input type="text" id="nameInput" class="name-field-input" value="Имя" maxlength="20" style="display: none;" 
+                 onblur="if(this.value.trim()) document.getElementById('nameText').textContent=this.value; this.style.display='none'; document.getElementById('nameText').style.display='block';"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault(); this.blur();}">
+        </div>
+      </section>
+
+      <!-- Контейнер формы полностью по стилю регистрации -->
+      <form class="form-container" onsubmit="event.preventDefault(); alert('Изменения сохранены!');" autocomplete="off">
+        
+        <div class="input-group">
+          <label class="input-label">Email</label>
+          <input type="email" class="custom-input" placeholder="example@mail.com" required>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Пароль</label>
+          <input type="password" class="custom-input" placeholder="••••••••" required>
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">День рождения</label>
+          <input type="text" class="custom-input" placeholder="ДД.ММ.ГГГГ">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Пол</label>
+          <input type="text" class="custom-input" placeholder="Мужской / Женский">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Рост</label>
+          <input type="text" class="custom-input" placeholder="см">
+        </div>
+
+        <div class="input-group">
+          <label class="input-label">Вес</label>
+          <input type="text" class="custom-input" placeholder="кг">
+        </div>
+
+        <!-- Кнопка полностью из страницы регистрации -->
+        <button type="submit" class="submit-btn">
+          <span class="div7">Сохранить</span>
+        </button>
+      </form>
+
+    </main>
+  </div>
+
+</body>
+</html>
