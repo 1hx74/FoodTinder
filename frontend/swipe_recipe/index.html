@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="../vars.css" />
+    <link rel="stylesheet" href="./style.css" />
+
+    <style>
+      a, button, input, select, h1, h2, h3, h4, h5, * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: none;
+        text-decoration: none;
+        background: none;
+        -webkit-font-smoothing: antialiased;
+      }
+      menu, ol, ul { list-style-type: none; margin: 0; padding: 0; }
+    </style>
+    <title>FOODTINDER — Выбор рецептов</title>
+  </head>
+  <body>
+    <div class="div">
+      <!-- 1. ЕДИНАЯ ГЛОБАЛЬНАЯ ШАПКА -->
+      <header class="header-wrapper">
+        <div class="foodtinder">
+          <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+        </div>
+        <div class="frame-4">
+          <div class="frame-5">
+            <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Профиль" />
+            <div class="div2" id="profile-letter">Г</div>
+          </div>
+          <div class="div3" id="auth-container">
+            <a href="../vxod/index.html" class="div4">Вход</a>
+            <span class="slash-separator">/</span>
+            <a href="../registration/index.html" class="div4">Регистрация</a>
+          </div>
+        </div>
+      </header>
+
+      <!-- 2. ОСНОВНОЙ ЭКРАН С КАРТОЧКОЙ И КНОПКАМИ -->
+      <main class="main-content">
+        <!-- Карточка рецепта -->
+        <div class="frame-16" id="recipe-card">
+          <div class="frame-24">
+            <img class="rectangle-14" id="recipe-image" src="rectangle-140.png" alt="Блюдо" />
+            <div class="div7">
+              <div class="recipe-title" id="recipe-title">Загрузка рецепта...</div>
+              <div class="recipe-desc" id="recipe-description"></div>
+            </div>
+          </div>
+
+                      <!-- Рейтинг (сложность) и калорийность отдельными строками -->
+          <div class="recipe-meta-column">
+            <div class="difficulty-box">
+              <span class="meta-label">Сложность:</span>
+              <div class="stars-row" id="recipe-stars"></div>
+            </div>
+            <div class="difficulty-box">
+              <span class="meta-label">Калорийность:</span>
+              <span class="calories-box" id="recipe-calories"></span>
+            </div>
+          </div>
+
+
+
+
+          <!-- Кнопка перехода к полному рецепту -->
+          <a href="#" target="_blank" class="div5" id="recipe-link-btn">
+            <span class="div6">Посмотреть рецепт</span>
+          </a>
+        </div>
+
+        <!-- Заглушка, если рецепты закончились -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-title">Вы просмотрели все карточки!</div>
+          <div class="empty-subtitle">Попробуйте изменить фильтры в профиле или загляните позже.</div>
+          <a href="../glavnaya/index.html" class="div5" style="margin-top: 20px;">
+            <span class="div6">На главную</span>
+          </a>
+        </div>
+
+        <!-- Нижние кнопки реакций: Дизлайк / Избранное / Лайк -->
+        <div class="frame-18" id="reaction-controls">
+            <button type="button" class="reaction-btn" id="btn-dislike" aria-label="Не нравится">
+                <img class="div8" src="dislike.svg" alt="Не нравится" />
+            </button>
+
+            <button type="button" class="reaction-btn fav-btn" id="btn-favorite" aria-label="В избранное" title="В избранное">
+                <!-- Заменили star-10.svg на твой файл favorite.svg -->
+                <img class="fav-icon" src="favorite.svg" alt="В избранное" />
+            </button>
+
+
+            <button type="button" class="reaction-btn" id="btn-like" aria-label="Нравится">
+                <img class="div9" src="like.svg" alt="Нравится" />
+            </button>
+        </div>
+      </main>
+    </div>
+
+    <script src="../api.js"></script>
+    <script src="./swipe.js"></script>
+  </body>
+</html>

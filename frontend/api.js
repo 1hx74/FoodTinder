@@ -28,6 +28,12 @@ const tokenStorage = {
 /** Низкоуровневый сетевой fetch-клиент */
 async function rawRequest(endpoint, { method = "GET", body } = {}) {
     const headers = { "Content-Type": "application/json" };
+
+    // Передаём JWT-токен, если пользователь авторизован
+    const token = tokenStorage.get();
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
     
     // Корректируем слэши: гарантируем, что путь начнется со слэша
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
@@ -148,6 +154,23 @@ const AuthAPI = {
         });
     },
 
+    // Получить ID следующего рецепта для ленты
+    async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {
+        return await rawRequest(customEndpoint, { method: "GET" });
+    },
+
+    // Получить полную карточку рецепта по ID
+    async getRecipeById(recipeId) {
+        return await rawRequest(`/api/db/recipes/${recipeId}`, { method: "GET" });
+    },
+
+    // Отправить реакцию пользователя (like / dislike / favorite)
+    async sendRecipeReaction(recipeId, action, customEndpoint = "/api/db/recipes/reaction") {
+        return await rawRequest(customEndpoint, {
+            method: "PUT",
+            body: { recipe_id: recipeId, action }
+        });
+    },
 
     // Глобальная функция автоматического переключения шапки интерфейса
     updateHeaderUI() {

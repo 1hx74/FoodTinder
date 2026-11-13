@@ -38,6 +38,75 @@ app = FastAPI()
 # Динамически вычисляем корневой каталог проекта относительно места сборки этого скрипта.
 BASE_DIR = Path(__file__).resolve().parent
 
+MOCK_RECIPES = {
+    1: {
+        "recipe_id": 1,
+        "image_url": "rectangle-140.png",
+        "title": "Паста Карбонара с хрустящим беконом",
+        "description": "Классический итальянский рецепт с нежным сливочно-яичным соусом и пармезаном. Готовится всего за 20 минут!",
+        "stars": 5,
+        "kitchen_equipment": ["stove", "pot"],
+        "products": ["pasta", "bacon", "eggs", "parmesan"],
+        "calories_and_macros": 640,
+        "hyper-text": "https://example.com",
+    },
+    2: {
+        "recipe_id": 2,
+        "image_url": "rectangle-140.png",
+        "title": "Том Ям с креветками и кокосовым молоком",
+        "description": "Пряный тайский суп с яркой кислинкой лайма, лемонграссом и тигровыми креветками.",
+        "stars": 4,
+        "kitchen_equipment": ["stove", "pot"],
+        "products": ["shrimp", "coconut_milk", "lime", "mushrooms"],
+        "calories_and_macros": 420,
+        "hyper-text": "https://example.com",
+    },
+    3: {
+        "recipe_id": 3,
+        "image_url": "rectangle-140.png",
+        "title": "Сырники из фермерского творога с ягодами",
+        "description": "Пышные золотистые сырники с ванилью, подаются со сметаной и свежей голубикой.",
+        "stars": 5,
+        "kitchen_equipment": ["stove", "frying_pan"],
+        "products": ["cottage_cheese", "eggs", "flour", "berries"],
+        "calories_and_macros": 380,
+        "hyper-text": "https://example.com",
+    },
+    4: {
+        "recipe_id": 4,
+        "image_url": "rectangle-140.png",
+        "title": "Запечённый лосось со спаржей и лимоном",
+        "description": "Сочное филе красной рыбы в духовке с ароматными травами и хрустящей зелёной спаржей.",
+        "stars": 4,
+        "kitchen_equipment": ["oven", "backing_dish"],
+        "products": ["salmon", "asparagus", "lemon", "olive_oil"],
+        "calories_and_macros": 510,
+        "hyper-text": "https://example.com",
+    },
+    5: {
+        "recipe_id": 5,
+        "image_url": "rectangle-140.png",
+        "title": "[ТЕСТ ОШИБКИ 404] Удалённый рецепт рамена",
+        "description": "Нажми 'Избранное' — увидишь предупреждение. Нажми 'Лайк/Дизлайк' — ошибка проигнорируется!",
+        "stars": 3,
+        "kitchen_equipment": ["stove"],
+        "products": ["noodles", "egg"],
+        "calories_and_macros": 490,
+        "hyper-text": "https://example.com",
+    },
+    6: {
+        "recipe_id": 6,
+        "image_url": "rectangle-140.png",
+        "title": "[ТЕСТ ОШИБКИ 401] Секретный стейк Рибай",
+        "description": "При любой реакции на эту карточку сервер вернёт 401 Unauthorized и предложит войти в аккаунт.",
+        "stars": 5,
+        "kitchen_equipment": ["stove", "frying_pan"],
+        "products": ["beef", "rosemary", "butter"],
+        "calories_and_macros": 780,
+        "hyper-text": "https://example.com",
+    },
+}
+
 # 1. ПОЛИТИКА КРОСС-ДОМЕННОЙ БЕЗОПАСНОСТИ (НАСТРОЙКА CORS)
 # Позволяет локальным файлам, инструментам тестирования или сторонним клиентам
 # беспрепятственно выполнять сетевые запросы к нашему API.
@@ -87,6 +156,17 @@ class PreferencesRequest(BaseModel):
     diets: list[str] = []
     religions: list[str] = []
     kitchen_equipment: list[str] = []
+
+NEXT_RECIPE_POINTER = 1
+class RecipeReactionRequest(BaseModel):
+    """Контракт реакции на карточку рецепта (like / dislike / favorite)"""
+    recipe_id: int
+    action: str
+
+@app.get("/swipe")
+def swipe_page():
+    """Перенаправляет на страницу свайпа рецептов"""
+    return RedirectResponse(url="/swipe/")
 
 
 # ПЕРЕНАПРАВЛЕНИЕ НАВИГАЦИИ ФРОНТЕНДА (ДВИЖОК РЕДИРЕКТОВ)
@@ -256,6 +336,66 @@ def change_password(data: NewPasswordRequest, response: Response):
     logger.info(f"===> [БЭКЕНД] Запрос на смену пароля успешно получен.")
     logger.info("========================================")
     
+    response.status_code = status.HTTP_200_OK
+    return {
+        "code": 200,
+        "state": "OK"
+    }
+
+@app.get("/api/db/recipes/next")
+def get_next_recipe(response: Response):
+    """Выдаёт ID следующего рецепта для пополнения очереди на фронтенде"""
+    global NEXT_RECIPE_POINTER
+    
+    if NEXT_RECIPE_POINTER > len(MOCK_RECIPES):
+        logger.info("===> [РЕЦЕПТЫ] Все тестовые карточки выданы, возвращаем пустой массив.")
+        response.status_code = status.HTTP_200_OK
+        return {"recipes": []}
+        
+    current_id = NEXT_RECIPE_POINTER
+    NEXT_RECIPE_POINTER += 1
+    logger.info(f"===> [РЕЦЕПТЫ] Выдан следующий ID в очередь: {current_id}")
+    
+    response.status_code = status.HTTP_200_OK
+    return {
+        "recipe_id": current_id,
+        "code": 200,
+        "state": "OK"
+    }
+
+@app.get("/api/db/recipes/{recipe_id}")
+def get_recipe_details(recipe_id: int, response: Response):
+    """Возвращает полную карточку рецепта по его ID"""
+    recipe = MOCK_RECIPES.get(recipe_id)
+    if not recipe:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"code": 404, "state": "Not Found"}
+        
+    logger.info(f"===> [РЕЦЕПТЫ] Загружены детали рецепта #{recipe_id}: {recipe['title']}")
+    response.status_code = status.HTTP_200_OK
+    return {
+        **recipe,
+        "code": 200,
+        "state": "OK"
+    }
+
+@app.put("/api/db/recipes/reaction")
+def react_to_recipe(payload: RecipeReactionRequest, response: Response):
+    """Принимает реакцию (like / dislike / favorite) и симулирует ошибки 404 и 401"""
+    logger.info("========================================")
+    logger.info(f"===> [РЕАКЦИЯ] Рецепт #{payload.recipe_id} -> действие: {payload.action}")
+    logger.info("========================================")
+
+    # Симуляция ошибки 404 (рецепт удалили на сервере)
+    if payload.recipe_id == 5:
+        response.status_code = status.HTTP_404_NOT_FOUND
+        return {"code": 404, "state": "Not Found"}
+
+    # Симуляция ошибки 401 (пользователь не авторизован)
+    if payload.recipe_id == 6:
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {"code": 401, "state": "Unauthorized"}
+
     response.status_code = status.HTTP_200_OK
     return {
         "code": 200,
