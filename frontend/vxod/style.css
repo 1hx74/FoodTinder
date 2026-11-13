@@ -118,3 +118,21 @@
   .form-container { gap: 12px; }
   .custom-input, .submit-btn { height: 44px; }
 }
+
+/* Для очень низких экранов (например, телефоны в альбомной ориентации) */
+@media (max-height: 550px) {
+  .form-title { 
+    font-size: 20px; 
+    margin-bottom: 10px; 
+  }
+  .form-container { 
+    gap: 10px; 
+  }
+  .custom-input, .submit-btn { 
+    height: 40px; 
+  }
+  .form-links { 
+    margin-top: 10px; 
+    font-size: 12px;
+  }
+}
