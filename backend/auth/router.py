@@ -77,7 +77,7 @@ async def register(
 
 @router.post("/login", response_model=AuthResponse)
 async def login(body: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    member = MemberRepository(db).get_by_name(body.username)
+    member = MemberRepository(db).get_by_email(body.email)
     if not member or not security.verify_password(
         body.password, member.salt, member.password_hash
     ):

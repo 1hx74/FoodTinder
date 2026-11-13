@@ -26,7 +26,12 @@ class MemberRepository:
         return self.db.execute(
             select(Member.name).where(Member.id == user_id)
         ).scalar_one_or_none()
-
+    
+    def get_by_email(self, email: str)->str|None:
+        return self.db.execute(
+            select(Member).where(Member.email == email)
+        ).scalar_one_or_none()
+    
     def name_exists(self, name: str) -> bool:
         return self.db.execute(
             select(Member.id).where(Member.name == name)
