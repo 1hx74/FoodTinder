@@ -58,6 +58,10 @@ class RegisterRequest(BaseModel):
     FastAPI автоматически заблокирует запрос и вернет клиенту ошибку 422 Unprocessable Entity.
     """
     email: str
+    password: str # Изменено: при регистрации передаем только email и пароль
+
+class LoginRequest(BaseModel):
+    """Контракт для входа в систему (принимает логин или почту)"""
     username: str
     password: str
 
@@ -122,6 +126,10 @@ def register_user(user: RegisterRequest, response: Response):
     """
     logger.info("========================================")
     logger.info(f"===> [РЕГИСТРАЦИЯ] Первичные данные получены для: {user.email}")
+    
+    # Автоматически создаем логин из Email (например, test@mail.ru -> test)
+    generated_username = user.email.split('@')[0]
+    logger.info(f"===> [РЕГИСТРАЦИЯ] Сгенерирован логин: {generated_username}")
     logger.info("========================================")
 
     # Выставляем статус 201 Created — данные успешно кэшированы, ждем код подтверждения
@@ -129,7 +137,34 @@ def register_user(user: RegisterRequest, response: Response):
     return {
         "code": 201,
         "state": "Created",
+        "username": generated_username,
         "message": "Verification code sent to email"
+    }
+
+
+# ДОБАВЛЕННЫЙ ЭНДПОИНТ ДЛЯ ВХОДА (ПОДДЕРЖИВАЕТ И ЛОГИН, И EMAIL)
+@app.post("/api/auth/login")
+def login_user(user: LoginRequest, response: Response):
+    """
+    Принимает логин (или email) и пароль. Возвращает токен сессии.
+    """
+    logger.info("========================================")
+    logger.info(f"===> [ВХОД] Получены данные: {user.username}")
+    logger.info("========================================")
+    
+    # Умная обработка: если есть @, значит это Email. Берем часть до @ как логин.
+    if "@" in user.username:
+        display_username = user.username.split("@")[0]
+    else:
+        display_username = user.username # Это обычный логин
+        
+    response.status_code = status.HTTP_200_OK
+    return {
+        "user_id": 123,
+        "username": display_username, # Возвращаем чистое имя (например, "test" из "test@mail.ru")
+        "access_token": f"jwt.token.for.{display_username}.success",
+        "code": 200,
+        "state": "OK"
     }
 
 
@@ -261,7 +296,6 @@ def change_password(data: NewPasswordRequest, response: Response):
         "code": 200,
         "state": "OK"
     }
-
 
 
 # ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ

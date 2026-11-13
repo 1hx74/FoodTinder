@@ -3,6 +3,7 @@
 
   const REDIRECT_LOGIN = "../vxod/index.html";
   const REDIRECT_REGISTER = "../registration/index.html";
+  const REDIRECT_CATALOG = "../katalog_vkladok/index.html"; // Путь в каталог для клика по имени
 
   // DOM-узлы
   const profileName = document.getElementById("profile-name");
@@ -10,13 +11,11 @@
   const authContainer = document.getElementById("auth-container");
   const avatarLetter = document.getElementById("profile-letter");
 
-  // Берем все ссылки-вкладки
   const tabLinks = document.querySelectorAll(".tab-link");
   
-  // Первые 3 кнопки (Фильтр, Понравившиеся, Непонравившиеся) — ДОСТУПНЫ ГОСТЮ
+  // Первые 3 кнопки доступны гостю
   const guestAllowedTabs = Array.from(tabLinks).slice(0, 3);
-  
-  // Последние 5 кнопок (Инфо, Избранное, Достижения, Планировщик, Список) — ЗАБЛОКИРОВАНЫ
+  // Последние 5 кнопок заблокированы
   const guestLockedTabs = Array.from(tabLinks).slice(3);
 
   function isAuthenticated() {
@@ -78,7 +77,7 @@
 
     // Шапка: показываем имя вместо Вход/Регистрация
     if (authContainer) {
-      authContainer.innerHTML = `<span class="div4">${username}</span>`;
+      authContainer.innerHTML = `<a href="#" class="div4">${username}</a>`;
     }
 
     // Блок под кругом: Выйти
@@ -105,17 +104,37 @@
     Array.from(tabLinks).forEach(link => setTabEnabled(link, true));
   }
 
+  // =========================================================
+  // КЛИК ПО ИМЕНИ (ГОСТЬ / ИМЯ) В ШАПКЕ ВЕДЕТ В КАТАЛОГ
+  // =========================================================
+  function setupHeaderNameClick() {
+    if (!authContainer) return;
+
+    authContainer.addEventListener("click", (event) => {
+      // Проверяем, что кликнули по ссылке <a>
+      if (event.target.tagName === "A") {
+        const text = event.target.textContent.trim();
+        // Если это не "Вход" и не "Регистрация" (они ведут на свои страницы)
+        if (text !== "Вход" && text !== "Регистрация") {
+          event.preventDefault(); 
+          window.location.href = REDIRECT_CATALOG; // Переходим в каталог
+        }
+      }
+    });
+  }
+
   function logoutUser() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
     localStorage.removeItem("avatarUrl");
     
-    // Перекидываем на главную
     window.location.href = "../glavnaya/index.html"; 
   }
 
   function init() {
+    setupHeaderNameClick(); // Подключаем клик по имени в шапке
+
     if (isAuthenticated()) {
       renderAuthorizedState();
     } else {
