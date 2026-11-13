@@ -11,14 +11,12 @@
 }
 
 /* =========================================================
-   ЦЕНТРАЛЬНЫЙ КРУГ (Адаптивный по высоте и ширине)
+   ЦЕНТРАЛЬНЫЙ КРУГ (Адаптивный)
    ========================================================= */
 .frame-15 {
-  /* Размер круга зависит от высоты экрана: от 80px до 150px */
   width: clamp(80px, 18vh, 150px); 
   aspect-ratio: 1 / 1; 
   position: relative;
-  /* Отступы тоже сжимаются на маленьких экранах */
   margin: clamp(10px, 3vh, 30px) auto clamp(10px, 1.5vh, 20px) auto; 
   flex-shrink: 0; 
 }
@@ -38,7 +36,6 @@
 .div5 {
   text-align: center;
   font-family: var(--main-font);
-  /* Шрифт уменьшается от 24px до 18px */
   font-size: clamp(18px, 2.5vh, 24px); 
   font-weight: 700;
   color: #000000;
@@ -64,7 +61,7 @@
 .div7 .div4, .div9 .div4, .logout-link .div4 {
   color: #000000;
   font-family: var(--main-font);
-  font-size: clamp(16px, 2.5vh, 20px); /* Шрифт сжимается */
+  font-size: clamp(16px, 2.5vh, 20px);
   font-weight: 700;
   position: relative;
   text-align: center;
@@ -81,18 +78,16 @@
 }
 
 /* =========================================================
-   БЛОК С КНОПКАМИ-ВКЛАДКАМИ (Главный фикс)
+   БЛОК С КНОПКАМИ-ВКЛАДКАМИ
    ========================================================= */
 .div10 {
-  flex: 1; /* Занимает всё оставшееся место */
+  flex: 1; 
   display: flex;
   flex-direction: column;
   width: 100%;
   max-width: 328px;
   margin: 0 auto;
-  /* Нижний отступ тоже сжимается */
   padding: 0 clamp(10px, 3vw, 14px) clamp(10px, 2vh, 20px) clamp(10px, 3vw, 14px);
-  /* Расстояние между кнопками сжимается (от 4px до 10px) */
   gap: clamp(4px, 1vh, 10px); 
 }
 
@@ -101,8 +96,7 @@
 .rectangle-10, .rectangle-11, .rectangle-12, .rectangle-13 {
   background: var(--primary-color);
   border-radius: 12px;
-  flex: 1; /* Каждая кнопка забирает свою долю */
-  /* Минимальная высота 30px, чтобы текст влезал, но на низких экранах они сжимаются */
+  flex: 1; 
   min-height: 30px; 
   display: flex;
   justify-content: center;
@@ -118,11 +112,11 @@
   transform: translateY(-1px);
 }
 
-/* Текст внутри кнопок (тоже уменьшается) */
+/* Текст внутри кнопок */
 .tab-text {
   color: #ffffff;
   font-family: var(--main-font);
-  font-size: clamp(13px, 2vh, 16px); /* От 13px до 16px */
+  font-size: clamp(13px, 2vh, 16px); 
   font-weight: 700;
   white-space: nowrap;
   pointer-events: none;
