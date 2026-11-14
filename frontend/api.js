@@ -52,6 +52,29 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
 }
 
 const AuthAPI = {
+
+    // ДОБАВЛЕНО: Метод для авторизации по логину/почте
+    async login(email, password) {
+        const data = await rawRequest("/api/auth/login", {
+            method: "POST",
+            body: { email, password }
+        });
+
+        console.log("[api.js] Ответ входа:", data);
+
+        // Сохраняем токен и имя пользователя в память
+        if (data && data.access_token) {
+            tokenStorage.set(data.access_token);
+            
+            // Определяем имя: берем из ответа бэкенда, либо извлекаем из email до символа '@'
+            const extractedUsername = data.username || email.split("@")[0];
+            localStorage.setItem("username", extractedUsername);
+            localStorage.setItem("email", email);
+        }
+
+        return data;
+    },
+
     async register(email, username, password, customEndpoint = "/api/auth/register") {
         return await rawRequest(customEndpoint, {
             method: "POST",

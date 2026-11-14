@@ -179,6 +179,10 @@ app.add_middleware(
 # ОБЪЕКТЫ ПЕРЕДАЧИ ДАННЫХ (ТИПИЗАЦИЯ ВХОДЯЩИХ КОНТРАКТОВ DTO)
 class RegisterRequest(BaseModel):
     email: str
+    password: str # Изменено: при регистрации передаем только email и пароль
+
+class LoginRequest(BaseModel):
+    """Контракт для входа в систему (принимает логин или почту)"""
     username: str
     password: str
 
@@ -237,14 +241,48 @@ def authentication_page():
 def register_user(user: RegisterRequest, response: Response):
     logger.info("========================================")
     logger.info(f"===> [РЕГИСТРАЦИЯ] Первичные данные получены для: {user.email}")
+    
+    # Автоматически создаем логин из Email (например, test@mail.ru -> test)
+    generated_username = user.email.split('@')[0]
+    logger.info(f"===> [РЕГИСТРАЦИЯ] Сгенерирован логин: {generated_username}")
     logger.info("========================================")
 
     response.status_code = status.HTTP_201_CREATED
     return {
         "code": 201,
         "state": "Created",
+        "username": generated_username,
         "message": "Verification code sent to email"
     }
+
+
+# ДОБАВЛЕННЫЙ ЭНДПОИНТ ДЛЯ ВХОДА (ПОДДЕРЖИВАЕТ И ЛОГИН, И EMAIL)
+@app.post("/api/auth/login")
+def login_user(user: LoginRequest, response: Response):
+    """
+    Принимает логин (или email) и пароль. Возвращает токен сессии.
+    """
+    logger.info("========================================")
+    logger.info(f"===> [ВХОД] Получены данные: {user.username}")
+    logger.info("========================================")
+    
+    # Умная обработка: если есть @, значит это Email. Берем часть до @ как логин.
+    if "@" in user.username:
+        display_username = user.username.split("@")[0]
+    else:
+        display_username = user.username # Это обычный логин
+        
+    response.status_code = status.HTTP_200_OK
+    return {
+        "user_id": 123,
+        "username": display_username, # Возвращаем чистое имя (например, "test" из "test@mail.ru")
+        "access_token": f"jwt.token.for.{display_username}.success",
+        "code": 200,
+        "state": "OK"
+    }
+
+
+# --- 8. ЭНДПОИНТЫ ДВУХФАКТОРНОГО ПОДТВЕРЖДЕНИЯ И ВОССТАНОВЛЕНИЯ ---
 
 @app.post("/api/auth/send_code")
 def send_code(payload: SendCodeRequest, response: Response):
@@ -349,61 +387,9 @@ def change_password(data: NewPasswordRequest, response: Response):
         "state": "OK"
     }
 
-@app.get("/api/db/recipes/next")
-def get_next_recipe(response: Response):
-    global NEXT_RECIPE_POINTER
-    
-    if NEXT_RECIPE_POINTER > len(MOCK_RECIPES):
-        logger.info("===> [РЕЦЕПТЫ] Все тестовые карточки выданы, возвращаем пустой массив.")
-        response.status_code = status.HTTP_200_OK
-        return {"recipes": []}
-        
-    current_id = NEXT_RECIPE_POINTER
-    NEXT_RECIPE_POINTER += 1
-    logger.info(f"===> [РЕЦЕПТЫ] Выдан следующий ID в очередь: {current_id}")
-    
-    response.status_code = status.HTTP_200_OK
-    return {
-        "recipe_id": current_id,
-        "code": 200,
-        "state": "OK"
-    }
 
-@app.get("/api/db/recipes/{recipe_id}")
-def get_recipe_details(recipe_id: int, response: Response):
-    recipe = MOCK_RECIPES.get(recipe_id)
-    if not recipe:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"code": 404, "state": "Not Found"}
-        
-    logger.info(f"===> [РЕЦЕПТЫ] Загружены детали рецепта #{recipe_id}: {recipe['title']}")
-    response.status_code = status.HTTP_200_OK
-    return {
-        **recipe,
-        "code": 200,
-        "state": "OK"
-    }
-
-@app.put("/api/db/recipes/reaction")
-def react_to_recipe(payload: RecipeReactionRequest, response: Response):
-    logger.info("========================================")
-    logger.info(f"===> [РЕАКЦИЯ] Рецепт #{payload.recipe_id} -> действие: {payload.action}")
-    logger.info("========================================")
-
-    if payload.recipe_id == 5:
-        response.status_code = status.HTTP_404_NOT_FOUND
-        return {"code": 404, "state": "Not Found"}
-
-    if payload.recipe_id == 6:
-        response.status_code = status.HTTP_401_UNAUTHORIZED
-        return {"code": 401, "state": "Unauthorized"}
-
-    response.status_code = status.HTTP_200_OK
-    return {
-        "code": 200,
-        "state": "OK"
-    }
-
+# ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ
+# ВАЖНО: Подключается строго в самом конце файла, выполняя роль фонового перехватчика.
 app.mount(
     "/",
     StaticFiles(directory=str(BASE_DIR), html=True),

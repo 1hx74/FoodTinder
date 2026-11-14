@@ -32,16 +32,15 @@
     if (submitBtn) submitBtn.disabled = true;
 
     try {
-      // Вызов функции из api.js
+      // Вызываем красивый метод из api.js. 
+      // Вся логика эндпоинта, запроса и сохранения токена скрыта внутри api.js.
       const data = await AuthAPI.login(loginValue, password);
       
-      // Сохраняем имя для отображения на других страницах (в каталоге)
-      localStorage.setItem("username", data.username || loginValue);
-      
-      // Переход на главную
+      // api.js уже сохранил и токен, и имя. Нам остается только перейти.
       window.location.href = "../glavnaya/index.html";
 
     } catch (error) {
+      // Обработка ошибок (ApiError из api.js имеет поле message)
       errorBox.textContent = error.message || "Не удалось войти";
       
       if (submitLabel) submitLabel.textContent = "Войти";
