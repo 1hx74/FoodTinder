@@ -127,28 +127,52 @@ async def refresh_tokens(
 
 @router.post("/logout", response_model=OkResponse)
 async def logout(
-    refresh_token: str | None = Cookie(alias=config.REFRESH_COOKIE_NAME, default=None),
+    response: Response,
+    refresh_token: str | None = Cookie(
+        alias=config.REFRESH_COOKIE_NAME,
+        default=None,
+    ),
     current_user: dict = Depends(security.get_current_user),
     db: Session = Depends(get_db),
 ):
-    if not refresh_token:
-        raise HTTPException(400, "Refresh token not found")
-    try:
-        payload = security.decode_token(refresh_token)
-        RefreshTokenRepository(db).revoke(payload.get("jti", ""))
-        db.commit()
-    except Exception:
-        pass
+    if refresh_token:
+        try:
+            payload = security.decode_token(refresh_token)
+            RefreshTokenRepository(db).revoke(payload["jti"])
+            db.commit()
+        except Exception:
+            pass
+
+    response.delete_cookie(
+        key=config.REFRESH_COOKIE_NAME,
+        httponly=True,
+        secure=config.COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+
     return {"ok": True}
 
 
 @router.post("/logout_all", response_model=OkResponse)
 async def logout_all(
+    response: Response,
     current_user: dict = Depends(security.get_current_user),
     db: Session = Depends(get_db),
 ):
-    RefreshTokenRepository(db).revoke_all_for_user(current_user["sub"])
+    RefreshTokenRepository(db).revoke_all_for_user(
+        current_user["sub"]
+    )
     db.commit()
+
+    response.delete_cookie(
+        key=config.REFRESH_COOKIE_NAME,
+        httponly=True,
+        secure=config.COOKIE_SECURE,
+        samesite="lax",
+        path="/",
+    )
+
     return {"ok": True}
 
 
