@@ -19,6 +19,7 @@
   position: relative;
   margin: clamp(10px, 3vh, 30px) auto clamp(10px, 1.5vh, 20px) auto; 
   flex-shrink: 0; 
+  overflow: hidden; /* Чтобы картинка не вылезала за края круга */
 }
 
 .ellipse-3 {
@@ -26,6 +27,8 @@
   border-radius: 50%;
   width: 100%;
   height: 100%;
+  object-fit: cover; /* Картинка заполняет круг, не искажаясь */
+  display: block;
 }
 
 /* =========================================================

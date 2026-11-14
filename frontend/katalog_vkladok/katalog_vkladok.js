@@ -3,19 +3,21 @@
 
   const REDIRECT_LOGIN = "../vxod/index.html";
   const REDIRECT_REGISTER = "../registration/index.html";
-  const REDIRECT_CATALOG = "../katalog_vkladok/index.html"; // Путь в каталог для клика по имени
+  const REDIRECT_CATALOG = "../katalog_vkladok/index.html";
+  const DEFAULT_AVATAR = "../glavnaya/ellipse-20.svg";
 
   // DOM-узлы
   const profileName = document.getElementById("profile-name");
   const authLinksBlock = document.getElementById("auth-links");
   const authContainer = document.getElementById("auth-container");
+  
+  // Аватарки
+  const smallAvatarImg = document.querySelector(".frame-5 .ellipse-2");
+  const bigAvatarImg = document.getElementById("big-avatar");
   const avatarLetter = document.getElementById("profile-letter");
 
   const tabLinks = document.querySelectorAll(".tab-link");
-  
-  // Первые 3 кнопки доступны гостю
   const guestAllowedTabs = Array.from(tabLinks).slice(0, 3);
-  // Последние 5 кнопок заблокированы
   const guestLockedTabs = Array.from(tabLinks).slice(3);
 
   function isAuthenticated() {
@@ -35,10 +37,40 @@
     }
   }
 
+  // =========================================================
+  // ЗАПРОС ПРОФИЛЯ ДЛЯ ЗАГРУЗКИ АВАТАРОК
+  // =========================================================
+  async function loadProfileData() {
+    if (!isAuthenticated()) return;
+
+    try {
+      const profileData = await AuthAPI.getProfile();
+      console.log("[katalog] Данные профиля загружены:", profileData);
+
+      if (profileData && profileData.avatar_url) {
+        // Если есть реальная картинка — ставим её в обе аватарки и скрываем букву
+        if (smallAvatarImg) smallAvatarImg.src = profileData.avatar_url;
+        if (bigAvatarImg) bigAvatarImg.src = profileData.avatar_url;
+        if (avatarLetter) avatarLetter.style.display = "none";
+      } else {
+        // Если нет — ставим заглушку
+        if (smallAvatarImg) smallAvatarImg.src = DEFAULT_AVATAR;
+        if (bigAvatarImg) bigAvatarImg.src = DEFAULT_AVATAR;
+        if (avatarLetter) avatarLetter.style.display = "";
+      }
+    } catch (error) {
+      console.error("[katalog] Не удалось загрузить профиль:", error);
+      if (error.status === 401) logoutUser();
+    }
+  }
+
+  // =========================================================
+  // ОТРИСОВКА ИНТЕРФЕЙСА
+  // =========================================================
+
   function renderGuestState() {
     if (profileName) profileName.textContent = "Гость";
     
-    // Шапка: Вход / Регистрация
     if (authContainer) {
       authContainer.innerHTML = `
         <a href="${REDIRECT_LOGIN}" class="div4">Вход</a>
@@ -47,7 +79,6 @@
       `;
     }
 
-    // Блок под кругом: Вход / Регистрация
     if (authLinksBlock) {
       authLinksBlock.style.display = "";
       authLinksBlock.innerHTML = `
@@ -61,9 +92,12 @@
       `;
     }
 
-    // Буква в углу: "Г"
+    // Для гостя — картинка-заглушка в обеих аватарках и буква "Г"
+    if (smallAvatarImg) smallAvatarImg.src = DEFAULT_AVATAR;
+    if (bigAvatarImg) bigAvatarImg.src = DEFAULT_AVATAR;
     if (avatarLetter) {
       avatarLetter.textContent = "Г";
+      avatarLetter.style.display = "";
     }
 
     guestAllowedTabs.forEach(link => setTabEnabled(link, true));
@@ -75,12 +109,10 @@
 
     if (profileName) profileName.textContent = username;
 
-    // Шапка: показываем имя вместо Вход/Регистрация
     if (authContainer) {
       authContainer.innerHTML = `<a href="#" class="div4">${username}</a>`;
     }
 
-    // Блок под кругом: Выйти
     if (authLinksBlock) {
       authLinksBlock.style.display = "";
       authLinksBlock.innerHTML = `
@@ -95,29 +127,28 @@
       });
     }
 
-    // Буква в углу: первая буква имени
+    // По умолчанию ставим заглушки и первую букву
+    if (smallAvatarImg) smallAvatarImg.src = DEFAULT_AVATAR;
+    if (bigAvatarImg) bigAvatarImg.src = DEFAULT_AVATAR;
     if (avatarLetter) {
       avatarLetter.textContent = username.charAt(0).toUpperCase();
+      avatarLetter.style.display = "";
     }
 
-    // Все кнопки активны
     Array.from(tabLinks).forEach(link => setTabEnabled(link, true));
+
+    // Запрашиваем аватарку (если она есть — подставится в оба круга)
+    loadProfileData();
   }
 
-  // =========================================================
-  // КЛИК ПО ИМЕНИ (ГОСТЬ / ИМЯ) В ШАПКЕ ВЕДЕТ В КАТАЛОГ
-  // =========================================================
   function setupHeaderNameClick() {
     if (!authContainer) return;
-
     authContainer.addEventListener("click", (event) => {
-      // Проверяем, что кликнули по ссылке <a>
       if (event.target.tagName === "A") {
         const text = event.target.textContent.trim();
-        // Если это не "Вход" и не "Регистрация" (они ведут на свои страницы)
         if (text !== "Вход" && text !== "Регистрация") {
           event.preventDefault(); 
-          window.location.href = REDIRECT_CATALOG; // Переходим в каталог
+          window.location.href = REDIRECT_CATALOG;
         }
       }
     });
@@ -128,12 +159,11 @@
     localStorage.removeItem("username");
     localStorage.removeItem("userId");
     localStorage.removeItem("avatarUrl");
-    
     window.location.href = "../glavnaya/index.html"; 
   }
 
   function init() {
-    setupHeaderNameClick(); // Подключаем клик по имени в шапке
+    setupHeaderNameClick(); 
 
     if (isAuthenticated()) {
       renderAuthorizedState();
