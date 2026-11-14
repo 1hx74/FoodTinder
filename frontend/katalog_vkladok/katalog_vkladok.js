@@ -141,19 +141,6 @@
     loadProfileData();
   }
 
-  function setupHeaderNameClick() {
-    if (!authContainer) return;
-    authContainer.addEventListener("click", (event) => {
-      if (event.target.tagName === "A") {
-        const text = event.target.textContent.trim();
-        if (text !== "Вход" && text !== "Регистрация") {
-          event.preventDefault(); 
-          window.location.href = REDIRECT_CATALOG;
-        }
-      }
-    });
-  }
-
   function logoutUser() {
     localStorage.removeItem("accessToken");
     localStorage.removeItem("username");
@@ -163,8 +150,6 @@
   }
 
   function init() {
-    setupHeaderNameClick(); 
-
     if (isAuthenticated()) {
       renderAuthorizedState();
     } else {

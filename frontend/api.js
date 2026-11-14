@@ -178,7 +178,7 @@ const AuthAPI = {
         // РЕЖИМ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
         if (token && username) {
             if (authContainer) {
-                authContainer.innerHTML = `<a href="#" class="div4">${username}</a>`;
+                authContainer.innerHTML = `<a href="../katalog_vkladok/index.html" class="div4">${username}</a>`;
             }
             if (profileLetter) {
                 profileLetter.innerText = username.charAt(0).toUpperCase();
