@@ -31,6 +31,23 @@
   display: block;
 }
 
+/* Буква внутри большого круга (для тех, у кого нет аватарки) */
+.big-avatar-letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff; 
+  font-family: var(--main-font);
+  font-size: clamp(32px, 8vh, 64px); /* Большой шрифт для большого круга */
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* =========================================================
    ИМЯ ПОЛЬЗОВАТЕЛЯ И ВХОД/ВЫЙТИ
    ========================================================= */
