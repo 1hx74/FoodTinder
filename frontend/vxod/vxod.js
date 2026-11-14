@@ -1,4 +1,4 @@
-/* global rawRequest, localStorage, document, window */
+/* global AuthAPI, localStorage, document, window */
 
 (function () {
   "use strict";
@@ -32,26 +32,11 @@
     if (submitBtn) submitBtn.disabled = true;
 
     try {
-      // Проверяем, загрузился ли api.js (функция rawRequest)
-      if (typeof rawRequest !== "function") {
-        throw new Error("Файл api.js не загружен. Проверьте тег <script> в HTML.");
-      }
-
-      // Вызываем rawRequest из api.js тимлида
-      // Указываем эндпоинт /api/auth/login
-      const data = await rawRequest("/api/auth/login", {
-        method: "POST",
-        body: { username: loginValue, password: password }
-      });
-
-      // Сохраняем токен и имя (как задумано в архитектуре)
-      if (data && data.access_token) {
-        localStorage.setItem("accessToken", data.access_token);
-        // Если сервер вернул username (мы это прописали в Python), берем его. Иначе — то, что ввели.
-        localStorage.setItem("username", data.username || loginValue);
-      }
-
-      // Переход на главную
+      // Вызываем красивый метод из api.js. 
+      // Вся логика эндпоинта, запроса и сохранения токена скрыта внутри api.js.
+      const data = await AuthAPI.login(loginValue, password);
+      
+      // api.js уже сохранил и токен, и имя. Нам остается только перейти.
       window.location.href = "../glavnaya/index.html";
 
     } catch (error) {

@@ -58,6 +58,24 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
 /** Глобальный объект авторизации, доступный на всем сайте */
 const AuthAPI = {
 
+    // ДОБАВЛЕНО: Метод для авторизации по логину/почте
+    async login(username, password) {
+        const data = await rawRequest("/api/auth/login", {
+            method: "POST",
+            body: { username, password }
+        });
+
+        console.log("[api.js] Ответ входа:", data);
+
+        // Сохраняем токен и имя пользователя в память
+        if (data && data.access_token) {
+            tokenStorage.set(data.access_token);
+            localStorage.setItem("username", data.username || username);
+        }
+
+        return data;
+    },
+
     async register(email, username, password, customEndpoint = "/api/auth/register") {
         const data = await rawRequest(customEndpoint, {
             method: "POST",
