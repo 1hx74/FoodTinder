@@ -4,8 +4,33 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
-from models import Recipe, ReactionAction, RecipeImpression, RecipeReaction
+from models import (
+    IngredientQuantity,
+    ReactionAction,
+    Recipe,
+    RecipeEquipment,
+    RecipeImpression,
+    RecipeIngredient,
+    RecipeReaction,
+)
+
+
+def _ingredient_rows(recipe_id: int | None, items: Sequence[dict]) -> list[RecipeIngredient]:
+    return [
+        RecipeIngredient(
+            recipe_id=recipe_id,
+            name=i["name"],
+            quantity=IngredientQuantity(i["quantity"]).value,
+            count=i["count"],
+        )
+        for i in items
+    ]
+
+
+def _equipment_rows(recipe_id: int | None, names: Sequence[str]) -> list[RecipeEquipment]:
+    return [RecipeEquipment(recipe_id=recipe_id, name=n) for n in names]
 
 
 class RecipeRepository:
@@ -15,7 +40,18 @@ class RecipeRepository:
         self.session = session
 
     async def get(self, recipe_id: int) -> Recipe | None:
-        return await self.session.get(Recipe, recipe_id)
+        """Рецепт сразу с ингредиентами и оборудованием."""
+        stmt = (
+            select(Recipe)
+            .where(Recipe.id == recipe_id)
+            .options(
+                selectinload(Recipe.ingredients),
+                selectinload(Recipe.equipment),
+            )
+            # свежие данные, даже если объект уже лежит в identity map сессии
+            .execution_options(populate_existing=True)
+        )
+        return (await self.session.execute(stmt)).scalar_one_or_none()
 
     async def get_next(
         self,
@@ -103,25 +139,95 @@ class RecipeRepository:
 
         return True
 
+    async def _recipe_ids_by_action(self, user_id: str, action: ReactionAction) -> list[int]:
+        stmt = (
+            select(RecipeReaction.recipe_id)
+            .where(
+                RecipeReaction.user_id == user_id,
+                RecipeReaction.action == action,
+            )
+            .order_by(RecipeReaction.created_at.desc())
+        )
+        return list((await self.session.execute(stmt)).scalars().all())
+
+    async def get_liked(self, user_id: str) -> list[int]:
+        return await self._recipe_ids_by_action(user_id, ReactionAction.LIKE)
+
+    async def get_disliked(self, user_id: str) -> list[int]:
+        return await self._recipe_ids_by_action(user_id, ReactionAction.DISLIKE)
+
+    async def get_favourite(self, user_id:str) -> list[int]:
+         return await self._recipe_ids_by_action(user_id, ReactionAction.FAVORITE)
     # ---------- управление рецептами ----------
 
     async def create(self, data: dict) -> Recipe:
-        recipe = Recipe(**data)
+        """data может содержать ключи ingredients (list[dict]) и equipment (list[str])."""
+        data = dict(data)
+        ingredients = data.pop("ingredients", None) or []
+        equipment = data.pop("equipment", None) or []
+
+        recipe = Recipe(
+            **data,
+            ingredients=_ingredient_rows(None, ingredients),
+            equipment=_equipment_rows(None, equipment),
+        )
         self.session.add(recipe)
         await self.session.commit()
-        return recipe
+
+        # после commit атрибуты экспайрятся, а связи у нас lazy="raise" —
+        # поэтому перечитываем рецепт целиком
+        return await self.get(recipe.id)
 
     async def update(self, recipe_id: int, data: dict) -> Recipe | None:
-        """Частичное обновление одним запросом. None, если рецепта нет."""
-        result = await self.session.execute(
-            update(Recipe).where(Recipe.id == recipe_id).values(**data).returning(Recipe)
-        )
-        recipe = result.scalar_one_or_none()
-        await self.session.commit()
-        return recipe
+        """
+        Частичное обновление. None, если рецепта нет.
+        Если ingredients / equipment переданы — список заменяется целиком
+        (пустой список очищает). Если не переданы — не трогаются.
+        """
+        data = dict(data)
+        ingredients = data.pop("ingredients", None)
+        equipment = data.pop("equipment", None)
+
+        try:
+            if data:
+                result = await self.session.execute(
+                    update(Recipe)
+                    .where(Recipe.id == recipe_id)
+                    .values(**data)
+                    .returning(Recipe.id)
+                )
+                if result.scalar_one_or_none() is None:
+                    await self.session.rollback()
+                    return None
+            else:
+                exists = await self.session.execute(
+                    select(Recipe.id).where(Recipe.id == recipe_id)
+                )
+                if exists.scalar_one_or_none() is None:
+                    return None
+
+            if ingredients is not None:
+                await self.session.execute(
+                    delete(RecipeIngredient).where(RecipeIngredient.recipe_id == recipe_id)
+                )
+                self.session.add_all(_ingredient_rows(recipe_id, ingredients))
+
+            if equipment is not None:
+                await self.session.execute(
+                    delete(RecipeEquipment).where(RecipeEquipment.recipe_id == recipe_id)
+                )
+                self.session.add_all(_equipment_rows(recipe_id, equipment))
+
+            await self.session.commit()
+        except IntegrityError:
+            # рецепт удалили параллельно (FK при вставке дочерних строк)
+            await self.session.rollback()
+            return None
+
+        return await self.get(recipe_id)
 
     async def delete(self, recipe_id: int) -> bool:
-        """Реакции и impressions удаляются каскадом (ON DELETE CASCADE)."""
+        """Реакции, impressions, ингредиенты и оборудование удаляются каскадом (ON DELETE CASCADE)."""
         result = await self.session.execute(
             delete(Recipe).where(Recipe.id == recipe_id).returning(Recipe.id)
         )
