@@ -45,30 +45,45 @@
       <main class="main-content">
         <!-- Карточка рецепта -->
         <div class="frame-16" id="recipe-card">
-          <div class="frame-24">
-            <img class="rectangle-14" id="recipe-image" src="rectangle-140.png" alt="Блюдо" />
+          <!-- Картинка на всю ширину карточки -->
+          <img class="rectangle-14" id="recipe-image" src="" alt="Блюдо" />
+
+          <div class="recipe-inner-content">
             <div class="div7">
               <div class="recipe-title" id="recipe-title">Загрузка рецепта...</div>
               <div class="recipe-desc" id="recipe-description"></div>
             </div>
+
+            <!-- МЕТАДАННЫЕ: Сложность, Калории, Время, Б/Ж/У, Вес -->
+            <div class="recipe-meta-column">
+              <div class="recipe-meta-row">
+                <div class="difficulty-box">
+                  <span class="meta-label">Сложность:</span>
+                  <div class="stars-row" id="recipe-stars"></div>
+                </div>
+                <div class="calories-box" id="recipe-calories"></div>
+              </div>
+
+              <div class="recipe-meta-row info-row">
+                <span>⏱ <span id="recipe-time"></span> мин</span>
+                <span>⚖️ <span id="recipe-weight"></span> г</span>
+              </div>
+
+              <div class="recipe-meta-row macros-row">
+                <span>Белки: <strong id="recipe-belki"></strong> г</span>
+                <span>Жиры: <strong id="recipe-fats"></strong> г</span>
+                <span>Углеводы: <strong id="recipe-uglevods"></strong> г</span>
+              </div>
+            </div>
+
+            <!-- ОБОРУДОВАНИЕ В ОВАЛАХ -->
+            <div class="equipment-section">
+              <div class="meta-label">Оборудование:</div>
+              <div class="equipment-container" id="recipe-equipment"></div>
+            </div>
           </div>
 
-                      <!-- Рейтинг (сложность) и калорийность отдельными строками -->
-          <div class="recipe-meta-column">
-            <div class="difficulty-box">
-              <span class="meta-label">Сложность:</span>
-              <div class="stars-row" id="recipe-stars"></div>
-            </div>
-            <div class="difficulty-box">
-              <span class="meta-label">Калорийность:</span>
-              <span class="calories-box" id="recipe-calories"></span>
-            </div>
-          </div>
-
-
-
-
-          <!-- Кнопка перехода к полному рецепту -->
+          <!-- Кнопка «Посмотреть рецепт» в самом низу внутри рамки карточки -->
           <a href="#" target="_blank" class="div5" id="recipe-link-btn">
             <span class="div6">Посмотреть рецепт</span>
           </a>
@@ -90,10 +105,8 @@
             </button>
 
             <button type="button" class="reaction-btn fav-btn" id="btn-favorite" aria-label="В избранное" title="В избранное">
-                <!-- Заменили star-10.svg на твой файл favorite.svg -->
                 <img class="fav-icon" src="favorite.svg" alt="В избранное" />
             </button>
-
 
             <button type="button" class="reaction-btn" id="btn-like" aria-label="Нравится">
                 <img class="div9" src="like.svg" alt="Нравится" />

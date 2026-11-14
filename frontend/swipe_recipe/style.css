@@ -23,12 +23,12 @@
   width: 100%;
   max-width: 351px;
   flex: 1;
-  max-height: 572px;
+  max-height: 620px;
   padding: 20px 22px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 12px;
+  gap: 14px;
   overflow: hidden;
   transition: transform 0.25s ease, opacity 0.25s ease;
 }
@@ -43,33 +43,35 @@
   opacity: 0;
 }
 
-.frame-24 {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  width: 100%;
-  flex: 1;
-  overflow: hidden;
-}
-
+/* КАРТИНКА (растянута немного вниз) */
 .rectangle-14 {
   border-radius: 16px;
   width: 100%;
-  height: 260px;
+  height: 225px;
   object-fit: cover;
   flex-shrink: 0;
   background: #f5f5f5;
 }
 
+/* КОНТЕЙНЕР СЕКЦИЙ ВНУТРИ КАРТОЧКИ */
+.recipe-inner-content {
+  display: flex;
+  flex-direction: column;
+  gap: 14px; /* Чёткий отступ между 3 секциями */
+  width: 100%;
+  flex: 1;
+  overflow-y: auto;
+}
+
+/* СЕКЦИЯ 1: Название + описание */
 .div7 {
   color: #000000;
   text-align: left;
   font-family: var(--main-font);
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  overflow-y: auto;
-  flex: 1;
+  gap: 4px;
+  flex-shrink: 0;
 }
 
 .recipe-title {
@@ -85,7 +87,17 @@
   color: #222222;
 }
 
-/* СТРОКА СЛОЖНОСТИ И КАЛОРИЙНОСТИ */
+/* СЕКЦИЯ 2: Сложность, калории, время, вес, БЖУ */
+.recipe-meta-column {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid #ececec;
+  flex-shrink: 0;
+}
+
 .recipe-meta-row {
   display: flex;
   flex-direction: row;
@@ -118,6 +130,18 @@
   white-space: nowrap;
 }
 
+.info-row, .macros-row {
+  font-family: var(--main-font);
+  font-size: 13px;
+  color: #444;
+  justify-content: space-between;
+}
+
+.macros-row {
+  font-size: 12px;
+  color: #666;
+}
+
 /* ЗВЁЗДЫ РЕЙТИНГА */
 .stars-row {
   display: flex;
@@ -131,6 +155,48 @@
 .star-icon {
   width: 22px;
   height: 20px;
+}
+
+/* СЕКЦИЯ 3: Оборудование в овалах */
+.equipment-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+  padding-top: 10px;
+  border-top: 1px solid #ececec;
+  flex-shrink: 0;
+}
+
+.equipment-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  max-height: 70px;
+  overflow-y: auto;
+}
+
+.equipment-pill {
+  font-family: var(--main-font);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.equipment-pill.available {
+  background-color: var(--primary-color, #964F4C);
+  color: #ffffff;
+}
+
+.equipment-pill.unavailable {
+  background-color: #e0e0e0;
+  color: #777777;
+  opacity: 0.7;
 }
 
 /* КНОПКА "ПОСМОТРЕТЬ РЕЦЕПТ" */
@@ -221,8 +287,8 @@
 }
 
 @media (max-height: 720px) {
-  .rectangle-14 { height: 190px; }
-  .frame-16 { padding: 14px 16px; gap: 8px; }
+  .rectangle-14 { height: 180px; }
+  .frame-16 { padding: 14px 16px; gap: 10px; }
   .div5 { height: 46px; }
   .frame-18 { height: 70px; margin-top: 8px; }
   .div8, .div9, .reaction-btn { width: 60px; height: 56px; }

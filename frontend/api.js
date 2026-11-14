@@ -1,13 +1,10 @@
 /**
  * ДЛЯ ЧЕГО: Это единый глобальный сервис авторизации и поддержания сессии.
- * Он отвечает строго за техническую работу с сетью и токенами:
- * 1. Принимает запросы от страниц, упаковывает их в JSON и отправляет по сети через fetch().
- * 2. Автоматически сохраняет выданный сервером JWT-токен в память браузера (localStorage).
- * Этот файл является общим, его не нужно менять при создании новых страниц форм.
+ * Он управляет сетевыми запросами и глобальным кешем в localStorage.
  */
 
-const SERVER_PORT = window.location.port || "8000";
-const API_BASE = `http://localhost:${SERVER_PORT}`;
+const API = "localhost";
+const API_BASE = `http://${API}:`;
 
 class ApiError extends Error {
     constructor(message, status, data) {
@@ -21,33 +18,26 @@ class ApiError extends Error {
 const tokenStorage = {
     get() { return localStorage.getItem("accessToken"); },
     set(token) { localStorage.setItem("accessToken", token); },
-    //Добавлен обязательный вызов localStorage для предотвращения ошибки undefined при очистке сессии
     clear() { localStorage.removeItem("accessToken"); }
 };
 
-/** Низкоуровневый сетевой fetch-клиент */
 async function rawRequest(endpoint, { method = "GET", body } = {}) {
     const headers = { "Content-Type": "application/json" };
-
-    // Передаём JWT-токен, если пользователь авторизован
     const token = tokenStorage.get();
     if (token) {
         headers["Authorization"] = `Bearer ${token}`;
     }
     
-    // Корректируем слэши: гарантируем, что путь начнется со слэша
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
     
     let response;
     try {
-        // Идеальная склейка без дублирования двоеточий или слэшей
         response = await fetch(`${API_BASE}${cleanEndpoint}`, {
             method,
             headers,
             body: body ? JSON.stringify(body) : undefined
         });
     } catch (e) {
-        // Теперь сюда не будет падать из-за пустого порта в file://
         throw new ApiError("Ошибка соединения: сервер недоступен", 0, null);
     }
 
@@ -61,118 +51,167 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
     return data;
 }
 
-/** Глобальный объект авторизации, доступный на всем сайте */
 const AuthAPI = {
-
     async register(email, username, password, customEndpoint = "/api/auth/register") {
-        const data = await rawRequest(customEndpoint, {
+        return await rawRequest(customEndpoint, {
             method: "POST",
             body: { email, username, password }
         });
-
-        console.log("[api.js] Ответ регистрации:", data);
-        // МИНИМАЛЬНОЕ ИЗМЕНЕНИЕ: При двухфакторке токен сохраняется на шаге проверки кода, 
-        // поэтому здесь просто возвращаем чистый ответ бэкенда для редиректа.
-        return data;
     },
 
-    // ДОБАВЛЕНО: Минимальный метод для проверки кода на странице /authentication
     async verifyRegisterCode(email, code, customEndpoint = "/api/auth/verify_code") {
         const data = await rawRequest(customEndpoint, {
             method: "POST",
             body: { email, code }
         });
-
-        console.log("[api.js] Ответ верификации кода:", data);
-
-        // Если код верный и бэкенд отдал токен доступа — сохраняем сессию!
         if (data && data.access_token) {
             localStorage.setItem("accessToken", data.access_token);
-            console.log("[api.js] Токен успешно сохранён после ввода кода:", localStorage.getItem("accessToken"));
         }
-
         return data;
     },
 
-    //Метод сохранения настроек профиля (аллергии, диеты, приборы)
     async updatePreferences(preferencesData, customEndpoint = "/api/db/me/preferences") {
         const data = await rawRequest(customEndpoint, {
             method: "PATCH",
             body: preferencesData
         });
-
-        console.log("[api.js] Ответ сервера на сохранение настроек:", data);
+        // Сбрасываем кеш оборудования при обновлении
+        localStorage.removeItem("global_cache_equipment");
         return data;
     },
 
-    // Получение ранее сохраненных настроек профиля из сессии
     async getPreferences(customEndpoint = "/api/db/me/preferences") {
-        return await rawRequest(customEndpoint, {
-            method: "GET" // Строго по твоему GET контракту
-        });
+        return await rawRequest(customEndpoint, { method: "GET" });
     },
 
-    //Получение данных текущего профиля пользователя
+    // --- СХЕМА КЕШИРОВАНИЯ И ПРОВЕРОК ---
+
+    // 1. Кеш оборудования (глобальный)
+    async getCachedEquipment() {
+        const cacheKey = "global_cache_equipment";
+        let cached = localStorage.getItem(cacheKey);
+        if (cached) {
+            return JSON.parse(cached);
+        }
+
+        // Если не авторизован, у неавторизованных пустой список оборудования по умолчанию
+        if (!this.isAuthenticated()) {
+            const emptyEq = { kitchen_equipment: [] };
+            localStorage.setItem(cacheKey, JSON.stringify(emptyEq));
+            return emptyEq;
+        }
+
+        try {
+            const data = await this.getPreferences();
+            if (data) {
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                return data;
+            }
+        } catch (e) {
+            console.error("[api.js] Ошибка загрузки оборудования:", e);
+        }
+        return { kitchen_equipment: [] };
+    },
+
+    // 2. Кеш для неавторизованных: Лайки и Дизлайки (списки ID рецептов)
+    getGuestReactionIds(actionType) {
+        // actionType: 'liked' или 'disliked'
+        const key = `guest_cache_${actionType}_ids`;
+        try {
+            return JSON.parse(localStorage.getItem(key)) || [];
+        } catch (_) {
+            return [];
+        }
+    },
+
+    addGuestReactionId(recipeId, actionType) {
+        if (this.isAuthenticated()) return; // Авторизованные шлют на бэк
+        const key = `guest_cache_${actionType}_ids`;
+        let list = this.getGuestReactionIds(actionType);
+        if (!list.includes(recipeId)) {
+            list.push(recipeId);
+            localStorage.setItem(key, JSON.stringify(list));
+        }
+    },
+
+    // 3. Кеш профиля для авторизованных
+    async getCachedProfile() {
+        const cacheKey = "global_cache_profile";
+        let cached = localStorage.getItem(cacheKey);
+        if (cached) return JSON.parse(cached);
+
+        if (!this.isAuthenticated()) return null;
+
+        try {
+            const data = await this.getProfile();
+            if (data) {
+                localStorage.setItem(cacheKey, JSON.stringify(data));
+                return data;
+            }
+        } catch (e) {
+            console.error("[api.js] Ошибка загрузки профиля:", e);
+        }
+        return null;
+    },
+
     async getProfile() {
-        return await rawRequest("/api/db/me", {
-            method: "GET"
-        });
+        return await rawRequest("/api/db/me", { method: "GET" });
     },
 
-    //Частичное обновление данных профиля и загруженной аватарки
     async updateProfile(profileData) {
-        return await rawRequest("/api/db/me", {
+        const data = await rawRequest("/api/db/me", {
             method: "PATCH",
             body: profileData
         });
+        localStorage.removeItem("global_cache_profile");
+        return data;
     },
 
-    //Запрос проверочного кода на Email (восстановление пароля)
     async sendRecoveryCode(email) {
-        return await rawRequest("/api/auth/send_code", {
-            method: "POST",
-            body: { email }
-        });
+        return await rawRequest("/api/auth/send_code", { method: "POST", body: { email } });
     },
 
-    //Верификация кода с почты
     async verifyRecoveryCode(email, code) {
-        return await rawRequest("/api/auth/verify_code", {
-            method: "POST",
-            body: { email, code }
-        });
+        return await rawRequest("/api/auth/verify_code", { method: "POST", body: { email, code } });
     },
 
-    //Отправка нового пароля на сервер по выданному токену сброса
     async resetPassword(resetToken, newPassword) {
-        return await rawRequest("/api/auth/new_pswd", {
-            method: "POST",
-            body: { 
-                reset_token: resetToken, 
-                new_password: newPassword 
-            }
-        });
+        return await rawRequest("/api/auth/new_pswd", { method: "POST", body: { reset_token: resetToken, new_password: newPassword } });
     },
 
-    // Получить ID следующего рецепта для ленты
     async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {
         return await rawRequest(customEndpoint, { method: "GET" });
     },
 
-    // Получить полную карточку рецепта по ID
     async getRecipeById(recipeId) {
         return await rawRequest(`/api/db/recipes/${recipeId}`, { method: "GET" });
     },
 
-    // Отправить реакцию пользователя (like / dislike / favorite)
     async sendRecipeReaction(recipeId, action, customEndpoint = "/api/db/recipes/reaction") {
-        return await rawRequest(customEndpoint, {
+        // Если пользователь не авторизован и это лайк/дизлайк — пишем в локальный кеш ID
+        if (!this.isAuthenticated() && (action === "like" || action === "dislike")) {
+            const actionType = action === "like" ? "liked" : "disliked";
+            this.addGuestReactionId(recipeId, actionType);
+            return { code: 200, state: "OK (Guest Cached)" };
+        }
+
+        // Если авторизован, отправляем на бэкенд (авторизованные ответы кешируются при необходимости)
+        const res = await rawRequest(customEndpoint, {
             method: "PUT",
             body: { recipe_id: recipeId, action }
         });
+        
+        // Кешируем ответ реакций авторизованного пользователя
+        const cacheKey = `auth_cache_reaction_${action}`;
+        let cached = JSON.parse(localStorage.getItem(cacheKey) || "[]");
+        if (!cached.includes(recipeId)) {
+            cached.push(recipeId);
+            localStorage.setItem(cacheKey, JSON.stringify(cached));
+        }
+
+        return res;
     },
 
-    // Глобальная функция автоматического переключения шапки интерфейса
     updateHeaderUI() {
         const authContainer = document.getElementById("auth-container");
         const profileLetter = document.getElementById("profile-letter");
@@ -180,7 +219,6 @@ const AuthAPI = {
         const token = localStorage.getItem("accessToken");
         const username = localStorage.getItem("username");
 
-        // РЕЖИМ АВТОРИЗОВАННОГО ПОЛЬЗОВАТЕЛЯ
         if (token && username) {
             if (authContainer) {
                 authContainer.innerHTML = `<a href="#" class="div4">${username}</a>`;
@@ -188,10 +226,7 @@ const AuthAPI = {
             if (profileLetter) {
                 profileLetter.innerText = username.charAt(0).toUpperCase();
             }
-            console.log(`[api.js] Шапка страницы успешно обновлена для пользователя: ${username}`);
-        } 
-        // РЕЖИМ ГОСТЯ
-        else {
+        } else {
             if (authContainer) {
                 authContainer.innerHTML = `
                     <a href="../vxod/index.html" class="div4">Вход</a>
@@ -210,10 +245,8 @@ const AuthAPI = {
     }
 };
 
-// АВТО-ЗАПУСК: Как только любая страница загрузит api.js, он сам мгновенно перерисует шапку под сессию
 document.addEventListener("DOMContentLoaded", () => {
     AuthAPI.updateHeaderUI();
 });
 
-// Экспортируем в глобальную видимость окна браузера
 window.AuthAPI = AuthAPI;

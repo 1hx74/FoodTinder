@@ -40,76 +40,133 @@ BASE_DIR = Path(__file__).resolve().parent
 
 MOCK_RECIPES = {
     1: {
-        "recipe_id": 1,
-        "image_url": "rectangle-140.png",
-        "title": "Паста Карбонара с хрустящим беконом",
-        "description": "Классический итальянский рецепт с нежным сливочно-яичным соусом и пармезаном. Готовится всего за 20 минут!",
+        "recipe_id": 3,
+        "image_url": "https://placehold.co/600x400?text=Паста+карбонара",
+        "title": "Паста карбонара",
+        "description": "Спагетти, бекон, яйцо и пармезан",
         "stars": 5,
-        "kitchen_equipment": ["stove", "pot"],
-        "products": ["pasta", "bacon", "eggs", "parmesan"],
-        "calories_and_macros": 640,
-        "hyper-text": "https://example.com",
+        "hyper-text": "https://example.com/recipes/3.html",
+        "cooking_time": 25,
+        "difficulty": 2,
+        "kalories": 520,
+        "belki": 22,
+        "fats": 24,
+        "uglevods": 55,
+        "final_weight": 350,
+        "ingredients": [
+            {"name": "Спагетти", "quantity": "gramm", "count": 200},
+            {"name": "Бекон", "quantity": "gramm", "count": 100},
+            {"name": "Яичные желтки", "quantity": "item", "count": 3},
+            {"name": "Пармезан", "quantity": "gramm", "count": 50}
+        ],
+        "equipment": ["stove", "pot", "grater"],
+        "code": 200,
+        "state": "OK"
     },
     2: {
         "recipe_id": 2,
-        "image_url": "rectangle-140.png",
-        "title": "Том Ям с креветками и кокосовым молоком",
-        "description": "Пряный тайский суп с яркой кислинкой лайма, лемонграссом и тигровыми креветками.",
+        "image_url": "https://placehold.co/600x400?text=Том+Ям",
+        "title": "Том Ям с креветками",
+        "description": "Пряный тайский суп с кокосовым молоком",
         "stars": 4,
-        "kitchen_equipment": ["stove", "pot"],
-        "products": ["shrimp", "coconut_milk", "lime", "mushrooms"],
-        "calories_and_macros": 420,
-        "hyper-text": "https://example.com",
+        "hyper-text": "https://example.com/recipes/2.html",
+        "cooking_time": 30,
+        "difficulty": 3,
+        "kalories": 410,
+        "belki": 28,
+        "fats": 16,
+        "uglevods": 35,
+        "final_weight": 400,
+        "ingredients": [
+            {"name": "Креветки", "quantity": "gramm", "count": 150}
+        ],
+        "equipment": ["stove", "pot"],
+        "code": 200,
+        "state": "OK"
     },
     3: {
         "recipe_id": 3,
-        "image_url": "rectangle-140.png",
-        "title": "Сырники из фермерского творога с ягодами",
-        "description": "Пышные золотистые сырники с ванилью, подаются со сметаной и свежей голубикой.",
+        "image_url": "https://placehold.co/600x400?text=Сырники",
+        "title": "Сырники классические",
+        "description": "Нежные творожные сырники с ванилью и сметаной",
         "stars": 5,
-        "kitchen_equipment": ["stove", "frying_pan"],
-        "products": ["cottage_cheese", "eggs", "flour", "berries"],
-        "calories_and_macros": 380,
-        "hyper-text": "https://example.com",
+        "hyper-text": "https://example.com/recipes/3.html",
+        "cooking_time": 20,
+        "difficulty": 1,
+        "kalories": 350,
+        "belki": 24,
+        "fats": 18,
+        "uglevods": 25,
+        "final_weight": 250,
+        "ingredients": [
+            {"name": "Творог", "quantity": "gramm", "count": 300}
+        ],
+        "equipment": ["stove", "blender"],
+        "code": 200,
+        "state": "OK"
     },
     4: {
         "recipe_id": 4,
-        "image_url": "rectangle-140.png",
-        "title": "Запечённый лосось со спаржей и лимоном",
-        "description": "Сочное филе красной рыбы в духовке с ароматными травами и хрустящей зелёной спаржей.",
+        "image_url": "https://placehold.co/600x400?text=Лосось",
+        "title": "Запечённый лосось",
+        "description": "Красная рыба под лимонным соусом в духовке",
         "stars": 4,
-        "kitchen_equipment": ["oven", "backing_dish"],
-        "products": ["salmon", "asparagus", "lemon", "olive_oil"],
-        "calories_and_macros": 510,
-        "hyper-text": "https://example.com",
+        "hyper-text": "https://example.com/recipes/4.html",
+        "cooking_time": 25,
+        "difficulty": 2,
+        "kalories": 480,
+        "belki": 34,
+        "fats": 22,
+        "uglevods": 10,
+        "final_weight": 300,
+        "ingredients": [
+            {"name": "Лосось", "quantity": "gramm", "count": 250}
+        ],
+        "equipment": ["oven", "backing_dish"],
+        "code": 200,
+        "state": "OK"
     },
     5: {
         "recipe_id": 5,
-        "image_url": "rectangle-140.png",
-        "title": "[ТЕСТ ОШИБКИ 404] Удалённый рецепт рамена",
-        "description": "Нажми 'Избранное' — увидишь предупреждение. Нажми 'Лайк/Дизлайк' — ошибка проигнорируется!",
+        "image_url": "https://placehold.co/600x400?text=Рамен",
+        "title": "[ТЕСТ ОШИБКИ 404] Рамен",
+        "description": "Тестовая карточка с симуляцией 404 ошибки бэкенда",
         "stars": 3,
-        "kitchen_equipment": ["stove"],
-        "products": ["noodles", "egg"],
-        "calories_and_macros": 490,
-        "hyper-text": "https://example.com",
+        "hyper-text": "https://example.com/recipes/5.html",
+        "cooking_time": 40,
+        "difficulty": 3,
+        "kalories": 550,
+        "belki": 20,
+        "fats": 20,
+        "uglevods": 60,
+        "final_weight": 500,
+        "ingredients": [],
+        "equipment": ["stove"],
+        "code": 404,
+        "state": "Not Found"
     },
     6: {
         "recipe_id": 6,
-        "image_url": "rectangle-140.png",
-        "title": "[ТЕСТ ОШИБКИ 401] Секретный стейк Рибай",
-        "description": "При любой реакции на эту карточку сервер вернёт 401 Unauthorized и предложит войти в аккаунт.",
+        "image_url": "https://placehold.co/600x400?text=Стейк",
+        "title": "[ТЕСТ ОШИБКИ 401] Стейк Рибай",
+        "description": "Тестовая карточка с симуляцией 401 ошибки авторизации",
         "stars": 5,
-        "kitchen_equipment": ["stove", "frying_pan"],
-        "products": ["beef", "rosemary", "butter"],
-        "calories_and_macros": 780,
-        "hyper-text": "https://example.com",
+        "hyper-text": "https://example.com/recipes/6.html",
+        "cooking_time": 15,
+        "difficulty": 4,
+        "kalories": 700,
+        "belki": 45,
+        "fats": 40,
+        "uglevods": 5,
+        "final_weight": 350,
+        "ingredients": [],
+        "equipment": ["stove"],
+        "code": 401,
+        "state": "Unauthorized"
     },
 }
 
 # 1. ПОЛИТИКА КРОСС-ДОМЕННОЙ БЕЗОПАСНОСТИ (НАСТРОЙКА CORS)
-# Позволяет локальным файлам, инструментам тестирования или сторонним клиентам
-# беспрепятственно выполнять сетевые запросы к нашему API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -121,11 +178,6 @@ app.add_middleware(
 
 # ОБЪЕКТЫ ПЕРЕДАЧИ ДАННЫХ (ТИПИЗАЦИЯ ВХОДЯЩИХ КОНТРАКТОВ DTO)
 class RegisterRequest(BaseModel):
-    """
-    Слой валидации данных Pydantic. Гарантирует строгую проверку типов входящего тела HTTP-запроса.
-    Если присланные JSON-свойства не будут соответствовать этим строковым ограничениям (str),
-    FastAPI автоматически заблокирует запрос и вернет клиенту ошибку 422 Unprocessable Entity.
-    """
     email: str
     username: str
     password: str
@@ -149,62 +201,44 @@ class NewPasswordRequest(BaseModel):
     reset_token: str
     new_password: str
 
-# Контракт строго разделен на 4 независимые категории полей
 class PreferencesRequest(BaseModel):
-    """Контракт валидации для сохранения настроек профиля"""
-    allergies: list[str] = []
-    diets: list[str] = []
+    """Контракт валидации для сохранения настроек профиля (с учётом forbidden вместо старых аллергий)"""
+    forbidden: list[str] = []
     religions: list[str] = []
     kitchen_equipment: list[str] = []
 
 NEXT_RECIPE_POINTER = 1
 class RecipeReactionRequest(BaseModel):
-    """Контракт реакции на карточку рецепта (like / dislike / favorite)"""
     recipe_id: int
     action: str
 
 @app.get("/swipe")
 def swipe_page():
-    """Перенаправляет на страницу свайпа рецептов"""
     return RedirectResponse(url="/swipe/")
 
 
-# ПЕРЕНАПРАВЛЕНИЕ НАВИГАЦИИ ФРОНТЕНДА (ДВИЖОК РЕДИРЕКТОВ)
 @app.get("/")
 def main_page():
-    """
-    Перехватывает базовые заходы пользователя на корневой адрес сервера (http://127.0.0.1:8000)
-    и отправляет браузеру команду мгновенного перенаправления (HTTP 307 Redirect) в папку главной страницы.
-    """
     return RedirectResponse(url="/glavnaya/")
 
 
 @app.get("/registration")
 def registration_page():
-    """
-    Нормализует вводимые пользователем URL-адреса, прозрачно перенаправляя
-    короткие пути на физические директории статических файлов фронтенда.
-    """
     return RedirectResponse(url="/registration/")
 
 
 @app.get("/authentication")
 def authentication_page():
-    """Перенаправляет на физический индекс внутри папки authentication"""
     return RedirectResponse(url="/authentication/")
 
 
-# ОБРАБОТКА ДАННЫХ API (СИМУЛЯЦИЯ БИЗНЕС-ЛОГИКИ БЭКЕНДА)
+# ОБРАБОТКА ДАННЫХ API
 @app.post("/api/auth/register")
 def register_user(user: RegisterRequest, response: Response):
-    """
-    Шаг 1: Принимает первичные данные регистрации. Симулирует отправку кода на почту.
-    """
     logger.info("========================================")
     logger.info(f"===> [РЕГИСТРАЦИЯ] Первичные данные получены для: {user.email}")
     logger.info("========================================")
 
-    # Выставляем статус 201 Created — данные успешно кэшированы, ждем код подтверждения
     response.status_code = status.HTTP_201_CREATED
     return {
         "code": 201,
@@ -212,12 +246,8 @@ def register_user(user: RegisterRequest, response: Response):
         "message": "Verification code sent to email"
     }
 
-
-# --- 8. ЭНДПОИНТЫ ДВУХФАКТОРНОГО ПОДТВЕРЖДЕНИЯ И ВОССТАНОВЛЕНИЯ ---
-
 @app.post("/api/auth/send_code")
 def send_code(payload: SendCodeRequest, response: Response):
-    """Вспомогательный шаг: Повторный запрос проверочного кода на Email"""
     logger.info(f"===> [ВОССТАНОВЛЕНИЕ] Запрос кода на email: {payload.email}")
     
     if "error" in payload.email:
@@ -233,7 +263,6 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
     logger.info(f"===> [ВЕРИФИКАЦИЯ] Проверка кода {payload.code} для: {payload.email}")
     logger.info("========================================")
     
-    # Сервер проверяет код. Если не совпал — шлет ошибку 400
     if payload.code != "123456":
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"code": 400, "state": "Bad Request", "message": "Invalid code"}
@@ -241,7 +270,6 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
     response.status_code = status.HTTP_200_OK
     extracted_username = payload.email.split('@')[0]
     
-    # Возвращает токен, который api.js перехватит и положит в localStorage
     return {
         "code": 200,
         "state": "OK",
@@ -249,19 +277,12 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
         "reset_token": f"temporary-token-for-password-reset-via-{payload.email}"
     }
 
-
-#Эндпоинт теперь логирует и обрабатывает ровно 4 массива
 @app.patch("/api/db/me/preferences")
 def update_user_preferences(payload: PreferencesRequest, response: Response):
-    """
-    Принимает массивы выбранных (красных) кнопок с фронтенда по 4 категориям.
-    Если категория пуста, в терминал выведется пустой список [].
-    """
     logger.info("========================================")
     logger.info("===> [БЭКЕНД ФИЛТР] Настройки пользователя обновлены!")
-    logger.info(f"Аллергии (allergies): {payload.allergies}")
-    logger.info(f"Диеты (diets): {payload.diets}")
-    logger.info(f"Религия (religions): {payload.religions}")
+    logger.info(f"Запрещенное (forbidden): {payload.forbidden}")
+    logger.info(f"Религии (religions): {payload.religions}")
     logger.info(f"Оборудование (kitchen_equipment): {payload.kitchen_equipment}")
     logger.info("========================================")
 
@@ -271,29 +292,19 @@ def update_user_preferences(payload: PreferencesRequest, response: Response):
         "state": "OK"
     }
 
-# --- 10. ПОЛУЧЕНИЕ НАСТРОЕК ПРОФИЛЯ ПО КОНТРАКТУ GET ---
 @app.get("/api/db/me/preferences")
 def get_user_preferences(response: Response):
-    """
-    Имитирует получение сохраненных фильтров пользователя из базы данных сессии.
-    Возвращает JSON согласно твоему GET-контракту.
-    """
     logger.info("===> [БЭКЕНД ФИЛЬТР] Запрос GET /api/db/me/preferences успешно обработан!")
     
     response.status_code = status.HTTP_200_OK
-    
-    # Мокаем (симулируем) ответ: пусть по умолчанию будут включены орехи, лактоза, халяль и микроволновка
     return {
-        "forbidden": ["nuts", "lactose"],
-        "religions": ["halal"],
-        "kitchen_equipment": ["microwave", "oven"]
+        "forbidden": ["nuts", "fish"],
+        "religions": ["halal", "vegan"],
+        "kitchen_equipment": ["microwave", "toaster", "stove"]
     }
-
-# --- ЭНДПОИНТЫ ЛИЧНОГО КАБИНЕТА ПОЛЬЗОВАТЕЛЯ ---
 
 @app.get("/api/db/me")
 def get_my_profile(response: Response):
-    """Возвращает данные текущего профиля с учетом сохраненной аватарки"""
     global SAVED_AVATAR_DATA, SAVED_USERNAME_DATA
     logger.info("===> [БЭКЕНД] Запрос GET /api/db/me")
     
@@ -301,7 +312,7 @@ def get_my_profile(response: Response):
     return {
         "user_id": 123,
         "username": SAVED_USERNAME_DATA,
-        "avatar_url": SAVED_AVATAR_DATA,  # Возвращаем сохраненную картинку (или None)
+        "avatar_url": SAVED_AVATAR_DATA,
         "email": "valeria@example.com",
         "birth_date": "15.06.1995",
         "gender": "Ж",
@@ -313,15 +324,12 @@ def get_my_profile(response: Response):
 
 @app.patch("/api/db/me")
 def update_my_profile(payload: UpdateProfileRequest, response: Response):
-    """Обновляет параметры пользователя и аватарку на сервере"""
     global SAVED_AVATAR_DATA, SAVED_USERNAME_DATA
     logger.info("===> [БЭКЕНД] Профиль и аватарка успешно обновлены!")
     
-    # Сохраняем измененные фронтендом данные в память сервера
     SAVED_USERNAME_DATA = payload.username
     if payload.avatar_url:
         SAVED_AVATAR_DATA = payload.avatar_url
-        logger.info("===> [БЭКЕНД] Новая аватарка успешно бинаризирована и сохранена в кэш сервера.")
     
     response.status_code = status.HTTP_200_OK
     return {
@@ -331,7 +339,6 @@ def update_my_profile(payload: UpdateProfileRequest, response: Response):
 
 @app.post("/api/auth/new_pswd")
 def change_password(data: NewPasswordRequest, response: Response):
-    """Принимает запрос на установку нового пароля по токену сброса"""
     logger.info("========================================")
     logger.info(f"===> [БЭКЕНД] Запрос на смену пароля успешно получен.")
     logger.info("========================================")
@@ -344,7 +351,6 @@ def change_password(data: NewPasswordRequest, response: Response):
 
 @app.get("/api/db/recipes/next")
 def get_next_recipe(response: Response):
-    """Выдаёт ID следующего рецепта для пополнения очереди на фронтенде"""
     global NEXT_RECIPE_POINTER
     
     if NEXT_RECIPE_POINTER > len(MOCK_RECIPES):
@@ -365,7 +371,6 @@ def get_next_recipe(response: Response):
 
 @app.get("/api/db/recipes/{recipe_id}")
 def get_recipe_details(recipe_id: int, response: Response):
-    """Возвращает полную карточку рецепта по его ID"""
     recipe = MOCK_RECIPES.get(recipe_id)
     if not recipe:
         response.status_code = status.HTTP_404_NOT_FOUND
@@ -381,17 +386,14 @@ def get_recipe_details(recipe_id: int, response: Response):
 
 @app.put("/api/db/recipes/reaction")
 def react_to_recipe(payload: RecipeReactionRequest, response: Response):
-    """Принимает реакцию (like / dislike / favorite) и симулирует ошибки 404 и 401"""
     logger.info("========================================")
     logger.info(f"===> [РЕАКЦИЯ] Рецепт #{payload.recipe_id} -> действие: {payload.action}")
     logger.info("========================================")
 
-    # Симуляция ошибки 404 (рецепт удалили на сервере)
     if payload.recipe_id == 5:
         response.status_code = status.HTTP_404_NOT_FOUND
         return {"code": 404, "state": "Not Found"}
 
-    # Симуляция ошибки 401 (пользователь не авторизован)
     if payload.recipe_id == 6:
         response.status_code = status.HTTP_401_UNAUTHORIZED
         return {"code": 401, "state": "Unauthorized"}
@@ -402,18 +404,12 @@ def react_to_recipe(payload: RecipeReactionRequest, response: Response):
         "state": "OK"
     }
 
-
-
-# ДВИЖОК ПОДКЛЮЧЕНИЯ И РАЗДАЧИ СТАТИЧЕСКИХ РЕСУРСОВ
-# ВАЖНО: Подключается строго в самом конце файла, выполняя роль фонового перехватчика.
 app.mount(
     "/",
     StaticFiles(directory=str(BASE_DIR), html=True),
     name="frontend",
 )
 
-
 if __name__ == "__main__":
     import uvicorn
-    # Запускаем локальный uvicorn-воркер на стандартном loopback-интерфейсе 127.0.0.1
     uvicorn.run(app, host="127.0.0.1", port=8000)
