@@ -1,9 +1,0 @@
-fastapi
-uvicorn[standard]
-sqlalchemy
-psycopg[binary]
-python-dotenv
-python-jose
-pyjwt
-slowapi
-python-multipart
