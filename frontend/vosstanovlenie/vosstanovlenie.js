@@ -1,61 +1,69 @@
 /**
  * ДЛЯ ЧЕГО: Изолированный контроллер страницы "Восстановление пароля".
- * Работает строго через глобальный сетевой сервис window.AuthAPI.
+ * Работает строго через глобальный сетевой сервис window.AuthAPI по контракту №8:
  * 1. Шаг 1: Запрашивает код на введенный Email (POST /api/auth/send_code).
- * 2. Шаг 2: Проверяет код, отправляя в контракте И код, И сохраненный Email (POST /api/auth/verify_code).
+ * 2. Шаг 2: Проверяет код и сохраненный Email (POST /api/auth/verify_code), сохраняет reset_token.
  */
 
 document.addEventListener("DOMContentLoaded", () => {
-    // Находим элементы ввода на странице
-    const emailInput = document.querySelector('.rectangle-7 input');
-    const codeInput = document.querySelector('.rectangle-8 input');
+    const emailInput = document.querySelector(".rectangle-7 input");
+    const codeInput = document.querySelector(".rectangle-8 input");
 
-    // Находим интерактивные кнопки по классам из CSS
-    const btnGetCode = document.querySelector('.rectangle-72');
-    const btnVerifyCode = document.querySelector('.rectangle-9');
+    const btnGetCode = document.querySelector(".rectangle-72");
+    const btnVerifyCode = document.querySelector(".rectangle-9");
+
+    // Подставляем email, если пользователь уже вводил его в текущей сессии
+    const existingEmail = sessionStorage.getItem("recoveryEmail") || sessionStorage.getItem("pendingEmail");
+    if (existingEmail && emailInput) {
+        emailInput.value = existingEmail;
+    }
 
     // ==========================================
-    // ШАГ 1: ЗАПРОС КОДА НА EMAIL
+    // ШАГ 1: ЗАПРОС КОДА НА EMAIL (POST /api/auth/send_code)
     // ==========================================
     if (btnGetCode) {
-        btnGetCode.addEventListener('click', async (e) => {
+        btnGetCode.addEventListener("click", async (e) => {
             e.preventDefault();
             const email = emailInput ? emailInput.value.trim() : "";
 
-            // Валидация регулярным выражением
             const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
             if (!emailRegex.test(email)) {
                 alert("Ошибка: Некорректный формат Email! Проверьте адрес.");
                 return;
             }
 
+            btnGetCode.disabled = true;
             try {
-                // Вызываем метод из api.js
-                await window.AuthAPI.sendRecoveryCode(email);
-                
-                // Сохраняем в память сессии для Шага 2
-                sessionStorage.setItem("pendingEmail", email);
+                console.log("[recovery.js] Отправка POST /api/auth/send_code:", { email });
+                const res = await window.AuthAPI.sendRecoveryCode(email);
+                console.log("[recovery.js] Ответ send_code:", res);
+
+                sessionStorage.setItem("recoveryEmail", email);
                 alert("✨ Проверочный код отправлен на вашу почту! ✨");
             } catch (error) {
-                alert(`Ошибка отправки: ${error.message}`);
-                console.error(error);
+                console.error("[recovery.js] Ошибка отправки кода:", error);
+                if (error.status === 404) {
+                    alert("Ошибка 404: Пользователь с таким Email не найден.");
+                } else {
+                    alert(`Ошибка отправки: ${error.message}`);
+                }
+            } finally {
+                btnGetCode.disabled = false;
             }
         });
     }
 
     // ==========================================
-    // ШАГ 2: ПРОВЕРКА КОДА И ПЕРЕХОД
+    // ШАГ 2: ПРОВЕРКА КОДА И ПЕРЕХОД (POST /api/auth/verify_code)
     // ==========================================
     if (btnVerifyCode) {
-        btnVerifyCode.addEventListener('click', async (e) => {
+        btnVerifyCode.addEventListener("click", async (e) => {
             e.preventDefault();
             const code = codeInput ? codeInput.value.trim() : "";
-            
-            // Извлекаем общую почту из сессии
-            const savedEmail = sessionStorage.getItem("pendingEmail");
+            const savedEmail = (emailInput ? emailInput.value.trim() : "") || sessionStorage.getItem("recoveryEmail");
 
             if (!savedEmail) {
-                alert("Ошибка: Сначала запросите код на Шаге 1!");
+                alert("Ошибка: Сначала введите Email и запросите код на Шаге 1!");
                 return;
             }
 
@@ -64,22 +72,31 @@ document.addEventListener("DOMContentLoaded", () => {
                 return;
             }
 
+            btnVerifyCode.disabled = true;
             try {
-                // Отправляем данные на верификацию через api.js
+                console.log("[recovery.js] Отправка POST /api/auth/verify_code:", { email: savedEmail, code });
                 const result = await window.AuthAPI.verifyRecoveryCode(savedEmail, code);
-                
-                // Сохраняем полученный токен сброса в localStorage для страницы установки нового пароля
+                console.log("[recovery.js] Ответ verify_code:", result);
+
                 if (result && result.reset_token) {
                     localStorage.setItem("resetToken", result.reset_token);
+                } else {
+                    throw new Error("Сервер не вернул reset_token");
                 }
-                
+
+                sessionStorage.removeItem("recoveryEmail");
                 alert("Код подтвержден успешно! Переходим к созданию нового пароля.");
-                
-                // Чистый фронтенд-переход на страницу нового пароля
-                window.location.href = '../newpassword/index.html';
+
+                window.location.href = "../newpassword/index.html";
             } catch (error) {
-                alert(`Ошибка проверки кода: ${error.message}`);
-                console.error(error);
+                console.error("[recovery.js] Ошибка проверки кода:", error);
+                if (error.status === 400) {
+                    alert("Ошибка 400: Неверный проверочный код");
+                } else {
+                    alert(`Ошибка проверки кода: ${error.message}`);
+                }
+            } finally {
+                btnVerifyCode.disabled = false;
             }
         });
     }

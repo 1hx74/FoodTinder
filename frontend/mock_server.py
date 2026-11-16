@@ -18,22 +18,24 @@
 """
 
 import logging
+from datetime import date
 from pathlib import Path
-from fastapi import FastAPI, Response, status
+from fastapi import FastAPI, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-# Глобальная переменная для хранения аватарки в памяти сервера (мок-база данных)
-SAVED_AVATAR_DATA = None
-SAVED_USERNAME_DATA = "Валерия"
 
 # Подключаемся напрямую к логгеру запущенного воркера Uvicorn,
 # чтобы системные обработчики не перехватывали наши сообщения.
 logger = logging.getLogger("uvicorn.error")
 
 app = FastAPI()
+
+# Профили пользователей в памяти сервера: {ключ из токена: профиль}. Пусто при старте,
+# профиль создаётся при регистрации
+app.state.profiles = {}
 
 # Динамически вычисляем корневой каталог проекта относительно места сборки этого скрипта.
 BASE_DIR = Path(__file__).resolve().parent
@@ -124,6 +126,19 @@ def register_user(user: RegisterRequest, response: Response):
     logger.info(f"===> [РЕГИСТРАЦИЯ] Первичные данные получены для: {user.email}")
     logger.info("========================================")
 
+    # Создаем профиль нового пользователя. Ключ — начало почты до @ (как в токене из verify_code).
+    # Данных, которые пользователь еще не вводил, нет: он заполнит их на странице профиля.
+    app.state.profiles.setdefault(user.email.split("@")[0], {
+        "user_id": len(app.state.profiles) + 1,
+        "username": user.username,
+        "avatar_url": "",
+        "email": user.email,
+        "birth_date": "",
+        "gender": "",
+        "height": None,
+        "weight": None,
+    })
+
     # Выставляем статус 201 Created — данные успешно кэшированы, ждем код подтверждения
     response.status_code = status.HTTP_201_CREATED
     return {
@@ -209,45 +224,102 @@ def get_user_preferences(response: Response):
         "kitchen_equipment": ["microwave", "oven"]
     }
 
+#Профили пользователей в app.state.profiles (создаётся при старте).
+# Заготовленного пользователя нет: профиль появляется при регистрации и дальше
+def current_user_key(request: Request) -> str | None:
+    """Достаёт ключ пользователя из заголовка 'Authorization: Bearer jwt.token.for.<имя>.success'."""
+    token = request.headers.get("authorization", "").removeprefix("Bearer ")
+    if not (token.startswith("jwt.token.for.") and token.endswith(".success")):
+        return None
+    return token.removeprefix("jwt.token.for.").removesuffix(".success")
+
+
+def error_response(status_code: int, state: str, message: str) -> JSONResponse:
+    """Ошибка по контракту: code + state. Поле message — подсказка для отладки (api.js выводит её в alert)."""
+    return JSONResponse(
+        status_code=status_code,
+        content={"code": status_code, "state": state, "message": message},
+    )
+
 # --- ЭНДПОИНТЫ ЛИЧНОГО КАБИНЕТА ПОЛЬЗОВАТЕЛЯ ---
 
 @app.get("/api/db/me")
-def get_my_profile(response: Response):
-    """Возвращает данные текущего профиля с учетом сохраненной аватарки"""
-    global SAVED_AVATAR_DATA, SAVED_USERNAME_DATA
-    logger.info("===> [БЭКЕНД] Запрос GET /api/db/me")
-    
-    response.status_code = status.HTTP_200_OK
-    return {
-        "user_id": 123,
-        "username": SAVED_USERNAME_DATA,
-        "avatar_url": SAVED_AVATAR_DATA,  # Возвращаем сохраненную картинку (или None)
-        "email": "valeria@example.com",
-        "birth_date": "15.06.1995",
-        "gender": "Ж",
-        "height": 180,
-        "weight": 75,
-        "code": 200,
-        "state": "OK"
-    }
+def get_my_profile(request: Request):
+    """Возвращает актуальный профиль пользователя, чей токен прислан (контракт: GET /api/db/me)."""
+    key = current_user_key(request)
+    if key is None:
+        logger.info("===> [БЭКЕНД ПРОФИЛЬ] GET /api/db/me отклонён: нет токена (401)")
+        return error_response(401, "Unauthorized", "Not authorized")
+
+    profile = app.state.profiles.get(key)
+    if profile is None:
+        logger.info(f"===> [БЭКЕНД ПРОФИЛЬ] GET /api/db/me: пользователь '{key}' не найден (404)")
+        return error_response(404, "Not Found", "User not found")
+
+    logger.info("========================================")
+    logger.info(f"===> [БЭКЕНД ПРОФИЛЬ] Запрос GET /api/db/me для '{key}' успешно обработан!")
+    logger.info(f"Текущие данные в памяти: { {k: v for k, v in profile.items() if k != 'avatar_url'} }")
+    logger.info(f"Аватар (avatar_url): {'задан, ' + str(len(profile['avatar_url'])) + ' символов' if profile['avatar_url'] else 'не задан'}")
+    logger.info("========================================")
+
+    return {**profile, "code": 200, "state": "OK"}
+
 
 @app.patch("/api/db/me")
-def update_my_profile(payload: UpdateProfileRequest, response: Response):
-    """Обновляет параметры пользователя и аватарку на сервере"""
-    global SAVED_AVATAR_DATA, SAVED_USERNAME_DATA
-    logger.info("===> [БЭКЕНД] Профиль и аватарка успешно обновлены!")
-    
-    # Сохраняем измененные фронтендом данные в память сервера
-    SAVED_USERNAME_DATA = payload.username
-    if payload.avatar_url:
-        SAVED_AVATAR_DATA = payload.avatar_url
-        logger.info("===> [БЭКЕНД] Новая аватарка успешно бинаризирована и сохранена в кэш сервера.")
-    
-    response.status_code = status.HTTP_200_OK
-    return {
-        "code": 200,
-        "state": "OK"
-    }
+def update_my_profile(payload: UpdateProfileRequest, request: Request):
+    """
+    Принимает поля профиля, проверяет их и перезаписывает профиль этого пользователя,
+    чтобы следующий GET вернул уже новые данные (обратная подгрузка).
+    """
+    key = current_user_key(request)
+    if key is None:
+        logger.info("===> [БЭКЕНД ПРОФИЛЬ] PATCH /api/db/me отклонён: нет токена (401)")
+        return error_response(401, "Unauthorized", "Not authorized")
+
+    logger.info("========================================")
+    logger.info(f"===> [БЭКЕНД ПРОФИЛЬ] Получен PATCH /api/db/me от '{key}'")
+    logger.info(f"Имя (username): {payload.username}")
+    logger.info(f"Дата рождения (birth_date): {payload.birth_date}")
+    logger.info(f"Пол (gender): {payload.gender}")
+    logger.info(f"Рост (height): {payload.height}")
+    logger.info(f"Вес (weight): {payload.weight}")
+    logger.info("Аватар (avatar_url): "
+                + (f"прислан, {len(payload.avatar_url)} символов" if payload.avatar_url else "не менялся"))
+    logger.info("========================================")
+
+    profile = app.state.profiles.get(key)
+    if profile is None:
+        return error_response(404, "Not Found", "User not found")
+
+    # Остальные ошибочные случаи по контракту — тоже 404 (текст — в message для отладки)
+    username = payload.username.strip()
+    if not username:
+        return error_response(404, "Not Found", "Имя не может быть пустым")
+    if payload.gender not in ("men", "women"):
+        return error_response(404, "Not Found", "Некорректное значение пола")
+    if not 50 <= payload.height <= 250:
+        return error_response(404, "Not Found", "Рост должен быть от 50 до 250 см")
+    if not 20 <= payload.weight <= 300:
+        return error_response(404, "Not Found", "Вес должен быть от 20 до 300 кг")
+    try:
+        birth = date.fromisoformat(payload.birth_date)
+    except ValueError:
+        return error_response(404, "Not Found", "Дата рождения должна быть в формате ГГГГ-ММ-ДД")
+    if birth > date.today():
+        return error_response(404, "Not Found", "Дата рождения не может быть в будущем")
+    if payload.avatar_url is not None and not payload.avatar_url.startswith(("data:image/", "http")):
+        return error_response(404, "Not Found", "avatar_url должен быть ссылкой или data:image/...")
+
+    profile["username"] = username
+    profile["birth_date"] = payload.birth_date
+    profile["gender"] = payload.gender
+    profile["height"] = payload.height
+    profile["weight"] = payload.weight
+    # avatar_url в запросе необязателен: не прислали — аватар остаётся прежним
+    if payload.avatar_url is not None:
+        profile["avatar_url"] = payload.avatar_url
+
+    return {"code": 200, "state": "OK"}
 
 @app.post("/api/auth/new_pswd")
 def change_password(data: NewPasswordRequest, response: Response):
@@ -255,6 +327,10 @@ def change_password(data: NewPasswordRequest, response: Response):
     logger.info("========================================")
     logger.info(f"===> [БЭКЕНД] Запрос на смену пароля успешно получен.")
     logger.info("========================================")
+
+    if len(data.new_password) < 6:
+        response.status_code = status.HTTP_422_UNPROCESSABLE_ENTITY
+        return {"code": 422, "state": "Unprocessable Entity"}
     
     response.status_code = status.HTTP_200_OK
     return {

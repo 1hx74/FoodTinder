@@ -28,6 +28,11 @@ const tokenStorage = {
 /** Низкоуровневый сетевой fetch-клиент */
 async function rawRequest(endpoint, { method = "GET", body } = {}) {
     const headers = { "Content-Type": "application/json" };
+
+    const token = tokenStorage.get();
+    if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+    }
     
     // Корректируем слэши: гарантируем, что путь начнется со слэша
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
