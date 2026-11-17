@@ -52,6 +52,7 @@ const MAX_QUEUE_SIZE = 5;
 let currentRecipe = null;
 let isFetchingQueue = false;
 let noMoreRecipes = false;
+let isReacting = false;
 
 const EQUIPMENT_TRANSLATIONS = {
     oven: "Духовка",
@@ -348,6 +349,10 @@ async function renderRecipe(recipe) {
 
     if (cardEl) {
         cardEl.classList.remove("swipe-left", "swipe-right");
+
+        cardEl.style.transition = "";
+        cardEl.style.transform = "";
+        cardEl.style.opacity = "";
     }
 }
 
@@ -563,15 +568,24 @@ async function showNextFromQueue() {
  * пользователя на следующий рецепт.
  */
 async function handleReaction(action) {
-    if (!currentRecipe) return;
+    if (!currentRecipe || isReacting) return;
 
-    if (action === "favorite" && !window.AuthAPI.isAuthenticated()) {
-        const goLogin = confirm("Добавление в избранное доступно только авторизованным пользователям. Перейти на страницу входа?");
+    if (
+        action === "favorite" &&
+        (!window.AuthAPI || !window.AuthAPI.isAuthenticated())
+    ) {
+        const goLogin = confirm(
+            "Добавление в избранное доступно только авторизованным пользователям. Перейти на страницу входа?"
+        );
+
         if (goLogin) {
             window.location.href = "../vxod/index.html";
         }
+
         return;
     }
+
+    isReacting = true;
 
     const reactedRecipeId = currentRecipe.recipe_id;
     const cardEl = document.getElementById("recipe-card");
@@ -583,22 +597,56 @@ async function handleReaction(action) {
             if (confirm("Вы не авторизованы! Хотите перейти на страницу входа?")) {
                 window.location.href = "../vxod/index.html";
             }
+
+            isReacting = false;
             return;
         }
+
         if (error.status === 404 && action === "favorite") {
             alert("Этот рецепт больше недоступен.");
         } else if (error.status === 500 || error.status === 0) {
             alert("Технические шоколадки, уже чиним!");
+            isReacting = false;
             return;
         }
     }
 
-    if (cardEl) {
-        cardEl.classList.add(action === "dislike" ? "swipe-left" : "swipe-right");
+    if (!cardEl) {
+        isReacting = false;
+        await showNextFromQueue();
+        return;
     }
-    setTimeout(() => {
-        showNextFromQueue();
-    }, 220);
+
+    const direction = action === "dislike" ? -1 : 1;
+    const distance = window.innerWidth + cardEl.offsetWidth;
+
+    cardEl.style.transition = "transform 0.35s ease, opacity 0.35s ease";
+    cardEl.style.transform =
+        `translate3d(${direction * distance}px, 0, 0) rotate(${direction * 15}deg)`;
+    cardEl.style.opacity = "0";
+
+    let finished = false;
+
+    const finishAnimation = async () => {
+        if (finished) return;
+        finished = true;
+
+        cardEl.removeEventListener("transitionend", onTransitionEnd);
+
+        await showNextFromQueue();
+        isReacting = false;
+    };
+
+    const onTransitionEnd = (event) => {
+        if (event.target === cardEl && event.propertyName === "transform") {
+            finishAnimation();
+        }
+    };
+
+    cardEl.addEventListener("transitionend", onTransitionEnd);
+
+    // Запасной вариант, если transitionend не сработает
+    setTimeout(finishAnimation, 500);
 }
 
 /* 12. initTouchSwipe()
@@ -611,23 +659,88 @@ async function handleReaction(action) {
  *
  * Для обработки используется touchstart и touchend.
  */
+
 function initTouchSwipe() {
     const cardEl = document.getElementById("recipe-card");
     if (!cardEl) return;
+
     let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let activePointerId = null;
 
-    cardEl.addEventListener("touchstart", (e) => {
-        startX = e.touches[0].clientX;
-    }, { passive: true });
+    cardEl.style.touchAction = "pan-y";
 
-    cardEl.addEventListener("touchend", (e) => {
-        const endX = e.changedTouches[0].clientX;
-        const diffX = endX - startX;
-        if (Math.abs(diffX) > 60) {
+    function resetCardInstantly() {
+        cardEl.style.transition = "none";
+        cardEl.style.transform = "";
+        cardEl.style.opacity = "";
+
+        void cardEl.offsetWidth;
+
+        cardEl.style.transition = "";
+    }
+
+    cardEl.addEventListener("pointerdown", (event) => {
+        // Не запускаем свайп при нажатии на кнопки и другие элементы управления
+        if (event.target.closest(
+            "button, a, input, textarea, select, #toggle-recipe-btn"
+        )) {
+            return;
+        }
+
+        if (isReacting || !currentRecipe) return;
+        if (event.button !== 0) return;
+
+        startX = event.clientX;
+        currentX = startX;
+        isDragging = true;
+        activePointerId = event.pointerId;
+
+        cardEl.style.transition = "none";
+        cardEl.setPointerCapture(event.pointerId);
+    });
+
+    cardEl.addEventListener("pointermove", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+        if (isReacting) return;
+
+        currentX = event.clientX;
+
+        const diffX = currentX - startX;
+        const rotation = diffX * 0.04;
+
+        cardEl.style.transform =
+            `translate3d(${diffX}px, 0, 0) rotate(${rotation}deg)`;
+    });
+
+    cardEl.addEventListener("pointerup", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+
+        const diffX = event.clientX - startX;
+
+        isDragging = false;
+        activePointerId = null;
+
+        const swipeThreshold = Math.max(90, cardEl.offsetWidth * 0.22);
+
+        if (Math.abs(diffX) >= swipeThreshold) {
             handleReaction(diffX > 0 ? "like" : "dislike");
+        } else {
+            resetCardInstantly();
         }
     });
+
+    cardEl.addEventListener("pointercancel", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+
+        isDragging = false;
+        activePointerId = null;
+
+        resetCardInstantly();
+    });
 }
+
 
 /* 13. Обработчик DOMContentLoaded (инициализация ленты)
  *
