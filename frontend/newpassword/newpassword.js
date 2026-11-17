@@ -1,47 +1,70 @@
 /**
- * ДЛЯ ЧЕГО: Это изолированный контроллер конкретно для страницы установки Нового Пароля.
- * Работает строго через глобальный сетевой сервис window.AuthAPI.
- * 1. Перехватывает событие отправки формы.
- * 2. Проводит валидацию длины пароля и совпадения строк прямо в браузере.
- * 3. Передает чистые данные в глобальный сервис сессий window.AuthAPI.resetPassword().
+ * ДЛЯ ЧЕГО: Изолированный контроллер конкретно для страницы установки Нового Пароля.
+ * Работает строго через глобальный сетевой сервис window.AuthAPI по контракту №8:
+ * 1. Перехватывает событие отправки формы после полной загрузки DOM.
+ * 2. Проводит валидацию длины пароля (от 6 символов) и совпадения полей.
+ * 3. Передает reset_token и new_password в window.AuthAPI.resetPassword() (POST /api/auth/new_pswd).
  */
 
-document.querySelector('.recovery-form').addEventListener('submit', async (event) => {
-  event.preventDefault(); // Блокируем стандартную перезагрузку страницы браузером
+document.addEventListener("DOMContentLoaded", () => {
+    const recoveryForm = document.querySelector(".recovery-form");
+    if (!recoveryForm) return;
 
-  // Считываем значения из инпутов
-  const passwordInput = document.querySelector('.rectangle-6 input');
-  const confirmInput = document.querySelector('.rectangle-7 input');
+    const submitBtn = recoveryForm.querySelector(".rectangle-10");
 
-  const password = passwordInput.value;
-  const confirmPassword = confirmInput.value;
+    recoveryForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
 
-  // ВАЛИДАЦИЯ НА СТОРОНЕ ФРОНТЕНДА
-  if (password.length < 6) {
-    alert("Ошибка: Пароль слишком короткий! Придумайте пароль от 6 символов и длиннее.");
-    return; // Обрываем отправку запроса
-  }
+        const passwordInput = document.querySelector(".rectangle-6 input");
+        const confirmInput = document.querySelector(".rectangle-7 input");
 
-  if (password !== confirmPassword) {
-    alert("Ошибка: Пароли не совпадают!");
-    return; // Обрываем отправку запроса
-  }
+        const password = passwordInput ? passwordInput.value : "";
+        const confirmPassword = confirmInput ? confirmInput.value : "";
 
-  // Берем токен сброса из памяти (который записала страница восстановления) или передаем дефолтный
-  const resetToken = localStorage.getItem("resetToken") || "temporary-token-for-password-reset";
+        // ВАЛИДАЦИЯ НА СТОРОНЕ ФРОНТЕНДА
+        if (password.length < 6) {
+            alert("Ошибка: Пароль слишком короткий! Придумайте пароль от 6 символов и длиннее.");
+            return;
+        }
 
-  try {
-    // Отправляем данные на бэкенд через единый клиент
-    await window.AuthAPI.resetPassword(resetToken, password);
+        if (password !== confirmPassword) {
+            alert("Ошибка: Пароли не совпадают!");
+            return;
+        }
 
-    // РЕАКЦИЯ НА УСПЕШНУЮ СМЕНУ ПАРОЛЯ
-    alert("Пароль успешно изменен!");
-    
-    // Чистый фронтенд-переход на страницу входа
-    window.location.href = '../vxod/index.html'; 
+        // Извлекаем реальный токен сброса, полученный на этапе verify_code
+        const resetToken = localStorage.getItem("resetToken");
+        if (!resetToken) {
+            alert("Ошибка: Сессия сброса пароля не найдена. Пройдите подтверждение почты заново.");
+            window.location.href = "../vosstanovlenie/index.html";
+            return;
+        }
 
-  } catch (error) {
-    alert(`Ошибка сброса пароля: ${error.message}`);
-    console.error("Детали сбоя:", error);
-  }
+        if (submitBtn) submitBtn.disabled = true;
+        try {
+            console.log("[newpassword.js] Отправка POST /api/auth/new_pswd:", {
+                reset_token: resetToken,
+                new_password: "***"
+            });
+
+            const response = await window.AuthAPI.resetPassword(resetToken, password);
+            console.log("[newpassword.js] Ответ сервера на смену пароля:", response);
+
+            // Удаляем использованный токен сброса из памяти браузера
+            localStorage.removeItem("resetToken");
+
+            alert("Пароль успешно изменен!");
+            window.location.href = "../vxod/index.html";
+        } catch (error) {
+            console.error("[newpassword.js] Детали сбоя:", error);
+
+            if (error.status === 422) {
+                alert("Ошибка 422: Сервер отклонил пароль (слишком короткий).");
+            } else {
+                alert(`Ошибка сброса пароля: ${error.message}`);
+            }
+        } finally {
+            if (submitBtn) submitBtn.disabled = false;
+        }
+    });
 });
