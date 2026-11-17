@@ -3,7 +3,7 @@
  * Он управляет сетевыми запросами и глобальным кешем в localStorage.
  */
 
-const API = "localhost";
+const API = "localhost:8000";
 const API_BASE = `http://${API}:`;
 
 class ApiError extends Error {
