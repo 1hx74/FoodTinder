@@ -4,16 +4,39 @@
   box-sizing: border-box;
 }
 
+html,
+body {
+    height: auto;
+    min-height: 100vh;
+    overflow-x: hidden;
+    overflow-y: auto;
+    margin: 0;
+    padding: 0;
+}
+
+.div {
+    min-height: 100vh;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
+}
+/* =========================================================
+   SPA-РЕЖИМ НА ОДНОЙ СТРАНИЦЕ (ПРОКРУТКА ВСЕЙ СТРАНИЦЫ)
+   ========================================================= */
+
 .main-content {
-  flex: 1;
+  flex: none !important;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
   width: 100%;
-  padding: 16px 24px 28px 24px;
-  overflow: hidden;
+  min-height: auto !important;
+  padding: 24px 24px 56px 24px;
+  overflow: visible !important;
+  box-sizing: border-box;
 }
+
 
 /* КАРТОЧКА РЕЦЕПТА */
 .frame-16 {
@@ -22,15 +45,44 @@
   border: 1px solid #000000;
   width: 100%;
   max-width: 351px;
-  flex: 1;
-  max-height: 620px;
-  padding: 20px 22px;
+  padding: 20px 22px; /* Статичные внутренние отступы рамки */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  gap: 14px;
+  gap: 12px; /* Фиксированный и стабильный отступ между элементами внутри */
+  transition: transform 0.25s ease;
   overflow: hidden;
-  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+/* 4. Карточка в развернутом виде принудительно заставляет страницу увеличиваться */
+.frame-16.expanded {
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+.frame-16.expanded .recipe-inner-content {
+  height: auto !important;
+  overflow: visible !important;
+}
+.expandable-section {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease, padding 0.3s ease;
+  padding-top: 0;
+  border-top: none;
+}
+
+.frame-16.expanded .expandable-section {
+  max-height: 100000px;
+  opacity: 1;
+  padding-top: 10px;
+  border-top: 1px solid #ececec;
+}
+/* Скрываем панель свайпов снизу в развернутом виде */
+.frame-16.expanded ~ #reaction-controls {
+  display: none !important;
 }
 
 /* Анимация улёта карточки при свайпе */
@@ -43,7 +95,7 @@
   opacity: 0;
 }
 
-/* КАРТИНКА (растянута немного вниз) */
+/* КАРТИНКА */
 .rectangle-14 {
   border-radius: 16px;
   width: 100%;
@@ -53,17 +105,17 @@
   background: #f5f5f5;
 }
 
-/* КОНТЕЙНЕР СЕКЦИЙ ВНУТРИ КАРТОЧКИ */
+/* Контейнер внутри карточки: элементы идут строго друг за другом сверху вниз */
 .recipe-inner-content {
   display: flex;
   flex-direction: column;
-  gap: 14px; /* Чёткий отступ между 3 секциями */
+  justify-content: flex-start;
+  gap: 12px;
   width: 100%;
-  flex: 1;
-  overflow-y: auto;
+  height: auto; /* убираем жесткие ограничения высоты */
 }
 
-/* СЕКЦИЯ 1: Название + описание */
+/* Блок названия и описания */
 .div7 {
   color: #000000;
   text-align: left;
@@ -71,13 +123,17 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  flex-shrink: 0;
+  width: 100%;
 }
 
 .recipe-title {
   font-size: 16px;
   font-weight: 700;
   line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
 }
 
 .recipe-desc {
@@ -85,9 +141,14 @@
   font-weight: 500;
   line-height: 1.35;
   color: #222222;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* СЕКЦИЯ 2: Сложность, калории, время, вес, БЖУ */
+/* Блок метаданных (сложность, время, калории) */
 .recipe-meta-column {
   display: flex;
   flex-direction: column;
@@ -157,7 +218,7 @@
   height: 20px;
 }
 
-/* СЕКЦИЯ 3: Оборудование в овалах */
+/* Блок оборудования строго под метаданными */
 .equipment-section {
   display: flex;
   flex-direction: column;
@@ -172,8 +233,8 @@
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
-  max-height: 70px;
-  overflow-y: auto;
+  max-height: 62px;
+  overflow: hidden;
 }
 
 .equipment-pill {
@@ -199,7 +260,7 @@
   opacity: 0.7;
 }
 
-/* КНОПКА "ПОСМОТРЕТЬ РЕЦЕПТ" */
+/* КНОПКА ПЕРЕКЛЮЧЕНИЯ (Посмотреть рецепт / Назад) */
 .div5 {
   background: var(--primary-color);
   border-radius: 12px;
@@ -289,7 +350,158 @@
 @media (max-height: 720px) {
   .rectangle-14 { height: 180px; }
   .frame-16 { padding: 14px 16px; gap: 10px; }
+  .recipe-desc { -webkit-line-clamp: 1; }
+  .equipment-container { max-height: 30px; }
   .div5 { height: 46px; }
   .frame-18 { height: 70px; margin-top: 8px; }
   .div8, .div9, .reaction-btn { width: 60px; height: 56px; }
+}
+
+/* =========================================================
+   СЕКЦИИ ИНГРЕДИЕНТОВ И ШАГОВ (ДЛЯ РАЗВЕРНУТОГО СОСТОЯНИЯ)
+   ========================================================= */
+
+.ingredients-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.ingredients-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.ingredient-item {
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  font-family: var(--main-font);
+  font-size: 14px;
+  line-height: 1.35;
+  color: #222222;
+}
+
+.ingredient-name {
+  font-weight: 500;
+  color: #000000;
+}
+
+.ingredient-dots {
+  flex: 1;
+  border-bottom: 1px dotted #cccccc;
+  min-width: 16px;
+}
+
+.ingredient-amount {
+  font-weight: 700;
+  color: var(--primary-color, #964F4C);
+  white-space: nowrap;
+}
+
+.recipe-steps-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.recipe-steps-text {
+  font-family: var(--main-font);
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  color: #222222;
+  white-space: pre-line;
+}
+
+/* =========================================================
+   АНИМАЦИЯ РАСКРЫТИЯ (SPA-РЕЖИМ НА ОДНОЙ СТРАНИЦЕ)
+   ========================================================= */
+
+/* По умолчанию скрываем расширенные блоки внутри карточки */
+.expandable-section {
+  max-height: 0;
+  opacity: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Когда карточка получает класс .expanded (полный режим) */
+.frame-16.expanded {
+  max-height: none !important;
+  height: auto !important;
+  overflow-y: visible !important;
+}
+
+.frame-16.expanded .recipe-inner-content {
+  flex: none !important;
+  overflow: visible !important;
+}
+
+/* Раскрытие текста и описания без обрезки */
+.frame-16.expanded .recipe-title {
+  white-space: normal !important;
+  overflow: visible !important;
+}
+
+.frame-16.expanded .recipe-desc {
+  display: block !important;
+  -webkit-line-clamp: unset !important;
+  overflow: visible !important;
+}
+
+.frame-16.expanded .equipment-container {
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+/* Плавное проявление скрытых блоков */
+.frame-16.expanded .expandable-section {
+  max-height: 1200px;
+  opacity: 1;
+  padding-top: 10px;
+  border-top: 1px solid #ececec;
+}
+
+/* Скрываем панель свайпов снизу, когда открыт полный рецепт */
+.frame-16.expanded ~ #reaction-controls {
+  display: none !important;
+}
+
+/* Разрешаем странице скроллиться в развернутом виде */
+body {
+  overflow-y: auto;
+}
+
+/* Исправляем только высоту */
+html,
+body,
+.div,
+.main-content {
+    height: auto !important;
+    max-height: none !important;
+}
+
+/* Не ограничиваем высоту развёрнутой карточки */
+.frame-16.expanded {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+}
+
+.frame-16.expanded .recipe-inner-content,
+.frame-16.expanded .expandable-section {
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
 }
