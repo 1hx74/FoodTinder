@@ -4,82 +4,74 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FOODTINDER — Профиль</title>
-  <link rel="stylesheet" href="../glavnaya/vars.css">
   <link rel="stylesheet" href="./style.css">
 </head>
 <body>
-
-  <!-- Глобальный адаптивный каркас приложения из vars.css -->
   <div class="div">
-    
-    <!-- Глобальная шапка сайта -->
-    <div class="header-wrapper">
+    <!-- ЕДИНАЯ ГЛОБАЛЬНАЯ ШАПКА (КАК НА СТРАНИЦЕ РЕГИСТРАЦИИ) -->
+    <header class="header-wrapper">
       <div class="foodtinder">
-        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+        <a href="/glavnaya/" class="foodtinder2">FOODTINDER</a>
       </div>
+
       <div class="frame-4">
-        <div class="div3">
-          <!-- Скрипт тимлида ищет именно тег с классом .div4 для подстановки имени пользователя -->
-          <span class="div4" id="header-username">Загрузка...</span>
+        <div class="div3" id="auth-container">
+          <a href="/vxod/" class="div4">Вход</a>
+          <span class="slash-separator">/</span>
+          <a href="/registration/" class="div4">Регистрация</a>
         </div>
         <div class="frame-5">
-          <img class="ellipse-2" src="../glavnaya/ellipse-20.svg" alt="Аватар">
-          <div class="div2" id="profile-letter">П</div>
+          <div class="ellipse-2" style="background: var(--brand-text); border-radius: 50%;"></div>
+          <span class="div2" id="profile-letter">Г</span>
         </div>
       </div>
-    </div>
+    </header>
 
-    <!-- Центральный блок формы (Полная аналогия main-content из регистрации) -->
-    <div class="main-content">
-      <!-- Секция большого аватара и интерактивного имени из Figma -->
+    <!-- ОСНОВНОЙ КОНТЕНТ ПРОФИЛЯ -->
+    <main class="main-content">
       <div class="avatar-section">
-        <!-- Скрытый инпут для вызова загрузочного окна операционной системы -->
+        <img id="profile-avatar-img" class="ellipse-3" src="" alt="Аватар" style="object-fit: cover; cursor: pointer;">
         <input type="file" id="avatar-file-picker" accept="image/*" style="display: none;">
-        
-        <!-- Делаем аватарку кликабельной картинкой. Если файла нет, она будет серой по умолчанию через CSS -->
-        <img class="ellipse-3" id="profile-avatar-img" src="" alt="" style="cursor: pointer; object-fit: cover; background-color: #d9d9d9;">
-        
-        <div class="editable-name-wrapper" id="name-wrapper">
+
+        <div class="editable-name-wrapper" title="Нажмите, чтобы изменить имя">
           <h2 class="div4" id="name-display">Загрузка...</h2>
-          <input type="text" class="name-field-input" id="name-input" style="display: none;">
+          <input type="text" id="name-input" class="name-field-input" style="display: none;" placeholder="Введите имя">
         </div>
       </div>
 
-      <!-- Контейнер формы полностью по стилю регистрации -->
-      <form class="form-container" autocomplete="off">
-        
-        <form class="form-container">
-          <div class="input-group">
-            <span class="input-label">Email</span>
-            <input type="email" id="email" class="custom-input">
-          </div>
+      <form class="form-container">
+        <div class="input-group">
+          <label class="input-label" for="email">Email</label>
+          <input class="custom-input" type="email" id="email" placeholder="user@example.com" disabled>
+        </div>
 
-          <div class="input-group">
-            <span class="input-label">День рождения</span>
-            <input type="text" id="birth_date" class="custom-input" placeholder="ДД.ММ.ГГГГ">
-          </div>
+        <div class="input-group">
+          <label class="input-label" for="birth_date">День рождения</label>
+          <input class="custom-input" type="date" id="birth_date">
+        </div>
 
-          <div class="input-group">
-            <span class="input-label">Пол</span>
-            <input type="text" id="gender" class="custom-input" placeholder="men / women">
-          </div>
+        <div class="input-group">
+          <label class="input-label" for="gender">Пол</label>
+          <select class="custom-input" id="gender">
+            <option value="men">Мужской</option>
+            <option value="women">Женский</option>
+          </select>
+        </div>
 
-          <div class="input-group">
-            <span class="input-label">Рост</span>
-            <input type="number" id="height" class="custom-input">
-          </div>
+        <div class="input-group">
+          <label class="input-label" for="height">Рост (см)</label>
+          <input class="custom-input" type="number" id="height" placeholder="180" min="50" max="250">
+        </div>
 
-          <div class="input-group">
-            <span class="input-label">Вес</span>
-            <input type="number" id="weight" class="custom-input">
-          </div>
+        <div class="input-group">
+          <label class="input-label" for="weight">Вес (кг)</label>
+          <input class="custom-input" type="number" id="weight" placeholder="75" min="20" max="300">
+        </div>
 
-          <button type="submit" class="submit-btn">
-            <span class="div7">Сохранить</span>
-          </button>
-        </form>
-
-
+        <button type="submit" class="submit-btn">
+          <span class="div7">Сохранить</span>
+        </button>
+      </form>
     </main>
   </div>
 

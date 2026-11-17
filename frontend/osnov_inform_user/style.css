@@ -1,121 +1,8 @@
+/* Подгружаем общие адаптивные рамки приложения, шапку, цвета и шрифты */
 @import url('../vars.css');
 
 *, *::before, *::after {
   box-sizing: border-box;
-}
-
-/* ==========================================================================
-   БАЗОВЫЕ ГЛОБАЛЬНЫЕ СТИЛИ (ПОЛНАЯ КОПИЯ СТРАНИЦЫ РЕГИСТРАЦИИ)
-   ========================================================================== */
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: 100%;
-  background-color: #f5f5f5; 
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden; 
-}
-
-/* Единый каркас мобильного приложения для ВСЕХ страниц сайта */
-.div {
-  background: #ffffff;
-  width: 100%;
-  min-width: 390px;
-  max-width: 520px; 
-  height: 100vh; 
-  max-height: 880px; 
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: hidden; 
-  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1); 
-}
-
-/* --- ГЛОБАЛЬНАЯ ШАПКА (ВЫНЕСЕНА ДЛЯ ВСЕХ СТРАНИЦ) --- */
-.header-wrapper {
-  display: flex;
-  justify-content: flex-start;
-  align-items: center; /* Центрируем всё строго по вертикальной оси шапки */
-  padding: 0 24px;     
-  width: 100%;
-  flex-shrink: 0; 
-  height: 64px;        
-  background: #ffffff;
-  position: relative;
-  z-index: 10; /* Поднимаем над формой, чтобы ссылки кликались */
-}
-
-/* Сбрасываем абсолютные фигмовские рамки у обертки логотипа */
-.foodtinder {
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
-  width: auto !important;
-  height: auto !important;
-  display: flex;
-  align-items: center;
-}
-
-.foodtinder2 {
-  color: var(--brand-text);
-  font-family: var(--main-font);
-  font-size: 24px;
-  font-weight: 700;
-  text-decoration: none;
-  line-height: 1; 
-}
-
-/* Автоматический сдвиг блока входа в правый край */
-.header-wrapper .frame-4 {
-  margin-left: auto;
-  position: relative !important;
-  left: auto !important;
-  top: auto !important;
-}
-
-.frame-4 {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.user-text {
-  color: #000000;
-  font-family: var(--main-font);
-  font-size: 18px;
-  font-weight: 700;
-  text-decoration: none;
-}
-
-.frame-5 {
-  position: relative;
-  width: 36px;
-  height: 36px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ellipse-2 {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-
-.div2 {
-  color: #ffffff;
-  font-family: var(--main-font);
-  font-size: 18px;
-  font-weight: 700;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
 }
 
 /* ==========================================================================
@@ -126,10 +13,10 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start; 
+  justify-content: flex-start;
   padding: 1.5vh 24px;
   width: 100%;
-  overflow-y: auto; 
+  overflow-y: auto;
 }
 
 /* Секция большого аватара */
@@ -137,24 +24,16 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-bottom: 1.5vh; 
+  margin-bottom: 1.5vh;
   flex-shrink: 0;
 }
 
 .ellipse-3 {
   background: #d9d9d9;
   border-radius: 50%;
-  width: 100px; 
+  width: 100px;
   height: 100px;
   margin-bottom: 0.8vh;
-}
-
-.div4 {
-  color: #000000;
-  font-family: var(--main-font);
-  font-size: 22px;
-  font-weight: 700;
-  margin: 0;
 }
 
 /* Интерактивное имя */
@@ -188,10 +67,10 @@ html, body {
 /* Контейнер для формы ввода */
 .form-container {
   width: 100%;
-  max-width: 320px; 
+  max-width: 320px;
   display: flex;
   flex-direction: column;
-  gap: 1.2vh; 
+  gap: 1.2vh;
 }
 
 /* Блок одного поля (Текст-метка + Поле ввода) */
@@ -202,7 +81,7 @@ html, body {
   width: 100%;
 }
 
-/* Название поля (Email, Пароль и т.д.) */
+/* Название поля */
 .input-label {
   color: #000000;
   font-family: var(--main-font);
@@ -233,6 +112,12 @@ html, body {
 .custom-input:focus {
   border-color: var(--brand-text);
   border-width: 2px;
+}
+
+.custom-input:disabled {
+  background-color: #f9f9f9;
+  color: #666666;
+  cursor: not-allowed;
 }
 
 /* КНОПКА СОХРАНИТЬ */
