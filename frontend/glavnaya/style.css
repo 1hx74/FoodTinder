@@ -49,11 +49,13 @@ _1-1 {
 }
 
 .btn-frame {
+  display: block; /* ДОБАВЛЕНО: чтобы ссылка <a> держала высоту 76px */
   width: 100%;
   height: 76px;
   position: relative;
   cursor: pointer;
 }
+
 
 .btn-rect {
   background: var(--primary-color);

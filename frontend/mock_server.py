@@ -40,9 +40,135 @@ app.state.profiles = {}
 # Динамически вычисляем корневой каталог проекта относительно места сборки этого скрипта.
 BASE_DIR = Path(__file__).resolve().parent
 
+MOCK_RECIPES = {
+    1: {
+        "recipe_id": 3,
+        "image_url": "https://placehold.co/600x400?text=Паста+карбонара",
+        "title": "Паста карбонара",
+        "description": "Спагетти, бекон, яйцо и пармезан",
+        "stars": 5,
+        "hyper-text": "https://example.com/recipes/3.html",
+        "cooking_time": 25,
+        "difficulty": 2,
+        "kalories": 520,
+        "belki": 22,
+        "fats": 24,
+        "uglevods": 55,
+        "final_weight": 350,
+        "ingredients": [
+            {"name": "Спагетти", "quantity": "gramm", "count": 200},
+            {"name": "Бекон", "quantity": "gramm", "count": 100},
+            {"name": "Яичные желтки", "quantity": "item", "count": 3},
+            {"name": "Пармезан", "quantity": "gramm", "count": 50}
+        ],
+        "equipment": ["stove", "pot", "grater"],
+        "code": 200,
+        "state": "OK"
+    },
+    2: {
+        "recipe_id": 2,
+        "image_url": "https://placehold.co/600x400?text=Том+Ям",
+        "title": "Том Ям с креветками",
+        "description": "Пряный тайский суп с кокосовым молоком",
+        "stars": 4,
+        "hyper-text": "https://example.com/recipes/2.html",
+        "cooking_time": 30,
+        "difficulty": 3,
+        "kalories": 410,
+        "belki": 28,
+        "fats": 16,
+        "uglevods": 35,
+        "final_weight": 400,
+        "ingredients": [
+            {"name": "Креветки", "quantity": "gramm", "count": 150}
+        ],
+        "equipment": ["stove", "pot"],
+        "code": 200,
+        "state": "OK"
+    },
+    3: {
+        "recipe_id": 3,
+        "image_url": "https://placehold.co/600x400?text=Сырники",
+        "title": "Сырники классические",
+        "description": "Нежные творожные сырники с ванилью и сметаной",
+        "stars": 5,
+        "hyper-text": "https://example.com/recipes/3.html",
+        "cooking_time": 20,
+        "difficulty": 1,
+        "kalories": 350,
+        "belki": 24,
+        "fats": 18,
+        "uglevods": 25,
+        "final_weight": 250,
+        "ingredients": [
+            {"name": "Творог", "quantity": "gramm", "count": 300}
+        ],
+        "equipment": ["stove", "blender"],
+        "code": 200,
+        "state": "OK"
+    },
+    4: {
+        "recipe_id": 4,
+        "image_url": "https://placehold.co/600x400?text=Лосось",
+        "title": "Запечённый лосось",
+        "description": "Красная рыба под лимонным соусом в духовке",
+        "stars": 4,
+        "hyper-text": "https://example.com/recipes/4.html",
+        "cooking_time": 25,
+        "difficulty": 2,
+        "kalories": 480,
+        "belki": 34,
+        "fats": 22,
+        "uglevods": 10,
+        "final_weight": 300,
+        "ingredients": [
+            {"name": "Лосось", "quantity": "gramm", "count": 250}
+        ],
+        "equipment": ["oven", "backing_dish"],
+        "code": 200,
+        "state": "OK"
+    },
+    5: {
+        "recipe_id": 5,
+        "image_url": "https://placehold.co/600x400?text=Рамен",
+        "title": "[ТЕСТ ОШИБКИ 404] Рамен",
+        "description": "Тестовая карточка с симуляцией 404 ошибки бэкенда",
+        "stars": 3,
+        "hyper-text": "https://example.com/recipes/5.html",
+        "cooking_time": 40,
+        "difficulty": 3,
+        "kalories": 550,
+        "belki": 20,
+        "fats": 20,
+        "uglevods": 60,
+        "final_weight": 500,
+        "ingredients": [],
+        "equipment": ["stove"],
+        "code": 404,
+        "state": "Not Found"
+    },
+    6: {
+        "recipe_id": 6,
+        "image_url": "https://placehold.co/600x400?text=Стейк",
+        "title": "[ТЕСТ ОШИБКИ 401] Стейк Рибай",
+        "description": "Тестовая карточка с симуляцией 401 ошибки авторизации",
+        "stars": 5,
+        "hyper-text": "https://example.com/recipes/6.html",
+        "cooking_time": 15,
+        "difficulty": 4,
+        "kalories": 700,
+        "belki": 45,
+        "fats": 40,
+        "uglevods": 5,
+        "final_weight": 350,
+        "ingredients": [],
+        "equipment": ["stove"],
+        "code": 401,
+        "state": "Unauthorized"
+    },
+}
+
 # 1. ПОЛИТИКА КРОСС-ДОМЕННОЙ БЕЗОПАСНОСТИ (НАСТРОЙКА CORS)
-# Позволяет локальным файлам, инструментам тестирования или сторонним клиентам
-# беспрепятственно выполнять сетевые запросы к нашему API.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -54,11 +180,6 @@ app.add_middleware(
 
 # ОБЪЕКТЫ ПЕРЕДАЧИ ДАННЫХ (ТИПИЗАЦИЯ ВХОДЯЩИХ КОНТРАКТОВ DTO)
 class RegisterRequest(BaseModel):
-    """
-    Слой валидации данных Pydantic. Гарантирует строгую проверку типов входящего тела HTTP-запроса.
-    Если присланные JSON-свойства не будут соответствовать этим строковым ограничениям (str),
-    FastAPI автоматически заблокирует запрос и вернет клиенту ошибку 422 Unprocessable Entity.
-    """
     email: str
     password: str # Изменено: при регистрации передаем только email и пароль
 
@@ -86,46 +207,40 @@ class NewPasswordRequest(BaseModel):
     reset_token: str
     new_password: str
 
-# Контракт строго разделен на 4 независимые категории полей
 class PreferencesRequest(BaseModel):
-    """Контракт валидации для сохранения настроек профиля"""
-    allergies: list[str] = []
-    diets: list[str] = []
+    """Контракт валидации для сохранения настроек профиля (с учётом forbidden вместо старых аллергий)"""
+    forbidden: list[str] = []
     religions: list[str] = []
     kitchen_equipment: list[str] = []
 
+NEXT_RECIPE_POINTER = 1
+class RecipeReactionRequest(BaseModel):
+    recipe_id: int
+    action: str
 
-# ПЕРЕНАПРАВЛЕНИЕ НАВИГАЦИИ ФРОНТЕНДА (ДВИЖОК РЕДИРЕКТОВ)
+@app.get("/swipe")
+def swipe_page():
+    return RedirectResponse(url="/swipe/")
+
+
 @app.get("/")
 def main_page():
-    """
-    Перехватывает базовые заходы пользователя на корневой адрес сервера (http://127.0.0.1:8000)
-    и отправляет браузеру команду мгновенного перенаправления (HTTP 307 Redirect) в папку главной страницы.
-    """
     return RedirectResponse(url="/glavnaya/")
 
 
 @app.get("/registration")
 def registration_page():
-    """
-    Нормализует вводимые пользователем URL-адреса, прозрачно перенаправляя
-    короткие пути на физические директории статических файлов фронтенда.
-    """
     return RedirectResponse(url="/registration/")
 
 
 @app.get("/authentication")
 def authentication_page():
-    """Перенаправляет на физический индекс внутри папки authentication"""
     return RedirectResponse(url="/authentication/")
 
 
-# ОБРАБОТКА ДАННЫХ API (СИМУЛЯЦИЯ БИЗНЕС-ЛОГИКИ БЭКЕНДА)
+# ОБРАБОТКА ДАННЫХ API
 @app.post("/api/auth/register")
 def register_user(user: RegisterRequest, response: Response):
-    """
-    Шаг 1: Принимает первичные данные регистрации. Симулирует отправку кода на почту.
-    """
     logger.info("========================================")
     logger.info(f"===> [РЕГИСТРАЦИЯ] Первичные данные получены для: {user.email}")
     
@@ -187,7 +302,6 @@ def login_user(user: LoginRequest, response: Response):
 
 @app.post("/api/auth/send_code")
 def send_code(payload: SendCodeRequest, response: Response):
-    """Вспомогательный шаг: Повторный запрос проверочного кода на Email"""
     logger.info(f"===> [ВОССТАНОВЛЕНИЕ] Запрос кода на email: {payload.email}")
     
     if "error" in payload.email:
@@ -203,7 +317,6 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
     logger.info(f"===> [ВЕРИФИКАЦИЯ] Проверка кода {payload.code} для: {payload.email}")
     logger.info("========================================")
     
-    # Сервер проверяет код. Если не совпал — шлет ошибку 400
     if payload.code != "123456":
         response.status_code = status.HTTP_400_BAD_REQUEST
         return {"code": 400, "state": "Bad Request", "message": "Invalid code"}
@@ -211,7 +324,6 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
     response.status_code = status.HTTP_200_OK
     extracted_username = payload.email.split('@')[0]
     
-    # Возвращает токен, который api.js перехватит и положит в localStorage
     return {
         "code": 200,
         "state": "OK",
@@ -219,19 +331,12 @@ def verify_code(payload: VerifyCodeRequest, response: Response):
         "reset_token": f"temporary-token-for-password-reset-via-{payload.email}"
     }
 
-
-#Эндпоинт теперь логирует и обрабатывает ровно 4 массива
 @app.patch("/api/db/me/preferences")
 def update_user_preferences(payload: PreferencesRequest, response: Response):
-    """
-    Принимает массивы выбранных (красных) кнопок с фронтенда по 4 категориям.
-    Если категория пуста, в терминал выведется пустой список [].
-    """
     logger.info("========================================")
     logger.info("===> [БЭКЕНД ФИЛТР] Настройки пользователя обновлены!")
-    logger.info(f"Аллергии (allergies): {payload.allergies}")
-    logger.info(f"Диеты (diets): {payload.diets}")
-    logger.info(f"Религия (religions): {payload.religions}")
+    logger.info(f"Запрещенное (forbidden): {payload.forbidden}")
+    logger.info(f"Религии (religions): {payload.religions}")
     logger.info(f"Оборудование (kitchen_equipment): {payload.kitchen_equipment}")
     logger.info("========================================")
 
@@ -241,22 +346,15 @@ def update_user_preferences(payload: PreferencesRequest, response: Response):
         "state": "OK"
     }
 
-# --- 10. ПОЛУЧЕНИЕ НАСТРОЕК ПРОФИЛЯ ПО КОНТРАКТУ GET ---
 @app.get("/api/db/me/preferences")
 def get_user_preferences(response: Response):
-    """
-    Имитирует получение сохраненных фильтров пользователя из базы данных сессии.
-    Возвращает JSON согласно твоему GET-контракту.
-    """
     logger.info("===> [БЭКЕНД ФИЛЬТР] Запрос GET /api/db/me/preferences успешно обработан!")
     
     response.status_code = status.HTTP_200_OK
-    
-    # Мокаем (симулируем) ответ: пусть по умолчанию будут включены орехи, лактоза, халяль и микроволновка
     return {
-        "forbidden": ["nuts", "lactose"],
-        "religions": ["halal"],
-        "kitchen_equipment": ["microwave", "oven"]
+        "forbidden": ["nuts", "fish"],
+        "religions": ["halal", "vegan"],
+        "kitchen_equipment": ["microwave", "toaster", "stove"]
     }
 
 #Профили пользователей в app.state.profiles (создаётся при старте).
@@ -358,7 +456,6 @@ def update_my_profile(payload: UpdateProfileRequest, request: Request):
 
 @app.post("/api/auth/new_pswd")
 def change_password(data: NewPasswordRequest, response: Response):
-    """Принимает запрос на установку нового пароля по токену сброса"""
     logger.info("========================================")
     logger.info(f"===> [БЭКЕНД] Запрос на смену пароля успешно получен.")
     logger.info("========================================")
@@ -382,8 +479,6 @@ app.mount(
     name="frontend",
 )
 
-
 if __name__ == "__main__":
     import uvicorn
-    # Запускаем локальный uvicorn-воркер на стандартном loopback-интерфейсе 127.0.0.1
     uvicorn.run(app, host="127.0.0.1", port=8000)
