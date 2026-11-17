@@ -141,7 +141,6 @@ def register_user(user: RegisterRequest, response: Response):
         "message": "Verification code sent to email"
     }
 
-
 # ДОБАВЛЕННЫЙ ЭНДПОИНТ ДЛЯ ВХОДА (ПОДДЕРЖИВАЕТ И ЛОГИН, И EMAIL)
 @app.post("/api/auth/login")
 def login_user(user: LoginRequest, response: Response):
@@ -293,6 +292,32 @@ def change_password(data: NewPasswordRequest, response: Response):
     
     response.status_code = status.HTTP_200_OK
     return {
+        "code": 200,
+        "state": "OK"
+    }
+
+
+# --- ЭНДПОИНТ ДЛЯ СТРАНИЦЫ ДОСТИЖЕНИЙ ---
+
+@app.get("/api/db/achievements")
+def get_achievements(response: Response):
+    """
+    Возвращает список достижений для пользователя.
+    """
+    logger.info("===> [БЭКЕНД] Запрос на получение достижений")
+    
+    # Мокаем ответ: для теста считаем, что выполнены только Регистрация (1) и Первый лайк (2)
+    response.status_code = status.HTTP_200_OK
+    return {
+        "achievements": [
+            {"id": 1, "is_unlocked": True},
+            {"id": 2, "is_unlocked": True},
+            {"id": 3, "is_unlocked": False},
+            {"id": 4, "is_unlocked": False},
+            {"id": 5, "is_unlocked": False},
+            {"id": 6, "is_unlocked": False},
+            {"id": 7, "is_unlocked": False}
+        ],
         "code": 200,
         "state": "OK"
     }
