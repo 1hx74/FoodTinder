@@ -4,7 +4,7 @@
 
 Фото и гипертекст (пошаговая инструкция с картинками) при этом скачиваются
 и кладутся в наше хранилище — см. media_seed.py и seed_content.py."""
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from media_seed import build_media
@@ -141,6 +141,115 @@ _DEMO = [
 ]
 
 
+# Теги и ограничения демо-рецептов (коды и их смысл — в vocab.py).
+# title -> (tags, forbidden — что рецепт нарушает из аллергий/диет,
+#           religions — какие религиозные ограничения нарушает)
+_META: dict[str, tuple[list[str], list[str], list[str]]] = {
+    "Борщ": (
+        ["soup", "russian", "meat", "vegetables", "comfort"],
+        ["lactose", "vegetarian", "vegan"],  # говядина, сметана
+        ["lenten"],
+    ),
+    "Омлет с сыром": (
+        ["breakfast", "eggs", "dairy", "quick", "easy"],
+        ["eggs", "lactose", "vegan"],
+        ["lenten"],
+    ),
+    "Паста карбонара": (
+        ["main", "pasta", "italian", "meat", "eggs", "quick"],
+        ["wheat", "eggs", "lactose", "vegetarian", "vegan"],
+        ["halal", "lenten"],  # бекон — свинина
+    ),
+    "Картошка в духовке": (
+        ["side", "vegetables", "easy", "comfort"],
+        [],
+        [],
+    ),
+    "Плов с курицей": (
+        ["main", "chicken", "rice", "asian"],
+        ["vegetarian", "vegan"],
+        ["lenten"],
+    ),
+    "Греческий салат": (
+        ["salad", "vegetables", "mediterranean", "healthy", "quick"],
+        ["lactose", "vegan"],  # фета
+        ["lenten"],
+    ),
+    "Блины": (
+        ["breakfast", "baking", "russian", "sweet", "dairy"],
+        ["wheat", "lactose", "eggs", "vegan"],
+        ["lenten"],
+    ),
+    "Лосось на гриле": (
+        ["main", "fish", "healthy", "quick", "mediterranean"],
+        ["fish", "citruses", "vegetarian", "vegan"],  # лимон
+        ["lenten"],
+    ),
+    "Эклеры": (
+        ["dessert", "baking", "french", "sweet", "chocolate"],
+        ["wheat", "lactose", "eggs", "vegan"],
+        ["lenten"],
+    ),
+    "Чизкейк Нью-Йорк": (
+        ["dessert", "baking", "american", "sweet", "dairy"],
+        ["wheat", "lactose", "eggs", "vegan"],  # печенье — мука
+        ["lenten"],
+    ),
+    "Тирамису": (
+        ["dessert", "italian", "sweet", "dairy"],
+        ["wheat", "lactose", "eggs", "vegan"],  # савоярди — мука и яйца
+        ["lenten"],
+    ),
+    "Домашний лимонад": (
+        ["drink", "fruit", "refreshing", "sweet", "quick"],
+        ["citruses"],
+        [],
+    ),
+    "Банановый смузи": (
+        ["drink", "fruit", "breakfast", "healthy", "quick"],
+        ["lactose", "vegan"],  # йогурт, мёд
+        ["lenten"],
+    ),
+    "Горячий шоколад": (
+        ["drink", "chocolate", "sweet", "dairy", "comfort", "quick"],
+        ["lactose", "vegetarian", "vegan"],  # маршмеллоу — желатин
+        ["halal", "lenten"],  # желатин обычно свиной
+    ),
+    "Том ям": (
+        ["soup", "asian", "seafood", "spicy"],
+        ["seafood", "citruses", "vegetarian", "vegan"],  # креветки, лайм
+        ["lenten"],
+    ),
+    "Курица терияки": (
+        ["main", "chicken", "rice", "asian", "quick"],
+        ["wheat", "vegetarian", "vegan"],  # соус терияки: соевый соус (пшеница)
+        ["halal", "lenten"],  # в терияки мирин/саке — алкоголь
+    ),
+}
+
+
+# Коды оборудования (vocab.EQUIPMENT_CODES), нужного демо-рецептам.
+# Посуда/ножи/миски не учитываются — они есть у всех.
+_EQUIPMENT: dict[str, list[str]] = {
+    "Борщ": ["stove", "grater"],
+    "Омлет с сыром": ["stove", "wisk"],
+    "Паста карбонара": ["stove"],
+    "Картошка в духовке": ["oven", "backind_sheet", "stove"],  # картофель сначала отваривают
+    "Плов с курицей": ["stove"],
+    "Греческий салат": [],
+    "Блины": ["stove", "blender"],
+    "Лосось на гриле": ["stove"],
+    "Эклеры": ["oven", "backind_sheet", "stove", "mixer"],
+    "Чизкейк Нью-Йорк": ["oven", "backing_dish", "mixer", "blender"],
+    "Тирамису": ["mixer", "backing_dish"],
+    "Домашний лимонад": ["stove"],  # сахарный сироп
+    "Банановый смузи": ["blender"],
+    "Горячий шоколад": ["stove", "wisk"],
+    "Том ям": ["stove"],
+    "Курица терияки": ["stove"],
+}
+
+
 async def seed_demo_recipes(session: AsyncSession) -> int:
     count = (await session.execute(select(func.count()).select_from(Recipe))).scalar_one()
     if count:
@@ -158,9 +267,14 @@ async def seed_demo_recipes(session: AsyncSession) -> int:
         if not hypertext_url:
             # гипертекст не сохранился — ссылка на страницу рецепта-источника
             hypertext_url = RECIPE_MEDIA.get(title, {}).get("source") or _HTML.format(n=n)
+        tags, forbidden, religions = _META.get(title, ([], [], []))
         session.add(
             Recipe(
                 title=title,
+                tags=tags,
+                forbidden=forbidden,
+                religions=religions,
+                equipment_codes=_EQUIPMENT.get(title, []),
                 description=desc,
                 image_url=image_url or _IMG + title.replace(" ", "+"),
                 stars=stars,
@@ -184,3 +298,26 @@ async def seed_demo_recipes(session: AsyncSession) -> int:
 
     await session.commit()
     return len(_DEMO)
+
+
+async def backfill_demo_meta(session: AsyncSession) -> int:
+    """Для БД, засеянной до появления тегов: демо-рецептам (по title) без тегов
+    проставляем tags / forbidden / religions из _META. Рецепты, у которых теги
+    уже есть (в т.ч. отредактированные админом), не трогаем."""
+    updated = 0
+    for title, (tags, forbidden, religions) in _META.items():
+        result = await session.execute(
+            update(Recipe)
+            .where(Recipe.title == title, func.cardinality(Recipe.tags) == 0)
+            .values(tags=tags, forbidden=forbidden, religions=religions)
+        )
+        updated += result.rowcount or 0
+    for title, codes in _EQUIPMENT.items():
+        if codes:
+            await session.execute(
+                update(Recipe)
+                .where(Recipe.title == title, func.cardinality(Recipe.equipment_codes) == 0)
+                .values(equipment_codes=codes)
+            )
+    await session.commit()
+    return updated

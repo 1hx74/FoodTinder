@@ -57,16 +57,24 @@ class RecipeRepository:
         self,
         user_id: str | None,
         exclude: Sequence[int] = (),
+        forbidden: Sequence[str] = (),
+        religions: Sequence[str] = (),
     ) -> Recipe | None:
         """
         user_id=None  -> случайный рецепт (минус exclude, если клиент передал).
         user_id задан -> случайный рецепт, которого пользователь ещё не получал
                          и на который не реагировал.
+        forbidden / religions -> исключаем рецепты, чьи ограничения
+                         пересекаются с ограничениями пользователя (оператор &&).
         """
         stmt = select(Recipe)
 
         if exclude:
             stmt = stmt.where(Recipe.id.not_in(exclude))
+        if forbidden:
+            stmt = stmt.where(~Recipe.forbidden.overlap(list(forbidden)))
+        if religions:
+            stmt = stmt.where(~Recipe.religions.overlap(list(religions)))
 
         if user_id is not None:
             shown = (

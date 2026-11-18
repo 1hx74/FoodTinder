@@ -4,7 +4,7 @@ from typing import Literal
 
 from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +12,7 @@ from db import get_session
 from models import IngredientQuantity, ReactionAction, Recipe
 from repos import RecipeRepository
 from jwks import get_optional_user_id, get_required_user_id
+from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RELIGION_CODES, TAGS, clean_codes
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +63,8 @@ def _recipe_payload(recipe: Recipe, code: int = 200, state: str = "OK") -> dict:
             for i in recipe.ingredients
         ],
         "equipment": [e.name for e in recipe.equipment],
+        # forbidden / religions / equipment_codes фронту не отдаём — они для рекомендаций
+        "tags": list(recipe.tags or []),
         "code": code,
         "state": state,
     }
@@ -76,7 +79,8 @@ class ReactionRequest(BaseModel):
 
 class AnonymousNextRequest(BaseModel):
     """Тело POST /next для незарегистрированного пользователя:
-    его лайки/дизлайки из локального кэша клиента."""
+    его лайки/дизлайки из локального кэша клиента, а также аллергии/диеты
+    и религия, кухонное оборудование — те же поля и коды, что в /api/db/me/preferences."""
 
     liked: list[int] = Field(default_factory=list, max_length=10000)
     disliked: list[int] = Field(default_factory=list, max_length=10000)
@@ -84,6 +88,16 @@ class AnonymousNextRequest(BaseModel):
         default_factory=list,
         max_length=10000,
         description="id, которые клиент уже держит в очереди",
+    )
+    forbidden: list[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description="аллергии и диеты: " + ", ".join(FORBIDDEN_CODES),
+    )
+    religions: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="религия: " + ", ".join(RELIGION_CODES),
     )
 
 
@@ -124,11 +138,27 @@ class RecipeCreate(BaseModel):
         default_factory=list,
         description="необходимое оборудование: блендер, большая зелёная чашка и т.д.",
     )
+    tags: list[str] = Field(default_factory=list, description="коды из: " + ", ".join(TAGS))
+    # ограничения рецепта (что он нарушает); в ответах не отдаются
+    forbidden: list[str] = Field(
+        default_factory=list, description="нарушает: " + ", ".join(FORBIDDEN_CODES)
+    )
+    religions: list[str] = Field(
+        default_factory=list, description="нарушает: " + ", ".join(RELIGION_CODES)
+    )
+    equipment_codes: list[str] = Field(
+        default_factory=list, description="нужное оборудование: " + ", ".join(EQUIPMENT_CODES)
+    )
 
     @model_validator(mode="after")
     def _check_equipment(self):
         self.equipment = _clean_equipment(self.equipment)
         return self
+
+    @field_validator("tags", "forbidden", "religions", "equipment_codes")
+    @classmethod
+    def _check_codes(cls, v: list[str], info) -> list[str]:
+        return _clean_recipe_codes(v, info.field_name)
 
 
 class RecipeUpdate(BaseModel):
@@ -151,6 +181,15 @@ class RecipeUpdate(BaseModel):
     final_weight: int | None = Field(default=None, ge=1)
     ingredients: list[IngredientSchema] | None = None
     equipment: list[str] | None = None
+    tags: list[str] | None = None
+    forbidden: list[str] | None = None
+    religions: list[str] | None = None
+    equipment_codes: list[str] | None = None
+
+    @field_validator("tags", "forbidden", "religions", "equipment_codes")
+    @classmethod
+    def _check_codes(cls, v: list[str] | None, info) -> list[str] | None:
+        return None if v is None else _clean_recipe_codes(v, info.field_name)
 
     @model_validator(mode="after")
     def _validate(self):
@@ -162,6 +201,18 @@ class RecipeUpdate(BaseModel):
         if self.equipment is not None:
             self.equipment = _clean_equipment(self.equipment)
         return self
+
+
+_RECIPE_CODES = {
+    "tags": TAGS,
+    "forbidden": FORBIDDEN_CODES,
+    "religions": RELIGION_CODES,
+    "equipment_codes": EQUIPMENT_CODES,
+}
+
+
+def _clean_recipe_codes(values: list[str], field: str) -> list[str]:
+    return clean_codes(values, _RECIPE_CODES[field], field)
 
 
 def _clean_equipment(items: list[str]) -> list[str]:
@@ -202,9 +253,21 @@ async def post_next_recipe(
 ):
     """Выдача для незарегистрированного пользователя: клиент присылает
     лайкнутые и дизлайкнутые id из своего кэша, мы их исключаем из выдачи.
+    forbidden / religions — аллергии, диеты и религия пользователя:
+    рецепты, которые их нарушают, не выдаются. Неизвестный код -> 422.
     Ничего в БД не записывается."""
+    try:
+        forbidden = clean_codes(body.forbidden, FORBIDDEN_CODES, "forbidden")
+        religions = clean_codes(body.religions, RELIGION_CODES, "religions")
+    except ValueError:
+        return _error(422, "Unprocessable Entity")
     exclude = set(body.liked) | set(body.disliked) | set(body.exclude)
-    recipe = await RecipeRepository(session).get_next(None, list(exclude))
+    recipe = await RecipeRepository(session).get_next(
+        None,
+        list(exclude),
+        forbidden=forbidden,
+        religions=religions,
+    )
 
     if recipe is None:
         return {"recipes": []}
