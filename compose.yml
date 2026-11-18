@@ -43,11 +43,17 @@ services:
     container_name: ft-recipes
     env_file:
       - ./backend/recipes/.env
+    environment:
+      # задаётся в одном месте — в .env в корне проекта
+      # (нужен для ссылок на фото и гипертекст демо-рецептов)
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost}
     ports:
       - "8000:8000"
     depends_on:
       postgres:
         condition: service_healthy
+      fileloud:
+        condition: service_started
     networks:
       - food-tinder-net
 

@@ -19,5 +19,15 @@ MinIO (S3 для fileloud) и Postgres наружу не опубликован�
 
 Публичный адрес задаётся в одном месте: `PUBLIC_BASE_URL` в `.env` в корне проекта
 (шаблон в `.env.example`). Можно IP или домен: `http://203.0.113.10`, `https://foodtinder.ru`.
-От него собираются ссылки `avatar_url`, `image_url`, `hyper-text`, которые отдаёт бэк.
-После изменения: `docker compose up -d --force-recreate media`.
+От него собираются ссылки `avatar_url`, `image_url`, `hyper-text`, которые отдаёт бэк
+(media — при загрузке, recipes — при первом сиде демо-рецептов).
+После изменения: `docker compose up -d --force-recreate media recipes`.
+
+## Демо-рецепты
+
+При старте recipes, если таблица `recipes` пуста, создаются 16 демо-рецептов.
+Их фото и гипертекст (пошаговая инструкция с картинкой на каждый шаг) скачиваются
+с eda.ru / 1000.menu и кладутся в fileloud (ссылки на источники — `backend/recipes/seed_content.py`).
+Нужен интернет; если что-то не скачалось — рецепты всё равно создаются, в логах recipes будет warning.
+Пересоздать демо-рецепты с нуля: `docker compose down -v && docker compose up --build -d`
+(удалит ВСЕ данные: пользователей, рецепты, файлы).

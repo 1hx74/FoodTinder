@@ -1,11 +1,17 @@
 """Рецепты-заглушки для теста (16 шт.: основные блюда, супы, салаты, выпечка,
 сладости, напитки, азиатская кухня — чтобы было на чём проверять рекомендации).
-Вставляются только если таблица recipes пуста."""
+Вставляются только если таблица recipes пуста.
+
+Фото и гипертекст (пошаговая инструкция с картинками) при этом скачиваются
+и кладутся в наше хранилище — см. media_seed.py и seed_content.py."""
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from media_seed import build_media
 from models import IngredientQuantity, Recipe, RecipeEquipment, RecipeIngredient
+from seed_content import RECIPE_MEDIA
 
+# запасные ссылки — если для рецепта нет данных в seed_content.py
 _IMG = "https://placehold.co/600x400?text="
 _HTML = "https://example.com/recipes/{n}.html"
 
@@ -140,18 +146,25 @@ async def seed_demo_recipes(session: AsyncSession) -> int:
     if count:
         return 0
 
+    # title -> (image_url, hypertext_url); качается до вставки, ошибки не роняют старт
+    media = await build_media([row[0] for row in _DEMO])
+
     for n, (
         title, desc, minutes, difficulty, stars,
         kalories, belki, fats, uglevods, final_weight,
         ingredients, equipment,
     ) in enumerate(_DEMO, start=1):
+        image_url, hypertext_url = media.get(title, (None, None))
+        if not hypertext_url:
+            # гипертекст не сохранился — ссылка на страницу рецепта-источника
+            hypertext_url = RECIPE_MEDIA.get(title, {}).get("source") or _HTML.format(n=n)
         session.add(
             Recipe(
                 title=title,
                 description=desc,
-                image_url=_IMG + title.replace(" ", "+"),
+                image_url=image_url or _IMG + title.replace(" ", "+"),
                 stars=stars,
-                hypertext_url=_HTML.format(n=n),
+                hypertext_url=hypertext_url,
                 cooking_time=minutes,
                 difficulty=difficulty,
                 kalories=kalories,
