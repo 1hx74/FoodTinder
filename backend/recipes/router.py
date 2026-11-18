@@ -74,6 +74,25 @@ class ReactionRequest(BaseModel):
     action: Literal["like", "dislike", "favorite"]
 
 
+class AnonymousNextRequest(BaseModel):
+    """Тело POST /next для незарегистрированного пользователя:
+    его лайки/дизлайки из локального кэша клиента."""
+
+    liked: list[int] = Field(default_factory=list, max_length=10000)
+    disliked: list[int] = Field(default_factory=list, max_length=10000)
+    exclude: list[int] = Field(
+        default_factory=list,
+        max_length=10000,
+        description="id, которые клиент уже держит в очереди",
+    )
+
+
+class ReactionsBulkRequest(BaseModel):
+    """Тело PUT /liked, PUT /disliked и PUT /favorite: id рецептов из кэша клиента."""
+
+    recipes: list[int] = Field(max_length=10000)
+
+
 class IngredientSchema(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -157,9 +176,11 @@ def _clean_equipment(items: list[str]) -> list[str]:
 @handle_db_errors
 async def get_next_recipe(
     exclude: list[int] = Query(default=[], description="id, которые клиент уже держит в очереди"),
-    user_id: str | None = Depends(get_optional_user_id),
+    user_id: str = Depends(get_required_user_id),
     session: AsyncSession = Depends(get_session),
 ):
+    """Только для авторизованных. Аноним без токена получит 401
+    и должен использовать POST /next."""
     repo = RecipeRepository(session)
     recipe = await repo.get_next(user_id, exclude)
 
@@ -169,6 +190,24 @@ async def get_next_recipe(
 
     if user_id is not None:
         await repo.mark_shown(user_id, recipe.id)
+
+    return {"recipe_id": recipe.id, "code": 200, "state": "OK"}
+
+
+@router.post("/next")
+@handle_db_errors
+async def post_next_recipe(
+    body: AnonymousNextRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Выдача для незарегистрированного пользователя: клиент присылает
+    лайкнутые и дизлайкнутые id из своего кэша, мы их исключаем из выдачи.
+    Ничего в БД не записывается."""
+    exclude = set(body.liked) | set(body.disliked) | set(body.exclude)
+    recipe = await RecipeRepository(session).get_next(None, list(exclude))
+
+    if recipe is None:
+        return {"recipes": []}
 
     return {"recipe_id": recipe.id, "code": 200, "state": "OK"}
 
@@ -218,6 +257,49 @@ async def get_disliked(
 ):
     ids = await RecipeRepository(session).get_disliked(user_id)
     return {"code": 200, "state": "OK", "recipes": ids}
+
+async def _put_reactions_bulk(
+    user_id: str, recipe_ids: list[int], action: ReactionAction, session: AsyncSession
+) -> dict:
+    applied = await RecipeRepository(session).set_reactions_bulk(user_id, recipe_ids, action)
+    skipped = sorted(set(recipe_ids) - set(applied))
+    return {"code": 200, "state": "OK", "recipes": applied, "skipped": skipped}
+
+
+@router.put("/liked")
+@handle_db_errors
+async def put_liked(
+    body: ReactionsBulkRequest,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Перенос лайков из кэша клиента в аккаунт (например, после регистрации).
+    Добавляет к уже имеющимся; если на рецепт стоял дизлайк — он заменяется лайком.
+    Несуществующие id пропускаются и возвращаются в skipped."""
+    return await _put_reactions_bulk(user_id, body.recipes, ReactionAction.LIKE, session)
+
+
+@router.put("/disliked")
+@handle_db_errors
+async def put_disliked(
+    body: ReactionsBulkRequest,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """То же для дизлайков; лайк на том же рецепте заменяется дизлайком."""
+    return await _put_reactions_bulk(user_id, body.recipes, ReactionAction.DISLIKE, session)
+
+
+@router.put("/favorite")
+@handle_db_errors
+async def put_favorite(
+    body: ReactionsBulkRequest,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Перенос избранного из кэша клиента в аккаунт. Favorite независим от like/dislike."""
+    return await _put_reactions_bulk(user_id, body.recipes, ReactionAction.FAVORITE, session)
+
 
 @router.get("/favorite")
 async def get_favorite(

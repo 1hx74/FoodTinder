@@ -139,6 +139,56 @@ class RecipeRepository:
 
         return True
 
+    async def set_reactions_bulk(
+        self,
+        user_id: str,
+        recipe_ids: Sequence[int],
+        action: ReactionAction,
+    ) -> list[int]:
+        """Массовая установка like/dislike (перенос из кэша клиента).
+        Возвращает id, к которым реакция реально применена (существующие рецепты)."""
+        ids = list(dict.fromkeys(recipe_ids))  # без дублей, порядок сохраняем
+        if not ids:
+            return []
+
+        existing = set(
+            (await self.session.execute(select(Recipe.id).where(Recipe.id.in_(ids))))
+            .scalars()
+            .all()
+        )
+        ids = [i for i in ids if i in existing]
+        if not ids:
+            return []
+
+        opposite = {
+            ReactionAction.LIKE: ReactionAction.DISLIKE,
+            ReactionAction.DISLIKE: ReactionAction.LIKE,
+        }.get(action)
+
+        try:
+            if opposite is not None:
+                await self.session.execute(
+                    delete(RecipeReaction).where(
+                        RecipeReaction.user_id == user_id,
+                        RecipeReaction.recipe_id.in_(ids),
+                        RecipeReaction.action == opposite.value,
+                    )
+                )
+            await self.session.execute(
+                pg_insert(RecipeReaction)
+                .values(
+                    [{"user_id": user_id, "recipe_id": i, "action": action.value} for i in ids]
+                )
+                .on_conflict_do_nothing(index_elements=["user_id", "recipe_id", "action"])
+            )
+            await self.session.commit()
+        except IntegrityError:
+            # какой-то рецепт удалили параллельно — повторяем с актуальным списком
+            await self.session.rollback()
+            return await self.set_reactions_bulk(user_id, ids, action)
+
+        return ids
+
     async def _recipe_ids_by_action(self, user_id: str, action: ReactionAction) -> list[int]:
         stmt = (
             select(RecipeReaction.recipe_id)
