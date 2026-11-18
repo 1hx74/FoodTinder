@@ -1,12 +1,12 @@
 """Фото и гипертекст для демо-рецептов.
 
 Вызывается из seed.py только когда таблица recipes пуста:
-  1. ждём, пока поднимется fileloud;
-  2. качаем картинки по ссылкам из seed_content.py (параллельно, с ограничением);
-  3. кладём их в fileloud (POST /media/images);
-  4. собираем почти голый html с шагами и картинками и кладём его в fileloud
+1. ждём, пока поднимется fileloud;
+2. качаем картинки по ссылкам из seed_content.py (параллельно, с ограничением);
+3. кладём их в fileloud (POST /media/images);
+4. собираем почти голый html с шагами и картинками и кладём его в fileloud
      (POST /media/texts);
-  5. отдаём публичные ссылки вида {PUBLIC_BASE_URL}/api/db/image/{id}
+5. отдаём публичные ссылки вида {PUBLIC_BASE_URL}/api/db/image/{id}
      и {PUBLIC_BASE_URL}/api/db/hyper-text/{id} (их раздаёт сервис media).
 
 Любая ошибка (нет интернета, fileloud лежит) не роняет старт: рецепты всё равно
@@ -36,17 +36,14 @@ MAX_IMAGE_BYTES = 10 * 1024 * 1024
 _USER_AGENT = "Mozilla/5.0 (compatible; FoodTinder-seed/1.0)"
 _EXT = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image/gif": ".gif"}
 
-# минимум оформления: шрифт, размеры, отступы и картинки по ширине блока.
-# Стили привязаны к классу обёртки, чтобы не задеть страницу, в которую вставят html.
+# Стили для компактного отображения шагов и картинок без лишних отступов
 _STYLE = (
-    # шрифт как на фронте (frontend/vars.css: --main-font)
-    '.ft-steps{font-family:"Inter-Bold",sans-serif;font-size:16px;line-height:1.4;'
-    "color:#222;max-width:720px;margin:0 auto;padding:0 12px}"
-    ".ft-steps h2{font-size:20px;margin:8px 0 10px}"
-    ".ft-steps h3{font-size:16px;margin:0 0 2px}"
-    ".ft-steps p{margin:0 0 6px}"
-    ".ft-steps .step{margin:0 0 12px}"
-    ".ft-steps img{display:block;max-width:100%;height:auto;border-radius:8px}"
+    '.ft-steps{font-family:var(--main-font, "Inter-Bold", sans-serif);font-size:14px;line-height:1.4;'
+    "color:#222222;width:100%;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}"
+    ".ft-steps h3{font-size:14px;font-weight:700;color:#000000;margin:0 0 4px}"
+    ".ft-steps p{font-size:14px;font-weight:400;line-height:1.4;color:#222222;margin:0;padding:0}"
+    ".ft-steps .step{margin:0;padding:0;display:flex;flex-direction:column;gap:6px}"
+    ".ft-steps img{display:block;max-width:100%;height:auto;border-radius:12px;margin:4px 0 0 0}"
 )
 
 
@@ -65,8 +62,7 @@ def _file_id(fileloud_url: str) -> str:
 
 def build_html(title: str, steps: list[tuple[str, str | None]]) -> str:
     """steps: [(текст, ссылка на картинку или None)]."""
-    parts = [f'<article class="ft-steps">', f"<style>{_STYLE}</style>",
-             f"<h2>{html.escape(title)}: пошаговый рецепт</h2>"]
+    parts = [f'<article class="ft-steps">', f"<style>{_STYLE}</style>"]
     for n, (text, img) in enumerate(steps, start=1):
         parts.append('<section class="step">')
         parts.append(f"<h3>Шаг {n}</h3>")
