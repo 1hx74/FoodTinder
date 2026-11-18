@@ -59,8 +59,10 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/fileloud/.env
+    # только localhost хоста (для /docs), из сети недоступен;
+    # снаружи файлы отдаются через сервис media
     ports:
-      - "8001:8000"
+      - "127.0.0.1:8001:8000"
     volumes:
       - fileloud_data:/data
     depends_on:
@@ -72,15 +74,38 @@ services:
     image: docker.io/pgsty/silo:RELEASE.2026-09-03T13-18-01Z
     container_name: ft-minio
     restart: unless-stopped
-    ports:
-      - "9000:9000"
-      - "9001:9001"
+    # наружу не публикуем: S3 нужен только fileloud внутри docker-сети
+    expose:
+      - "9000"
+      - "9001"
     environment:
       - MINIO_ROOT_USER=supersecretadmin
       - MINIO_ROOT_PASSWORD=supersecretpassword
     volumes:
       - minio_data:/data
     command: server /data --console-address ":9001"
+    networks:
+      - food-tinder-net
+
+  media:
+    build:
+      context: ./backend/media
+      dockerfile: .dockerfile
+    container_name: ft-media
+    restart: unless-stopped
+    env_file:
+      - ./backend/media/.env
+    environment:
+      # задаётся в одном месте — в .env в корне проекта
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost}
+    # только localhost хоста (для /docs); снаружи — через nginx
+    ports:
+      - "127.0.0.1:8002:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      fileloud:
+        condition: service_started
     networks:
       - food-tinder-net
 
@@ -96,6 +121,7 @@ services:
     depends_on:
       - auth
       - recipes
+      - media
     networks:
       - food-tinder-net
 

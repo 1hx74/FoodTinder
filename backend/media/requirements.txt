@@ -1,0 +1,7 @@
+fastapi
+uvicorn[standard]
+SQLAlchemy[asyncio]
+asyncpg
+PyJWT[crypto]
+httpx
+python-multipart
