@@ -39,14 +39,14 @@ _EXT = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp", "image
 # минимум оформления: шрифт, размеры, отступы и картинки по ширине блока.
 # Стили привязаны к классу обёртки, чтобы не задеть страницу, в которую вставят html.
 _STYLE = (
-    ".ft-steps{font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.5;"
+    # шрифт как на фронте (frontend/vars.css: --main-font)
+    '.ft-steps{font-family:"Inter-Bold",sans-serif;font-size:16px;line-height:1.4;'
     "color:#222;max-width:720px;margin:0 auto;padding:0 12px}"
-    ".ft-steps h2{font-size:20px;margin:16px 0}"
-    ".ft-steps h3{font-size:16px;margin:0 0 4px}"
-    ".ft-steps p{margin:0 0 8px}"
-    ".ft-steps .step{margin:0 0 24px}"
+    ".ft-steps h2{font-size:20px;margin:8px 0 10px}"
+    ".ft-steps h3{font-size:16px;margin:0 0 2px}"
+    ".ft-steps p{margin:0 0 6px}"
+    ".ft-steps .step{margin:0 0 12px}"
     ".ft-steps img{display:block;max-width:100%;height:auto;border-radius:8px}"
-    ".ft-steps .source{font-size:12px;color:#888}"
 )
 
 
@@ -63,7 +63,7 @@ def _file_id(fileloud_url: str) -> str:
     return fileloud_url.rstrip("/").rsplit("/", 1)[-1]
 
 
-def build_html(title: str, steps: list[tuple[str, str | None]], source: str | None = None) -> str:
+def build_html(title: str, steps: list[tuple[str, str | None]]) -> str:
     """steps: [(текст, ссылка на картинку или None)]."""
     parts = [f'<article class="ft-steps">', f"<style>{_STYLE}</style>",
              f"<h2>{html.escape(title)}: пошаговый рецепт</h2>"]
@@ -74,15 +74,8 @@ def build_html(title: str, steps: list[tuple[str, str | None]], source: str | No
         if img:
             parts.append(f'<img src="{html.escape(img)}" alt="Шаг {n}" loading="lazy">')
         parts.append("</section>")
-    if source:
-        parts.append(f'<p class="source">Фото: <a href="{html.escape(source)}" '
-                     f'target="_blank" rel="noopener">{html.escape(_host(source))}</a></p>')
     parts.append("</article>")
     return "\n".join(parts) + "\n"
-
-
-def _host(url: str) -> str:
-    return httpx.URL(url).host.removeprefix("www.")
 
 
 async def _wait_fileloud(client: httpx.AsyncClient) -> bool:
@@ -157,7 +150,7 @@ async def _one_recipe(client, sem, n: int, title: str, info: dict) -> tuple[str,
               for i, (_text, img) in enumerate(info["steps"], start=1)]
     photo, *step_imgs = await asyncio.gather(*tasks)
     steps = [(text, img) for (text, _src), img in zip(info["steps"], step_imgs)]
-    hypertext = await _store_html(client, build_html(title, steps, info.get("source")))
+    hypertext = await _store_html(client, build_html(title, steps))
     ok = sum(1 for i in step_imgs if i) + (1 if photo else 0)
     logger.info("seed media: %s — картинок %d/%d, гипертекст %s",
                 title, ok, len(tasks), "ok" if hypertext else "нет")
