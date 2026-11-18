@@ -51,6 +51,39 @@ services:
     networks:
       - food-tinder-net
 
+  fileloud:
+    build:
+      context: ./backend/fileloud
+      dockerfile: .dockerfile
+    container_name: ft-fileloud
+    restart: unless-stopped
+    env_file:
+      - ./backend/fileloud/.env
+    ports:
+      - "8001:8000"
+    volumes:
+      - fileloud_data:/data
+    depends_on:
+      - minio
+    networks:
+      - food-tinder-net
+
+  minio:
+    image: docker.io/pgsty/silo:RELEASE.2026-09-03T13-18-01Z
+    container_name: ft-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=supersecretadmin
+      - MINIO_ROOT_PASSWORD=supersecretpassword
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - food-tinder-net
+
   nginx:
     image: nginx:1.27-alpine
     container_name: ft-nginx
@@ -69,6 +102,8 @@ services:
 
 volumes:
   pgdata:
+  minio_data:
+  fileloud_data:
 
 networks:
   food-tinder-net:
