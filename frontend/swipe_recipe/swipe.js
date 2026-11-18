@@ -133,12 +133,19 @@ function formatIngredientMeasure(rawQuantity, rawCount) {
 
 /* 2. getUserPreferences()
  *
-- Получает настройки пользователя через AuthAPI.
-- Используется для определения доступного кухонного
-- оборудования.
+- Всегда берет данные об оборудовании напрямую из localStorage (кеша),
+- исключая любые сетевые запросы на бэкенд.
  */
-async function getUserPreferences() {
-    return await window.AuthAPI.getCachedEquipment();
+function getUserPreferences() {
+    try {
+        const cached = localStorage.getItem("global_cache_equipment");
+        if (cached) {
+            return JSON.parse(cached);
+        }
+    } catch (e) {
+        console.error("[swipe.js] Ошибка чтения кеша оборудования:", e);
+    }
+    return { kitchen_equipment: [], allergies: [], diets: [], religions: [] };
 }
 
 /* 3. getQueue()
@@ -297,7 +304,7 @@ async function renderRecipe(recipe) {
     if (equipmentContainer) {
         equipmentContainer.innerHTML = "";
         if (Array.isArray(recipe.equipment) && recipe.equipment.length > 0) {
-            const prefs = await getUserPreferences();
+            const prefs = getUserPreferences();
             const userEquipment = prefs.kitchen_equipment || [];
 
             recipe.equipment.forEach(itemKey => {
@@ -756,7 +763,7 @@ function initTouchSwipe() {
 - - настраивает кнопку избранного;
 - - подключает обработчики кнопок like и dislike;
 - - инициализирует свайпы;
-- - загружает настройки пользователя;
+- - загружает настройки пользователя (из кеша);
 - - отображает первую карточку из очереди или запрашивает
 -   первый рецепт с backend;
 - - запускает фоновое заполнение очереди.
@@ -781,7 +788,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btn-like")?.addEventListener("click", () => handleReaction("like"));
 
     initTouchSwipe();
-    await getUserPreferences();
+    getUserPreferences();
 
     const queue = getQueue();
     if (queue.length > 0) {
