@@ -4,7 +4,7 @@
  */
 
 const API = "localhost:8000";
-const API_BASE = `http://${API}:`;
+const API_BASE = `http://${API}`;
 
 class ApiError extends Error {
     constructor(message, status, data) {
@@ -54,10 +54,11 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
 const AuthAPI = {
 
     // ДОБАВЛЕНО: Метод для авторизации по логину/почте
-    async login(email, password) {
+    async login(username, password) {
+        // Отправляем данные на сервер (сервер ждет поле username, даже если там почта)
         const data = await rawRequest("/api/auth/login", {
             method: "POST",
-            body: { email, password }
+            body: { username, password }
         });
 
         console.log("[api.js] Ответ входа:", data);
@@ -66,10 +67,12 @@ const AuthAPI = {
         if (data && data.access_token) {
             tokenStorage.set(data.access_token);
             
-            // Определяем имя: берем из ответа бэкенда, либо извлекаем из email до символа '@'
-            const extractedUsername = data.username || email.split("@")[0];
+            // Берем имя из ответа сервера. Если сервер его не вернул — 
+            // берем то, что ввел пользователь, и отрезаем всё после @ (если это почта).
+            const extractedUsername = data.username || username.split("@")[0];
+            
             localStorage.setItem("username", extractedUsername);
-            localStorage.setItem("email", email);
+            localStorage.setItem("email", username); 
         }
 
         return data;
