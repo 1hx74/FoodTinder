@@ -3,8 +3,8 @@
  * Он управляет сетевыми запросами и глобальным кешем в localStorage.
  */
 
-const API = "localhost:8000";
-const API_BASE = `http://${API}:`;
+const API = "localhost";
+const API_BASE = `http://${API}`;
 
 class ApiError extends Error {
     constructor(message, status, data) {
@@ -21,15 +21,63 @@ const tokenStorage = {
     clear() { localStorage.removeItem("accessToken"); }
 };
 
+function formatAuthErrorMessage(status, rawState) {
+    const state = String(rawState || "").trim();
+
+    if (status === 400) {
+        if (state === "Wrong verification code") return "Неверный код подтверждения.";
+        if (state === "Invalid email") return "Некорректный формат Email.";
+        return state || "Некорректные данные запроса.";
+    }
+    if (status === 404) {
+        if (state === "User not found") {
+            return "Пользователь с таким Email не найден.";
+        }
+
+        if (
+            state === "Registration not found" ||
+            state === "Verification code not found"
+        ) {
+            return "Заявка на регистрацию или код подтверждения не найдены.";
+        }
+
+        if (state === "Password recovery not found") {
+            return "Запрос на восстановление пароля не найден. Начните восстановление заново.";
+        }
+
+        if (state === "Verification code not found") {
+            return "Код подтверждения не найден. Запросите новый.";
+        }
+
+        return state || "Запрашиваемые данные не найдены.";
+    }
+    if (status === 409) {
+        if (state === "Email already registered") return "Эта почта уже зарегистрирована.";
+        if (state === "User already exists") return "Пользователь с таким именем или почтой уже существует.";
+        return state || "Почта или имя пользователя уже заняты.";
+    }
+    if (status === 410) {
+        return "Срок действия кода истёк (5 минут). Запросите новый код.";
+    }
+    if (status === 429) {
+        if (state === "Too many verification attempts") {
+            return "Превышено количество попыток (5). Запросите новый код.";
+        }
+        return "Слишком много запросов. Повторить можно через 60 секунд.";
+    }
+
+    return state || "Ошибка запроса к серверу";
+}
+
 async function rawRequest(endpoint, { method = "GET", body } = {}) {
     const headers = { "Content-Type": "application/json" };
     const token = tokenStorage.get();
     if (token) {
         headers["Authorization"] = `Bearer ${token}`;
     }
-    
+
     const cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
-    
+
     let response;
     try {
         response = await fetch(`${API_BASE}${cleanEndpoint}`, {
@@ -45,28 +93,23 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
     try { data = await response.json(); } catch (_) {}
 
     if (!response.ok) {
-        throw new ApiError(data?.message || "Ошибка запроса к server.js", response.status, data);
+        const rawError = data?.state || data?.message;
+        const readableMessage = formatAuthErrorMessage(response.status, rawError);
+        throw new ApiError(readableMessage, response.status, data);
     }
 
     return data;
 }
 
 const AuthAPI = {
-
-    // ДОБАВЛЕНО: Метод для авторизации по логину/почте
     async login(email, password) {
         const data = await rawRequest("/api/auth/login", {
             method: "POST",
             body: { email, password }
         });
 
-        console.log("[api.js] Ответ входа:", data);
-
-        // Сохраняем токен и имя пользователя в память
         if (data && data.access_token) {
             tokenStorage.set(data.access_token);
-            
-            // Определяем имя: берем из ответа бэкенда, либо извлекаем из email до символа '@'
             const extractedUsername = data.username || email.split("@")[0];
             localStorage.setItem("username", extractedUsername);
             localStorage.setItem("email", email);
@@ -75,6 +118,7 @@ const AuthAPI = {
         return data;
     },
 
+    // Шаг 1 регистрации: отправляет код на почту, возвращает { code: 200, state: "OK" }
     async register(email, username, password, customEndpoint = "/api/auth/register") {
         return await rawRequest(customEndpoint, {
             method: "POST",
@@ -82,15 +126,41 @@ const AuthAPI = {
         });
     },
 
-    async verifyRegisterCode(email, code, customEndpoint = "/api/auth/verify_code") {
+    // Шаг 2 регистрации: подтверждает код и сразу авторизует пользователя
+    async verifyRegisterCode(email, code, customEndpoint = "/api/auth/register/verify") {
         const data = await rawRequest(customEndpoint, {
             method: "POST",
             body: { email, code }
         });
         if (data && data.access_token) {
-            localStorage.setItem("accessToken", data.access_token);
+            tokenStorage.set(data.access_token);
+            const pendingUsername = sessionStorage.getItem("pendingUsername");
+            const extractedUsername = data.username || pendingUsername || email.split("@")[0];
+            localStorage.setItem("username", extractedUsername);
+            localStorage.setItem("email", email);
+
+            // Стираем гостевые кэши после успешной регистрации
+            
+            localStorage.removeItem("guest_cache_liked_ids");
+            localStorage.removeItem("guest_cache_disliked_ids");
         }
         return data;
+    },
+
+    // Шаг 1 восстановления пароля: отправляет почту + новый пароль, на почту уходит код
+    async recoverPassword(email, newPassword, customEndpoint = "/api/auth/password/recover") {
+        return await rawRequest(customEndpoint, {
+            method: "POST",
+            body: { email, new_password: newPassword }
+        });
+    },
+
+    // Шаг 2 восстановления пароля: подтверждает код, меняет пароль и сбрасывает старые сессии
+    async verifyPasswordRecovery(email, code, customEndpoint = "/api/auth/password/recover/verify") {
+        return await rawRequest(customEndpoint, {
+            method: "POST",
+            body: { email, code }
+        });
     },
 
     async updatePreferences(preferencesData, customEndpoint = "/api/db/me/preferences") {
@@ -98,7 +168,6 @@ const AuthAPI = {
             method: "PATCH",
             body: preferencesData
         });
-        // Сбрасываем кеш оборудования при обновлении
         localStorage.removeItem("global_cache_equipment");
         return data;
     },
@@ -109,7 +178,6 @@ const AuthAPI = {
 
     // --- СХЕМА КЕШИРОВАНИЯ И ПРОВЕРОК ---
 
-    // 1. Кеш оборудования (глобальный)
     async getCachedEquipment() {
         const cacheKey = "global_cache_equipment";
         let cached = localStorage.getItem(cacheKey);
@@ -117,7 +185,6 @@ const AuthAPI = {
             return JSON.parse(cached);
         }
 
-        // Если не авторизован, у неавторизованных пустой список оборудования по умолчанию
         if (!this.isAuthenticated()) {
             const emptyEq = { kitchen_equipment: [] };
             localStorage.setItem(cacheKey, JSON.stringify(emptyEq));
@@ -136,9 +203,7 @@ const AuthAPI = {
         return { kitchen_equipment: [] };
     },
 
-    // 2. Кеш для неавторизованных: Лайки и Дизлайки (списки ID рецептов)
     getGuestReactionIds(actionType) {
-        // actionType: 'liked' или 'disliked'
         const key = `guest_cache_${actionType}_ids`;
         try {
             return JSON.parse(localStorage.getItem(key)) || [];
@@ -148,7 +213,7 @@ const AuthAPI = {
     },
 
     addGuestReactionId(recipeId, actionType) {
-        if (this.isAuthenticated()) return; // Авторизованные шлют на бэк
+        if (this.isAuthenticated()) return;
         const key = `guest_cache_${actionType}_ids`;
         let list = this.getGuestReactionIds(actionType);
         if (!list.includes(recipeId)) {
@@ -157,7 +222,6 @@ const AuthAPI = {
         }
     },
 
-    // 3. Кеш профиля для авторизованных
     async getCachedProfile() {
         const cacheKey = "global_cache_profile";
         let cached = localStorage.getItem(cacheKey);
@@ -190,25 +254,11 @@ const AuthAPI = {
         return data;
     },
 
-    async sendRecoveryCode(email) {
-        return await rawRequest("/api/auth/send_code", { method: "POST", body: { email } });
-    },
-
-    async verifyRecoveryCode(email, code) {
-        return await rawRequest("/api/auth/verify_code", { method: "POST", body: { email, code } });
-    },
-
-    async resetPassword(resetToken, newPassword) {
-        return await rawRequest("/api/auth/new_pswd", { method: "POST", body: { reset_token: resetToken, new_password: newPassword } });
-    },
-
     async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {
         if (!this.isAuthenticated()) {
-            // Для неавторизованных собираем данные по контракту:
             const liked = this.getGuestReactionIds('liked');
             const disliked = this.getGuestReactionIds('disliked');
-            
-            // Читаем кэш предпочтений/фильтров, если он есть
+
             let prefs = {};
             try {
                 prefs = JSON.parse(localStorage.getItem("global_cache_equipment")) || {};
@@ -225,8 +275,7 @@ const AuthAPI = {
                 }
             });
         }
-        
-        // Для авторизованных — стандартный GET-запрос
+
         return await rawRequest(customEndpoint, { method: "GET" });
     },
 
@@ -235,20 +284,17 @@ const AuthAPI = {
     },
 
     async sendRecipeReaction(recipeId, action, customEndpoint = "/api/db/recipes/reaction") {
-        // Если пользователь не авторизован и это лайк/дизлайк — пишем в локальный кеш ID
         if (!this.isAuthenticated() && (action === "like" || action === "dislike")) {
             const actionType = action === "like" ? "liked" : "disliked";
             this.addGuestReactionId(recipeId, actionType);
             return { code: 200, state: "OK (Guest Cached)" };
         }
 
-        // Если авторизован, отправляем на бэкенд (авторизованные ответы кешируются при необходимости)
         const res = await rawRequest(customEndpoint, {
             method: "PUT",
             body: { recipe_id: recipeId, action }
         });
-        
-        // Кешируем ответ реакций авторизованного пользователя
+
         const cacheKey = `auth_cache_reaction_${action}`;
         let cached = JSON.parse(localStorage.getItem(cacheKey) || "[]");
         if (!cached.includes(recipeId)) {

@@ -1,57 +1,48 @@
 /**
- * ДЛЯ ЧЕГО: Это изолированный контроллер конкретно для страницы Регистрации.
- * Он отвечает исключительно за пользовательский интерфейс этой страницы:
- * 1. Перехватывает клик по кнопке отправки и считывает текст из инпутов HTML.
- * 2. Проводит моментальную валидацию почты и совпадения паролей прямо в браузере.
- * 3. Передает чистые данные в глобальный сервис сессий window.AuthAPI.register() 
- * и реагирует на его ответ (выводит окна успеха или ошибки и делает редирект).
+ * ДЛЯ ЧЕГО: Контроллер страницы Регистрации.
+ * Валидирует форму, отправляет POST /api/auth/register (код уходит на почту)
+ * и сохраняет данные во временную сессию для страницы подтверждения кода.
  */
 
 document.querySelector('.form-container').addEventListener('submit', async (event) => {
-  event.preventDefault(); // Намертво блокируем стандартную перезагрузку страницы браузером
+  event.preventDefault();
 
-  // Считываем значения из инпутов по ID
   const email = document.getElementById('email').value.trim();
   const password = document.getElementById('password').value;
   const confirmPassword = document.getElementById('confirm_password').value;
 
-  //  ВАЛИДАЦИЯ НА СТОРОНЕ ФРОНТЕНДА 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(email)) {
     alert("Ошибка: Некорректный формат Email! Проверьте адрес (например, user@mail.ru).");
-    return; // Обрываем отправку запроса
+    return;
   }
 
-  // ЧУТКА ПОЗЖЕ: добавить валидацию на защищенность + соль тут же (и на входе соотвественно)
   if (password.length < 6) {
     alert("Ошибка: Пароль слишком короткий! Придумайте пароль от 6 символов и длиннее.");
-    return; // Обрываем отправку запроса
+    return;
   }
 
   if (password !== confirmPassword) {
     alert("Ошибка: Пароли не совпадают!");
-    return; // Обрываем отправку запроса
+    return;
   }
 
-  // Вырезаем имя пользователя из Email для соблюдения контракта бэкенда
-  const username = email.split('@')[0]; 
+  const username = email.split('@')[0];
 
   try {
-    // ОБРАЩАЕМСЯ К ГЛОБАЛЬНОМУ МЕНЕДЖЕРУ СЕССИЙ ИЗ API.JS
     await window.AuthAPI.register(email, username, password);
-    
-    // Cохраняем email во временную память, чтобы его прочитала страница ввода кода
-    sessionStorage.setItem("pendingEmail", email);
-    localStorage.setItem("username", username); 
 
-    // РЕАКЦИЯ НА УСПЕШНОЕ СОЗДАНИЕ СЕССИИ
-    alert("Переход на аутентификацию, ожидайте код на почте✨");
-    
-    // ИСПРАВЛЕНИЕ ПУТИ: сетевой адрес нашей папки подтверждения
-    window.location.href = '/authentication'; 
+    // Сохраняем данные во временную память до подтверждения кода (нужно для повторной отправки)
+    sessionStorage.setItem("pendingFlow", "register");
+    sessionStorage.setItem("pendingEmail", email);
+    sessionStorage.setItem("pendingUsername", username);
+    sessionStorage.setItem("pendingPassword", password);
+    sessionStorage.setItem("codeSentAt", String(Date.now()));
+
+    alert("Код подтверждения отправлен на почту ✨");
+    window.location.href = '/authentication';
 
   } catch (error) {
-    // Выводим текст ошибки, который сгенерировал и выбросил нам api.js
     alert(`Ошибка регистрации: ${error.message}`);
     console.error("Детали сбоя:", error);
   }
