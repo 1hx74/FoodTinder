@@ -156,7 +156,7 @@ const AuthAPI = {
     },
 
     // Шаг 2 восстановления пароля: подтверждает код, меняет пароль и сбрасывает старые сессии
-   async verifyPasswordRecovery(email, code, customEndpoint = "/api/auth/password/recover/verify") {
+    async verifyPasswordRecovery(email, code, customEndpoint = "/api/auth/password/recover/verify") {
         const data = await rawRequest(customEndpoint, {
             method: "POST",
             body: { email, code }
@@ -258,6 +258,79 @@ const AuthAPI = {
         });
         localStorage.removeItem("global_cache_profile");
         return data;
+    },
+
+    async uploadAvatar(file) {
+        const fd = new FormData();
+        fd.append("file", file);
+
+        const headers = {};
+        const token = tokenStorage.get();
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        let response;
+        try {
+            response = await fetch(`${API_BASE}/api/db/me/avatar`, {
+                method: "POST",
+                headers,
+                body: fd
+            });
+        } catch (e) {
+            throw new ApiError("Ошибка соединения: сервер недоступен", 0, null);
+        }
+
+        let data = null;
+        try { data = await response.json(); } catch (_) {}
+
+        if (!response.ok) {
+            const rawError = data?.state || data?.message || data?.detail;
+            const readableMessage =
+                typeof rawError === "string"
+                    ? formatAuthErrorMessage(response.status, rawError)
+                    : `Ошибка загрузки аватарки (${response.status})`;
+            throw new ApiError(readableMessage, response.status, data);
+        }
+
+        localStorage.removeItem("global_cache_profile");
+        return data;
+    },
+
+    async getMyAvatarUrl() {
+        const headers = {};
+        const token = tokenStorage.get();
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        let response;
+        try {
+            response = await fetch(`${API_BASE}/api/db/me/avatar`, {
+                method: "GET",
+                headers
+            });
+        } catch (e) {
+            throw new ApiError("Ошибка соединения: сервер недоступен", 0, null);
+        }
+
+        if (response.status === 404) {
+            return null;
+        }
+
+        let data = null;
+        try { data = await response.json(); } catch (_) {}
+
+        if (!response.ok) {
+            const rawError = data?.state || data?.message || data?.detail;
+            const readableMessage =
+                typeof rawError === "string"
+                    ? formatAuthErrorMessage(response.status, rawError)
+                    : `Ошибка получения аватарки (${response.status})`;
+            throw new ApiError(readableMessage, response.status, data);
+        }
+
+        return data?.avatar_url || null;
     },
 
     async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {

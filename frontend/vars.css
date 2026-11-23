@@ -113,6 +113,11 @@ html, body {
   position: relative;
   width: 36px;
   height: 36px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   order: 2; 
 }
 
@@ -123,7 +128,22 @@ html, body {
 .ellipse-2 {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.header-avatar-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+#profile-letter {
+  position: relative;
+  z-index: 1;
 }
 
 .div2 {

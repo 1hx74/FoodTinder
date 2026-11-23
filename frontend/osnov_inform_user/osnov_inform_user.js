@@ -1,42 +1,22 @@
 /**
  * ДЛЯ ЧЕГО: Это изолированный контроллер конкретно для страницы "Основная информация о пользователе".
  * Он отвечает исключительно за пользовательский интерфейс этой страницы:
- * 1. При открытии страницы запрашивает актуальные данные профиля через window.AuthAPI.getProfile() (GET /api/db/me).
- * 2. Обеспечивает интерактивное редактирование имени и выбор аватарки (сжимается до 256x256 и сохраняется на сервере).
- * 3. Передает обновленные данные по контракту (5 полей + avatar_url, если аватар менялся) в window.AuthAPI.updateProfile() (PATCH /api/db/me),
+ * 1. При открытии страницы запрашивает актуальные данные профиля (GET /api/db/me) и аватарку (GET /api/db/me/avatar).
+ * 2. Обеспечивает интерактивное редактирование имени и загрузку аватарки на сервер (POST /api/db/me/avatar).
+ * 3. Передает обновленные данные профиля (5 полей) в window.AuthAPI.updateProfile() (PATCH /api/db/me),
  *    затем делает обратную подгрузку и сверяет: сервер сохранил именно то, что мы отправили.
  */
 
 document.addEventListener("DOMContentLoaded", async () => {
-    // Прозрачный пиксель: вместо "битой" картинки показываем серый кружок, если аватара нет или он не загрузился
     const EMPTY_AVATAR = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7";
-
-    /** Обрезает картинку до квадрата и сжимает до size x size, возвращает data URL (jpeg ~20-40 КБ) */
-    function resizeImageToDataUrl(file, size = 256) {
-        return new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onerror = () => reject(new Error("Не удалось прочитать файл"));
-            reader.onload = () => {
-                const img = new Image();
-                img.onerror = () => reject(new Error("Файл не является изображением"));
-                img.onload = () => {
-                    const side = Math.min(img.width, img.height);
-                    const canvas = document.createElement("canvas");
-                    canvas.width = canvas.height = size;
-                    canvas.getContext("2d").drawImage(
-                        img, (img.width - side) / 2, (img.height - side) / 2, side, side, 0, 0, size, size
-                    );
-                    resolve(canvas.toDataURL("image/jpeg", 0.85));
-                };
-                img.src = reader.result;
-            };
-            reader.readAsDataURL(file);
-        });
-    }
+    const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
     // Элементы аватарки
     const avatarImg = document.getElementById("profile-avatar-img");
     const filePicker = document.getElementById("avatar-file-picker");
+    const headerAvatarImg = document.getElementById("header-avatar-img");
+    const profileLetterEl = document.getElementById("profile-letter");
 
     // Элементы интерактивного имени
     const nameDisplay = document.getElementById("name-display");
@@ -52,14 +32,33 @@ document.addEventListener("DOMContentLoaded", async () => {
     const submitBtn = form ? form.querySelector(".submit-btn") : null;
 
     // Состояние страницы
-    let currentName = "";        // актуальное имя: именно оно уйдет на сервер при сохранении
-    let pendingAvatar = null;    // новая аватарка (data URL), выбранная, но еще не сохраненная на сервере
+    let currentName = "";
+    let currentAvatarUrl = "";
 
-    // Если картинка по avatar_url не загрузилась — показываем серый кружок
     if (avatarImg) {
         avatarImg.addEventListener("error", () => {
             if (avatarImg.src !== EMPTY_AVATAR) avatarImg.src = EMPTY_AVATAR;
         });
+    }
+
+    function applyHeaderAvatar(url) {
+        if (!headerAvatarImg) return;
+
+        if (url) {
+            headerAvatarImg.onload = () => {
+                headerAvatarImg.style.display = "block";
+                if (profileLetterEl) profileLetterEl.style.display = "none";
+            };
+            headerAvatarImg.onerror = () => {
+                headerAvatarImg.style.display = "none";
+                if (profileLetterEl) profileLetterEl.style.display = "";
+            };
+            headerAvatarImg.src = url;
+        } else {
+            headerAvatarImg.style.display = "none";
+            headerAvatarImg.removeAttribute("src");
+            if (profileLetterEl) profileLetterEl.style.display = "";
+        }
     }
 
     function setName(name) {
@@ -68,10 +67,25 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (nameInput) nameInput.value = name;
     }
 
+    async function syncAvatarFromServer(fallbackUrl = "") {
+        let resolvedUrl = "";
+        if (typeof window.AuthAPI.getMyAvatarUrl === "function") {
+            resolvedUrl = (await window.AuthAPI.getMyAvatarUrl()) || "";
+        }
+        if (!resolvedUrl && fallbackUrl) {
+            resolvedUrl = fallbackUrl;
+        }
+        currentAvatarUrl = resolvedUrl;
+        if (avatarImg) {
+            avatarImg.src = currentAvatarUrl || EMPTY_AVATAR;
+        }
+        applyHeaderAvatar(currentAvatarUrl);
+        return currentAvatarUrl;
+    }
+
     // ==========================================
     // 1. ПОЛУЧЕНИЕ ДАННЫХ ПРОФИЛЯ (GET /api/db/me)
     // ==========================================
-    /** Возвращает данные профиля или null, если загрузить не удалось */
     async function loadUserProfile() {
         try {
             const data = await window.AuthAPI.getProfile();
@@ -88,18 +102,15 @@ document.addEventListener("DOMContentLoaded", async () => {
             if (heightField) heightField.value = data.height ?? "";
             if (weightField) weightField.value = data.weight ?? "";
 
-            // Аватар всегда берем с сервера: так видно, что он действительно сохранился
-            if (avatarImg) avatarImg.src = data.avatar_url || EMPTY_AVATAR;
-            pendingAvatar = null;
+            await syncAvatarFromServer(data.avatar_url || "");
 
-            // Синхронизируем имя с общим сервисом шапки из api.js
             if (data.username) {
                 localStorage.setItem("username", data.username);
                 if (typeof window.AuthAPI.updateHeaderUI === "function") {
                     window.AuthAPI.updateHeaderUI();
                 }
             }
-            return data;
+            return { ...data, avatar_url: currentAvatarUrl || data.avatar_url || "" };
         } catch (error) {
             console.error("[profile.js] Ошибка получения профиля:", error);
 
@@ -114,11 +125,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 
-    // Первичная загрузка данных при открытии страницы
     await loadUserProfile();
 
     // ==========================================
-    // 2. ИНТЕРАКТИВНАЯ ВЫГРУЗКА АВАТАРКИ (ПРЕВЬЮ + ОТПРАВКА ПО "СОХРАНИТЬ")
+    // 2. ЗАГРУЗКА АВАТАРКИ (POST /api/db/me/avatar)
     // ==========================================
     if (avatarImg && filePicker) {
         avatarImg.addEventListener("click", () => {
@@ -129,19 +139,37 @@ document.addEventListener("DOMContentLoaded", async () => {
             const file = event.target.files[0];
             if (!file) return;
 
-            if (!file.type.startsWith("image/")) {
-                alert("Ошибка: Можно загружать только изображения!");
+            if (!ALLOWED_AVATAR_TYPES.includes(file.type)) {
+                alert("Ошибка: Поддерживаются только форматы JPEG, PNG, WEBP и GIF!");
+                filePicker.value = "";
+                return;
+            }
+
+            if (file.size === 0 || file.size > MAX_AVATAR_BYTES) {
+                alert("Ошибка: Размер файла должен быть больше 0 и не превышать 5 МБ!");
+                filePicker.value = "";
                 return;
             }
 
             try {
-                pendingAvatar = await resizeImageToDataUrl(file);
-                avatarImg.src = pendingAvatar; // превью; на сервер уйдет по кнопке "Сохранить"
-                console.log("[profile.js] Аватар подготовлен к отправке, символов:", pendingAvatar.length);
-            } catch (err) {
-                alert(`Ошибка: ${err.message}`);
+                const uploadRes = await window.AuthAPI.uploadAvatar(file);
+                const newUrl = uploadRes?.avatar_url || (await window.AuthAPI.getMyAvatarUrl()) || "";
+                currentAvatarUrl = newUrl;
+                avatarImg.src = currentAvatarUrl || EMPTY_AVATAR;
+                applyHeaderAvatar(currentAvatarUrl);
+                localStorage.removeItem("global_cache_profile");
+                console.log("[profile.js] Аватар загружен:", currentAvatarUrl);
+                alert("Аватарка успешно обновлена!");
+            } catch (error) {
+                console.error("[profile.js] Ошибка загрузки аватарки:", error);
+                if (error.status === 401) {
+                    alert("Ошибка 401: Пользователь не авторизован. Переходим на страницу входа.");
+                    window.location.href = "../vxod/index.html";
+                    return;
+                }
+                alert(`Ошибка загрузки аватарки: ${error.message}`);
             } finally {
-                filePicker.value = ""; // чтобы можно было выбрать тот же файл повторно
+                filePicker.value = "";
             }
         });
     }
@@ -158,7 +186,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
         nameInput.addEventListener("blur", () => {
             const newName = nameInput.value.trim();
-            // Пустое имя не принимаем: возвращаем прежнее, чтобы на сервер не ушла пустая строка
             setName(newName !== "" ? newName : currentName);
             nameInput.style.display = "none";
             nameDisplay.style.display = "block";
@@ -179,7 +206,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         form.addEventListener("submit", async (event) => {
             event.preventDefault();
 
-            // По контракту: 5 полей профиля + avatar_url (только если пользователь выбрал новую картинку)
             const payload = {
                 username: currentName,
                 birth_date: birthField.value,
@@ -187,9 +213,7 @@ document.addEventListener("DOMContentLoaded", async () => {
                 height: parseInt(heightField.value, 10),
                 weight: parseInt(weightField.value, 10)
             };
-            if (pendingAvatar) payload.avatar_url = pendingAvatar;
 
-            // ВАЛИДАЦИЯ НА СТОРОНЕ ФРОНТЕНДА (до запроса)
             const today = new Date().toISOString().slice(0, 10);
 
             if (!payload.username) {
@@ -209,20 +233,15 @@ document.addEventListener("DOMContentLoaded", async () => {
                 return;
             }
 
-            console.log("[profile.js] Отправка PATCH /api/db/me:", {
-                ...payload,
-                avatar_url: payload.avatar_url ? `<${payload.avatar_url.length} символов>` : undefined
-            });
+            console.log("[profile.js] Отправка PATCH /api/db/me:", payload);
 
-            if (submitBtn) submitBtn.disabled = true; // защита от двойного клика
+            if (submitBtn) submitBtn.disabled = true;
             try {
                 await window.AuthAPI.updateProfile(payload);
 
-                // Обязательная обратная подгрузка с сервера для проверки сохранения
                 const saved = await loadUserProfile();
                 if (!saved) return;
 
-                // Сверяем отправленное с полученным: сразу видно, если бэкенд что-то потерял
                 const mismatches = Object.keys(payload).filter((key) => saved[key] !== payload[key]);
 
                 if (mismatches.length) {
