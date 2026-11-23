@@ -474,22 +474,60 @@ def change_password(data: NewPasswordRequest, response: Response):
 
 @app.get("/api/db/achievements")
 def get_achievements(response: Response):
-    """
-    Возвращает список достижений для пользователя.
-    """
     logger.info("===> [БЭКЕНД] Запрос на получение достижений")
     
-    # Мокаем ответ: для теста считаем, что выполнены только Регистрация (1) и Первый лайк (2)
     response.status_code = status.HTTP_200_OK
     return {
         "achievements": [
-            {"id": 1, "is_unlocked": True},
-            {"id": 2, "is_unlocked": True},
-            {"id": 3, "is_unlocked": False},
-            {"id": 4, "is_unlocked": False},
-            {"id": 5, "is_unlocked": False},
-            {"id": 6, "is_unlocked": False},
-            {"id": 7, "is_unlocked": False}
+            {
+                "id": 1, 
+                "title": "РЕГИСТРАЦИЯ", 
+                "description": "Успешно зарегистрироваться на сайте", 
+                "icon_url": "https://placehold.co/100x100?text=Reg", 
+                "is_unlocked": True
+            },
+            {
+                "id": 2, 
+                "title": "ПЕРВЫЙ ЛАЙК", 
+                "description": "Поставить лайк первому рецепту", 
+                "icon_url": "https://placehold.co/100x100?text=Like", 
+                "is_unlocked": False
+            },
+            {
+                "id": 3, 
+                "title": "ПЕРВЫЙ ДИЗЛАЙК", 
+                "description": "Поставить дизлайк первому рецепту", 
+                "icon_url": "https://placehold.co/100x100?text=Dislike", 
+                "is_unlocked": False
+            },
+            {
+                "id": 4, 
+                "title": "ПЕРВОЕ ИЗБРАННОЕ", 
+                "description": "Добавить первый рецепт в избранное", 
+                "icon_url": "https://placehold.co/100x100?text=Fav", 
+                "is_unlocked": False
+            },
+            {
+                "id": 5, 
+                "title": "100 ЛАЙКОВ", 
+                "description": "Поставить лайк 100 рецептам", 
+                "icon_url": "https://placehold.co/100x100?text=100Like", 
+                "is_unlocked": False
+            },
+            {
+                "id": 6, 
+                "title": "100 ДИЗЛАЙКОВ", 
+                "description": "Поставить дизлайк 100 рецептам", 
+                "icon_url": "https://placehold.co/100x100?text=100Dis", 
+                "is_unlocked": False
+            },
+            {
+                "id": 7, 
+                "title": "100 В ИЗБРАННОМ", 
+                "description": "Добавить 100 рецептов в избранное", 
+                "icon_url": "https://placehold.co/100x100?text=100Fav", 
+                "is_unlocked": False
+            }
         ],
         "code": 200,
         "state": "OK"
