@@ -306,6 +306,12 @@ def login_user(user: LoginRequest, response: Response):
         "state": "OK"
     }
 
+@app.post("/api/auth/logout")
+def logout(response: Response):
+    logger.info("===> [БЭКЕНД] Пользователь вышел из системы")
+    response.status_code = status.HTTP_200_OK
+    return {"code": 200, "state": "OK"}
+
 
 # --- 8. ЭНДПОИНТЫ ДВУХФАКТОРНОГО ПОДТВЕРЖДЕНИЯ И ВОССТАНОВЛЕНИЯ ---
 

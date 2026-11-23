@@ -10,14 +10,17 @@
   const authLinksBlock = document.getElementById("auth-links");
   const authContainer = document.getElementById("auth-container");
   
-  // Аватарки и буквы
+  // Аватарки
   const smallAvatarImg = document.querySelector(".frame-5 .ellipse-2");
   const bigAvatarImg = document.getElementById("big-avatar");
   const smallAvatarLetter = document.getElementById("profile-letter");
-  const bigAvatarLetter = document.getElementById("big-avatar-letter"); // Новая буква в большом круге
+  const bigAvatarLetter = document.getElementById("big-avatar-letter");
 
   const tabLinks = document.querySelectorAll(".tab-link");
+  
+  // Первые 3 кнопки доступны гостю
   const guestAllowedTabs = Array.from(tabLinks).slice(0, 3);
+  // Последние 5 кнопок заблокированы
   const guestLockedTabs = Array.from(tabLinks).slice(3);
 
   function isAuthenticated() {
@@ -54,7 +57,7 @@
         if (smallAvatarLetter) smallAvatarLetter.style.display = "none";
         if (bigAvatarLetter) bigAvatarLetter.style.display = "none";
       } else {
-        // Если нет — ставим заглушку и показываем буквы
+        // Если нет — ставим заглушку
         if (smallAvatarImg) smallAvatarImg.src = DEFAULT_AVATAR;
         if (bigAvatarImg) bigAvatarImg.src = DEFAULT_AVATAR;
         if (smallAvatarLetter) smallAvatarLetter.style.display = "";
@@ -151,11 +154,19 @@
     loadProfileData();
   }
 
-  function logoutUser() {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("username");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("avatarUrl");
+  // =========================================================
+  // ВЫХОД ИЗ АККАУНТА
+  // =========================================================
+  async function logoutUser() {
+    // Вызываем метод выхода из api.js (он почистит и сервер, и localStorage)
+    if (window.AuthAPI && typeof window.AuthAPI.logout === "function") {
+      await AuthAPI.logout();
+    } else {
+      // Страховка, если метод logout не добавлен в api.js
+      localStorage.clear();
+    }
+    
+    // Перекидываем на главную
     window.location.href = "../glavnaya/index.html"; 
   }
 

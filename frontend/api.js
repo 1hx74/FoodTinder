@@ -89,6 +89,34 @@ const AuthAPI = {
         return data;
     },
 
+        // ДОБАВЛЕНО: Выход из аккаунта с полной очисткой кэша
+    async logout() {
+        try {
+            // Отправляем запрос на сервер (по контракту POST /api/auth/logout)
+            await rawRequest("/api/auth/logout", { method: "POST" });
+        } catch (error) {
+            console.warn("Сервер не ответил при выходе, но мы всё равно чистим локальные данные:", error);
+        } finally {
+            // В ЛЮБОМ СЛУЧАЕ (даже если сервер упал) очищаем localStorage
+            tokenStorage.clear();
+            
+            // Полностью очищаем всё, что связано с пользователем
+            localStorage.removeItem("username");
+            localStorage.removeItem("email");
+            localStorage.removeItem("userId");
+            localStorage.removeItem("avatarUrl");
+            
+            // Чистим все кэши, которые вы писали в api.js
+            localStorage.removeItem("global_cache_equipment");
+            localStorage.removeItem("global_cache_profile");
+            localStorage.removeItem("guest_cache_liked_ids");
+            localStorage.removeItem("guest_cache_disliked_ids");
+            
+            // На всякий случай можно вообще очистить всё
+            // localStorage.clear(); 
+        }
+    },
+
     async register(email, username, password, customEndpoint = "/api/auth/register") {
         return await rawRequest(customEndpoint, {
             method: "POST",
