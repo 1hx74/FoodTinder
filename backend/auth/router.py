@@ -14,6 +14,7 @@ from models import get_db
 from repos import MemberRepository, PendingRepository, RefreshTokenRepository
 from schemas import (
     AuthResponse,
+    ChangePasswordRequest,
     LoginRequest,
     MeResponse,
     OkResponse,
@@ -198,6 +199,44 @@ async def password_recover_verify(
     members.set_password(member.id, reset.password_hash, reset.salt)
     RefreshTokenRepository(db).revoke_all_for_user(member.id)
     pending.delete_reset(body.email)
+    db.commit()
+    return {"code": 200, "state": "OK"}
+
+
+# --- смена пароля залогиненным: старый + новый, без кода с почты
+
+@router.post(
+    "/change_pswd",
+    response_model=StateResponse,
+    responses={401: {"description": "Unauthorized"},
+               403: {"model": StateResponse}, 409: {"model": StateResponse},
+               422: {"model": StateResponse}},
+)
+async def change_password(
+    body: ChangePasswordRequest,
+    current_user: dict = Depends(security.get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Меняет пароль текущего пользователя. Нужен Bearer access-токен.
+    После смены все refresh-токены отзываются (как после /password/recover/verify)."""
+    members = MemberRepository(db)
+    member = members.get_by_id(current_user["sub"])
+    if member is None:
+        raise ApiError(404, "User not found")
+
+    if not security.verify_password(
+        body.old_password, member.salt, member.password_hash
+    ):
+        raise ApiError(403, "Wrong password")
+
+    if security.verify_password(
+        body.new_password, member.salt, member.password_hash
+    ):
+        raise ApiError(409, "New password must be different")
+
+    password_hash, salt = security.hash_new_password(body.new_password)
+    members.set_password(member.id, password_hash, salt)
+    RefreshTokenRepository(db).revoke_all_for_user(member.id)
     db.commit()
     return {"code": 200, "state": "OK"}
 

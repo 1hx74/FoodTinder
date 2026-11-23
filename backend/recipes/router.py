@@ -12,6 +12,7 @@ from db import get_session
 from models import IngredientQuantity, ReactionAction, Recipe
 from repos import RecipeRepository
 from jwks import get_optional_user_id, get_required_user_id
+from me import load_preferences
 from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RELIGION_CODES, TAGS, clean_codes
 
 logger = logging.getLogger(__name__)
@@ -79,8 +80,8 @@ class ReactionRequest(BaseModel):
 
 class AnonymousNextRequest(BaseModel):
     """Тело POST /next для незарегистрированного пользователя:
-    его лайки/дизлайки из локального кэша клиента, а также аллергии/диеты
-    и религия, кухонное оборудование — те же поля и коды, что в /api/db/me/preferences."""
+    его лайки/дизлайки из локального кэша клиента, а также аллергии
+    и религия/диеты — те же поля и коды, что в /api/db/me/preferences."""
 
     liked: list[int] = Field(default_factory=list, max_length=10000)
     disliked: list[int] = Field(default_factory=list, max_length=10000)
@@ -92,12 +93,12 @@ class AnonymousNextRequest(BaseModel):
     forbidden: list[str] = Field(
         default_factory=list,
         max_length=50,
-        description="аллергии и диеты: " + ", ".join(FORBIDDEN_CODES),
+        description="аллергии: " + ", ".join(FORBIDDEN_CODES),
     )
     religions: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="религия: " + ", ".join(RELIGION_CODES),
+        description="религия и диеты: " + ", ".join(RELIGION_CODES),
     )
 
 
@@ -231,9 +232,18 @@ async def get_next_recipe(
     session: AsyncSession = Depends(get_session),
 ):
     """Только для авторизованных. Аноним без токена получит 401
-    и должен использовать POST /next."""
+    и должен использовать POST /next. Рецепты, которые нарушают сохранённые
+    аллергии и религию/диеты пользователя, не выдаются."""
     repo = RecipeRepository(session)
-    recipe = await repo.get_next(user_id, exclude)
+    # сохранённые фильтры пользователя (GET/PATCH /api/db/me/preferences) —
+    # как forbidden/religions в анонимном POST /next; по оборудованию не фильтруем
+    prefs = await load_preferences(session, user_id)
+    recipe = await repo.get_next(
+        user_id,
+        exclude,
+        forbidden=prefs["forbidden"],
+        religions=prefs["religions"],
+    )
 
     if recipe is None:
         # рецепты закончились — это успех, а не ошибка
@@ -253,7 +263,7 @@ async def post_next_recipe(
 ):
     """Выдача для незарегистрированного пользователя: клиент присылает
     лайкнутые и дизлайкнутые id из своего кэша, мы их исключаем из выдачи.
-    forbidden / religions — аллергии, диеты и религия пользователя:
+    forbidden / religions — аллергии и религия/диеты пользователя:
     рецепты, которые их нарушают, не выдаются. Неизвестный код -> 422.
     Ничего в БД не записывается."""
     try:

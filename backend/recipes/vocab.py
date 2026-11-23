@@ -6,7 +6,7 @@ TAGS — теги рецепта (отдаются фронту в поле "tag
 FORBIDDEN_CODES и RELIGION_CODES — те же коды, что у пользователя в контракте
 GET/PATCH /api/db/me/preferences (поля "forbidden" и "religions", см. frontend/filter).
 У рецепта эти поля означают «кому рецепт НЕ подходит» (что он нарушает):
-  recipe.forbidden  — аллергены и диеты, которые рецепт нарушает:
+  recipe.forbidden  — аллергены, которые есть в рецепте (у пользователя — его аллергии):
       nuts      — есть орехи
       seafood   — есть морепродукты (креветки, кальмары, мидии...)
       lactose   — есть молочные продукты (молоко, сливки, сыр, масло сливочное, йогурт...)
@@ -14,13 +14,14 @@ GET/PATCH /api/db/me/preferences (поля "forbidden" и "religions", см. fro
       eggs      — есть яйца (в т.ч. в составе печенья/савоярди)
       wheat     — есть пшеница/глютен (мука, паста, печенье, соевый соус)
       citruses  — есть цитрусовые (лимон, лайм, апельсин)
-      vegetarian — есть мясо, птица, рыба, морепродукты или желатин
-      vegan     — есть любой продукт животного происхождения
-                  (всё из vegetarian + молочное, яйца, мёд)
-  recipe.religions — религиозные ограничения, которые рецепт нарушает:
+  recipe.religions — религиозные и пищевые ограничения (исключают целые группы
+  продуктов), которые рецепт нарушает:
       halal     — свинина (бекон), алкоголь (в т.ч. мирин в терияки), желатин
       lenten    — строгий православный пост: мясо, птица, рыба, морепродукты,
                   молочное, яйца
+      vegetarian — есть мясо, птица, рыба, морепродукты или желатин
+      vegan     — есть любой продукт животного происхождения
+                  (всё из vegetarian + молочное, яйца, мёд)
 
 EQUIPMENT_CODES — коды кухонного оборудования, те же, что у пользователя
 в "kitchen_equipment" (frontend/filter, data-type="equipment"). Опечатки
@@ -45,12 +46,13 @@ TAGS: tuple[str, ...] = (
     "easy", "spicy", "sweet", "healthy", "refreshing", "comfort",
 )
 
+# аллергии
 FORBIDDEN_CODES: tuple[str, ...] = (
     "nuts", "seafood", "lactose", "fish", "eggs", "wheat", "citruses",
-    "vegan", "vegetarian",
 )
 
-RELIGION_CODES: tuple[str, ...] = ("halal", "lenten")
+# религия и диеты (vegan / vegetarian — тоже здесь: исключают группы продуктов)
+RELIGION_CODES: tuple[str, ...] = ("halal", "lenten", "vegan", "vegetarian")
 
 EQUIPMENT_CODES: tuple[str, ...] = (
     "oven",           # духовка
