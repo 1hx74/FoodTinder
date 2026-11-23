@@ -45,7 +45,18 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
     try { data = await response.json(); } catch (_) {}
 
     if (!response.ok) {
-        throw new ApiError(data?.message || "Ошибка запроса к server.js", response.status, data);
+        // Если сервер прислал текст ошибки (message) — показываем его. 
+        // Если нет — выводим общий текст в зависимости от кода ответа.
+        let errorMsg = data?.message || "Неизвестная ошибка";
+        
+        if (!data?.message) {
+            if (response.status === 401) errorMsg = "Неверный логин или пароль";
+            else if (response.status === 422) errorMsg = "Ошибка в данных. Проверьте ввод.";
+            else if (response.status === 404) errorMsg = "Не найдено";
+            else if (response.status >= 500) errorMsg = "Ошибка на сервере";
+        }
+
+        throw new ApiError(errorMsg, response.status, data);
     }
 
     return data;

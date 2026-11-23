@@ -279,18 +279,28 @@ def login_user(user: LoginRequest, response: Response):
     """
     logger.info("========================================")
     logger.info(f"===> [ВХОД] Получены данные: {user.username}")
-    logger.info("========================================")
     
     # Умная обработка: если есть @, значит это Email. Берем часть до @ как логин.
     if "@" in user.username:
         display_username = user.username.split("@")[0]
     else:
-        display_username = user.username # Это обычный логин
+        display_username = user.username 
         
+    # ПРОВЕРКА: Есть ли такой пользователь в нашей мок-базе?
+    if display_username not in app.state.profiles:
+        logger.info(f"===> [ВХОД] Ошибка: Пользователь {display_username} не найден.")
+        response.status_code = status.HTTP_401_UNAUTHORIZED
+        return {
+            "code": 401, 
+            "state": "Unauthorized",
+            "message": "Пользователь с таким логином не найден"
+        }
+
+    logger.info(f"===> [ВХОД] Успех для пользователя {display_username}")
     response.status_code = status.HTTP_200_OK
     return {
-        "user_id": 123,
-        "username": display_username, # Возвращаем чистое имя (например, "test" из "test@mail.ru")
+        "user_id": app.state.profiles[display_username]["user_id"],
+        "username": display_username,
         "access_token": f"jwt.token.for.{display_username}.success",
         "code": 200,
         "state": "OK"
