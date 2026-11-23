@@ -156,11 +156,17 @@ const AuthAPI = {
     },
 
     // Шаг 2 восстановления пароля: подтверждает код, меняет пароль и сбрасывает старые сессии
-    async verifyPasswordRecovery(email, code, customEndpoint = "/api/auth/password/recover/verify") {
-        return await rawRequest(customEndpoint, {
+   async verifyPasswordRecovery(email, code, customEndpoint = "/api/auth/password/recover/verify") {
+        const data = await rawRequest(customEndpoint, {
             method: "POST",
             body: { email, code }
         });
+        tokenStorage.clear();
+        localStorage.removeItem("username");
+        localStorage.removeItem("email");
+        localStorage.removeItem("global_cache_profile");
+        localStorage.removeItem("global_cache_equipment");
+        return data;
     },
 
     async updatePreferences(preferencesData, customEndpoint = "/api/db/me/preferences") {
