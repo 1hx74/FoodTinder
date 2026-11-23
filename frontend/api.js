@@ -1,6 +1,6 @@
 /**
- * ДЛЯ ЧЕГО: Это единый глобальный сервис авторизации и поддержания сессии.
- * Он управляет сетевыми запросами и глобальным кешем в localStorage.
+- ДЛЯ ЧЕГО: Это единый глобальный сервис авторизации и поддержания сессии.
+- Он управляет сетевыми запросами и глобальным кешем в localStorage.
  */
 
 const API = "localhost";
@@ -384,20 +384,137 @@ const AuthAPI = {
         return res;
     },
 
+    async getMyAvatarUrl() {
+        const headers = {};
+        const token = tokenStorage.get();
+        if (token) {
+            headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        let response;
+        try {
+            response = await fetch(`${API_BASE}/api/db/me/avatar`, {
+                method: "GET",
+                headers
+            });
+        } catch (e) {
+            throw new ApiError("Ошибка соединения: сервер недоступен", 0, null);
+        }
+
+        if (response.status === 404) {
+            return null;
+        }
+
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.startsWith("image/")) {
+            if (!response.ok) {
+                throw new ApiError(`Ошибка получения аватарки (${response.status})`, response.status, null);
+            }
+            const blob = await response.blob();
+            return URL.createObjectURL(blob);
+        }
+
+        let rawText = "";
+        try { rawText = await response.text(); } catch (_) {}
+
+        let data = null;
+        try { data = rawText ? JSON.parse(rawText) : null; } catch (_) {}
+
+        if (!response.ok) {
+            const rawError = data?.state || data?.message || data?.detail || rawText;
+            const readableMessage =
+                typeof rawError === "string"
+                    ? formatAuthErrorMessage(response.status, rawError)
+                    : `Ошибка получения аватарки (${response.status})`;
+            throw new ApiError(readableMessage, response.status, data);
+        }
+
+        let avatarUrl = null;
+        if (typeof data === "string") {
+            avatarUrl = data.replace(/^"+|"+$/g, "");
+        } else if (data && typeof data === "object") {
+            avatarUrl = data.avatar_url || data.url || data.avatar || null;
+        } else if (rawText) {
+            avatarUrl = rawText.replace(/^"+|"+$/g, "");
+        }
+
+        if (typeof avatarUrl === "string" && avatarUrl.startsWith("/")) {
+            avatarUrl = `${API_BASE}${avatarUrl}`;
+        }
+
+        return avatarUrl || null;
+    },
+
+    setHeaderAvatar(url) {
+        const avatarContainer = document.querySelector(".frame-5");
+        const baseCircleImg = avatarContainer ? avatarContainer.querySelector(".ellipse-2") : null;
+        const profileLetterEl = document.getElementById("profile-letter");
+        if (!avatarContainer) return;
+
+        avatarContainer.style.overflow = "hidden";
+        avatarContainer.style.borderRadius = "50%";
+
+        let headerAvatarImg = document.getElementById("header-avatar-img");
+        if (!headerAvatarImg) {
+            headerAvatarImg = document.createElement("img");
+            headerAvatarImg.id = "header-avatar-img";
+            headerAvatarImg.alt = "Аватар";
+            headerAvatarImg.style.position = "absolute";
+            headerAvatarImg.style.inset = "0";
+            headerAvatarImg.style.width = "100%";
+            headerAvatarImg.style.height = "100%";
+            headerAvatarImg.style.borderRadius = "50%";
+            headerAvatarImg.style.objectFit = "cover";
+            headerAvatarImg.style.display = "none";
+            avatarContainer.appendChild(headerAvatarImg);
+        }
+
+        const showFallback = () => {
+            headerAvatarImg.style.display = "none";
+            headerAvatarImg.removeAttribute("src");
+            if (baseCircleImg) baseCircleImg.style.display = "";
+            if (profileLetterEl) {
+                profileLetterEl.style.display = "";
+                profileLetterEl.style.visibility = "";
+            }
+        };
+
+        if (url) {
+            headerAvatarImg.onload = () => {
+                headerAvatarImg.style.display = "block";
+                if (baseCircleImg) baseCircleImg.style.display = "none";
+                if (profileLetterEl) {
+                    profileLetterEl.style.display = "none";
+                    profileLetterEl.style.visibility = "hidden";
+                }
+            };
+            headerAvatarImg.onerror = () => {
+                console.warn("[api.js] Не удалось загрузить картинку аватарки по ссылке:", url);
+                showFallback();
+            };
+            headerAvatarImg.src = url;
+        } else {
+            showFallback();
+        }
+    },
+    
     updateHeaderUI() {
         const authContainer = document.getElementById("auth-container");
         const profileLetter = document.getElementById("profile-letter");
 
-        const token = localStorage.getItem("accessToken");
+        const isAuth = this.isAuthenticated();
         const username = localStorage.getItem("username");
 
-        if (token && username) {
+        if (isAuth && username) {
             if (authContainer) {
                 authContainer.innerHTML = `<a href="../katalog_vkladok/index.html" class="div4">${username}</a>`;
             }
             if (profileLetter) {
                 profileLetter.innerText = username.charAt(0).toUpperCase();
             }
+            this.getMyAvatarUrl()
+                .then((url) => this.setHeaderAvatar(url))
+                .catch(() => this.setHeaderAvatar(null));
         } else {
             if (authContainer) {
                 authContainer.innerHTML = `
@@ -409,9 +526,10 @@ const AuthAPI = {
             if (profileLetter) {
                 profileLetter.innerText = "Г";
             }
+            this.setHeaderAvatar(null);
         }
     },
-
+    
     isAuthenticated() {
         return !!tokenStorage.get();
     }

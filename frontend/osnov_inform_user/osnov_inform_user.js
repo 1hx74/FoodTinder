@@ -15,8 +15,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Элементы аватарки
     const avatarImg = document.getElementById("profile-avatar-img");
     const filePicker = document.getElementById("avatar-file-picker");
-    const headerAvatarImg = document.getElementById("header-avatar-img");
-    const profileLetterEl = document.getElementById("profile-letter");
 
     // Элементы интерактивного имени
     const nameDisplay = document.getElementById("name-display");
@@ -41,26 +39,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
-    function applyHeaderAvatar(url) {
-        if (!headerAvatarImg) return;
-
-        if (url) {
-            headerAvatarImg.onload = () => {
-                headerAvatarImg.style.display = "block";
-                if (profileLetterEl) profileLetterEl.style.display = "none";
-            };
-            headerAvatarImg.onerror = () => {
-                headerAvatarImg.style.display = "none";
-                if (profileLetterEl) profileLetterEl.style.display = "";
-            };
-            headerAvatarImg.src = url;
-        } else {
-            headerAvatarImg.style.display = "none";
-            headerAvatarImg.removeAttribute("src");
-            if (profileLetterEl) profileLetterEl.style.display = "";
-        }
-    }
-
     function setName(name) {
         currentName = name;
         if (nameDisplay) nameDisplay.textContent = name || "Пользователь";
@@ -79,7 +57,6 @@ document.addEventListener("DOMContentLoaded", async () => {
         if (avatarImg) {
             avatarImg.src = currentAvatarUrl || EMPTY_AVATAR;
         }
-        applyHeaderAvatar(currentAvatarUrl);
         return currentAvatarUrl;
     }
 
@@ -106,9 +83,9 @@ document.addEventListener("DOMContentLoaded", async () => {
 
             if (data.username) {
                 localStorage.setItem("username", data.username);
-                if (typeof window.AuthAPI.updateHeaderUI === "function") {
-                    window.AuthAPI.updateHeaderUI();
-                }
+            }
+            if (typeof window.AuthAPI.updateHeaderUI === "function") {
+                window.AuthAPI.updateHeaderUI();
             }
             return { ...data, avatar_url: currentAvatarUrl || data.avatar_url || "" };
         } catch (error) {
@@ -156,8 +133,10 @@ document.addEventListener("DOMContentLoaded", async () => {
                 const newUrl = uploadRes?.avatar_url || (await window.AuthAPI.getMyAvatarUrl()) || "";
                 currentAvatarUrl = newUrl;
                 avatarImg.src = currentAvatarUrl || EMPTY_AVATAR;
-                applyHeaderAvatar(currentAvatarUrl);
                 localStorage.removeItem("global_cache_profile");
+                if (typeof window.AuthAPI.updateHeaderUI === "function") {
+                    window.AuthAPI.updateHeaderUI();
+                }
                 console.log("[profile.js] Аватар загружен:", currentAvatarUrl);
                 alert("Аватарка успешно обновлена!");
             } catch (error) {
