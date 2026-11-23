@@ -142,23 +142,24 @@ _DEMO = [
 
 
 # Теги и ограничения демо-рецептов (коды и их смысл — в vocab.py).
-# title -> (tags, forbidden — что рецепт нарушает из аллергий/диет,
-#           religions — какие религиозные ограничения нарушает)
+# title -> (tags, forbidden — какие аллергены содержит,
+#           religions — какие религиозные/пищевые ограничения нарушает,
+#           в т.ч. vegan / vegetarian)
 _META: dict[str, tuple[list[str], list[str], list[str]]] = {
     "Борщ": (
         ["soup", "russian", "meat", "vegetables", "comfort"],
-        ["lactose", "vegetarian", "vegan"],  # говядина, сметана
-        ["lenten"],
+        ["lactose"],  # говядина, сметана
+        ["lenten", "vegetarian", "vegan"],
     ),
     "Омлет с сыром": (
         ["breakfast", "eggs", "dairy", "quick", "easy"],
-        ["eggs", "lactose", "vegan"],
-        ["lenten"],
+        ["eggs", "lactose"],
+        ["lenten", "vegan"],
     ),
     "Паста карбонара": (
         ["main", "pasta", "italian", "meat", "eggs", "quick"],
-        ["wheat", "eggs", "lactose", "vegetarian", "vegan"],
-        ["halal", "lenten"],  # бекон — свинина
+        ["wheat", "eggs", "lactose"],
+        ["halal", "lenten", "vegetarian", "vegan"],  # бекон — свинина
     ),
     "Картошка в духовке": (
         ["side", "vegetables", "easy", "comfort"],
@@ -167,38 +168,38 @@ _META: dict[str, tuple[list[str], list[str], list[str]]] = {
     ),
     "Плов с курицей": (
         ["main", "chicken", "rice", "asian"],
-        ["vegetarian", "vegan"],
-        ["lenten"],
+        [],
+        ["lenten", "vegetarian", "vegan"],
     ),
     "Греческий салат": (
         ["salad", "vegetables", "mediterranean", "healthy", "quick"],
-        ["lactose", "vegan"],  # фета
-        ["lenten"],
+        ["lactose"],  # фета
+        ["lenten", "vegan"],
     ),
     "Блины": (
         ["breakfast", "baking", "russian", "sweet", "dairy"],
-        ["wheat", "lactose", "eggs", "vegan"],
-        ["lenten"],
+        ["wheat", "lactose", "eggs"],
+        ["lenten", "vegan"],
     ),
     "Лосось на гриле": (
         ["main", "fish", "healthy", "quick", "mediterranean"],
-        ["fish", "citruses", "vegetarian", "vegan"],  # лимон
-        ["lenten"],
+        ["fish", "citruses"],  # лимон
+        ["lenten", "vegetarian", "vegan"],
     ),
     "Эклеры": (
         ["dessert", "baking", "french", "sweet", "chocolate"],
-        ["wheat", "lactose", "eggs", "vegan"],
-        ["lenten"],
+        ["wheat", "lactose", "eggs"],
+        ["lenten", "vegan"],
     ),
     "Чизкейк Нью-Йорк": (
         ["dessert", "baking", "american", "sweet", "dairy"],
-        ["wheat", "lactose", "eggs", "vegan"],  # печенье — мука
-        ["lenten"],
+        ["wheat", "lactose", "eggs"],  # печенье — мука
+        ["lenten", "vegan"],
     ),
     "Тирамису": (
         ["dessert", "italian", "sweet", "dairy"],
-        ["wheat", "lactose", "eggs", "vegan"],  # савоярди — мука и яйца
-        ["lenten"],
+        ["wheat", "lactose", "eggs"],  # савоярди — мука и яйца
+        ["lenten", "vegan"],
     ),
     "Домашний лимонад": (
         ["drink", "fruit", "refreshing", "sweet", "quick"],
@@ -207,23 +208,23 @@ _META: dict[str, tuple[list[str], list[str], list[str]]] = {
     ),
     "Банановый смузи": (
         ["drink", "fruit", "breakfast", "healthy", "quick"],
-        ["lactose", "vegan"],  # йогурт, мёд
-        ["lenten"],
+        ["lactose"],  # йогурт, мёд
+        ["lenten", "vegan"],
     ),
     "Горячий шоколад": (
         ["drink", "chocolate", "sweet", "dairy", "comfort", "quick"],
-        ["lactose", "vegetarian", "vegan"],  # маршмеллоу — желатин
-        ["halal", "lenten"],  # желатин обычно свиной
+        ["lactose"],  # маршмеллоу — желатин
+        ["halal", "lenten", "vegetarian", "vegan"],  # желатин обычно свиной
     ),
     "Том ям": (
         ["soup", "asian", "seafood", "spicy"],
-        ["seafood", "citruses", "vegetarian", "vegan"],  # креветки, лайм
-        ["lenten"],
+        ["seafood", "citruses"],  # креветки, лайм
+        ["lenten", "vegetarian", "vegan"],
     ),
     "Курица терияки": (
         ["main", "chicken", "rice", "asian", "quick"],
-        ["wheat", "vegetarian", "vegan"],  # соус терияки: соевый соус (пшеница)
-        ["halal", "lenten"],  # в терияки мирин/саке — алкоголь
+        ["wheat"],  # соус терияки: соевый соус (пшеница)
+        ["halal", "lenten", "vegetarian", "vegan"],  # в терияки мирин/саке — алкоголь
     ),
 }
 

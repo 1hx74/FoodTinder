@@ -32,6 +32,7 @@ _CONTRACT_PATHS = {
     "/api/auth/register/verify",
     "/api/auth/password/recover",
     "/api/auth/password/recover/verify",
+    "/api/auth/change_pswd",
 }
 
 

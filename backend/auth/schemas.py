@@ -33,6 +33,13 @@ class PasswordRecoverVerifyRequest(BaseModel):
     code: str = Field(**_CODE_FIELD)
 
 
+# смена пароля залогиненным пользователем (без кода с почты).
+# новый пароль — от 6 символов, как уже проверяет фронт на регистрации.
+class ChangePasswordRequest(BaseModel):
+    old_password: str = Field(min_length=1)
+    new_password: str = Field(min_length=6)
+
+
 class StateResponse(BaseModel):
     code: int = 200
     state: str = "OK"
