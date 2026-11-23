@@ -6,7 +6,8 @@ from fastapi import FastAPI
 from db import SessionFactory, engine
 from models import Base
 from router import router
-from seed import seed_demo_recipes
+from migrations import upgrade_schema
+from seed import backfill_demo_meta, seed_demo_recipes
 from fastapi.middleware.cors import CORSMiddleware
 
 
@@ -14,9 +15,13 @@ from fastapi.middleware.cors import CORSMiddleware
 async def lifespan(app: FastAPI):
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # create_all не добавляет колонки в уже существующие таблицы
+        await upgrade_schema(conn)
     if os.getenv("SEED_DEMO_RECIPES", "false").lower() == "true":
         async with SessionFactory() as session:
             await seed_demo_recipes(session)
+            # демо-рецептам из старой БД (до появления тегов) проставляем теги/ограничения
+            await backfill_demo_meta(session)
     yield
     await engine.dispose()
 

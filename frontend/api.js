@@ -245,6 +245,30 @@ const AuthAPI = {
     },
 
     async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {
+        if (!this.isAuthenticated()) {
+            // Для неавторизованных собираем данные по контракту:
+            const liked = this.getGuestReactionIds('liked');
+            const disliked = this.getGuestReactionIds('disliked');
+            
+            // Читаем кэш предпочтений/фильтров, если он есть
+            let prefs = {};
+            try {
+                prefs = JSON.parse(localStorage.getItem("global_cache_equipment")) || {};
+            } catch (_) {}
+
+            return await rawRequest(customEndpoint, {
+                method: "POST",
+                body: {
+                    liked: liked,
+                    disliked: disliked,
+                    exclude: prefs.exclude || [],
+                    forbidden: prefs.forbidden || [],
+                    religions: prefs.religions || []
+                }
+            });
+        }
+        
+        // Для авторизованных — стандартный GET-запрос
         return await rawRequest(customEndpoint, { method: "GET" });
     },
 

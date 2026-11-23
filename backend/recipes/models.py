@@ -12,7 +12,9 @@ from sqlalchemy import (
     String,
     UniqueConstraint,
     func,
+    text,
 )
+from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -54,6 +56,23 @@ class Recipe(Base):
     fats: Mapped[int] = mapped_column(Integer) # жиры
     uglevods: Mapped[int] = mapped_column(Integer) # углеводы
     final_weight: Mapped[int] = mapped_column(Integer) # финальный вес
+
+    # коды из vocab.py. tags отдаются фронту; forbidden и religions — нет,
+    # они для рекомендаций: что рецепт НАРУШАЕТ (аллергии/диеты и религии)
+    tags: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, default=list, server_default=text("'{}'")
+    )
+    forbidden: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, default=list, server_default=text("'{}'")
+    )
+    religions: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, default=list, server_default=text("'{}'")
+    )
+    # коды оборудования, нужного для рецепта (vocab.EQUIPMENT_CODES); фронту не отдаётся,
+    # человекочитаемый список — в relationship equipment
+    equipment_codes: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, default=list, server_default=text("'{}'")
+    )
 
     # lazy="raise": случайная ленивая подгрузка в async-коде сразу падает,
     # а не даёт загадочный MissingGreenlet. Грузим явно через selectinload в репозитории.

@@ -31,6 +31,27 @@ class RefreshToken(Base):
     revoked: Mapped[bool] = mapped_column(Boolean, default=False)
 
 
+class PendingRegistration(Base):
+    """Регистрация, которая ждёт код с почты. В members попадает только после кода."""
+    __tablename__ = "pending_registrations"
+
+    email: Mapped[str] = mapped_column(String(320), primary_key=True)
+    name: Mapped[str] = mapped_column(Text)
+    password_hash: Mapped[str] = mapped_column(Text)
+    salt: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+
+class PendingPasswordReset(Base):
+    """Новый пароль, который применится после подтверждения кода с почты."""
+    __tablename__ = "pending_password_resets"
+
+    email: Mapped[str] = mapped_column(String(320), primary_key=True)
+    password_hash: Mapped[str] = mapped_column(Text)
+    salt: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime)
+
+
 engine = create_engine(config.DB_URL, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine)
 
