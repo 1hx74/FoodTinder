@@ -8,6 +8,7 @@
 | recipes   | ft-recipes    | http://localhost:8000/docs      | открыт наружу (порт 8000)  | рецепты, лайки/дизлайки/избранное, next (`/api/db/*`)          |
 | fileloud  | ft-fileloud   | http://localhost:8001/docs      | только localhost хоста     | хранилище файлов (MinIO + SQLite), напрямую фронтом не используется |
 | media     | ft-media      | http://localhost:8002/docs      | только localhost хоста     | аватар, фото рецептов, гипертекст (`/api/db/me/avatar`, `/api/db/avatar/{id}`, `/api/db/image`, `/api/db/hyper-text`) |
+| email_verificator | ft-email-verificator | http://localhost:8003/docs | только localhost хоста | коды подтверждения почты (`/api/mail/send`, `/api/mail/verify`), вызывается только из auth |
 
 Сайт и всё API через nginx: http://localhost (порт 80).
 
@@ -31,3 +32,28 @@ MinIO (S3 для fileloud) и Postgres наружу не опубликован�
 Нужен интернет; если что-то не скачалось — рецепты всё равно создаются, в логах recipes будет warning.
 Пересоздать демо-рецепты с нуля: `docker compose down -v && docker compose up --build -d`
 (удалит ВСЕ данные: пользователей, рецепты, файлы).
+
+## Подтверждение почты (регистрация и восстановление пароля)
+
+Сервис `backend/email_verificator` (взят из https://github.com/1hx74/email_verificator)
+генерирует 6-значный код, хранит его хэш в SQLite (docker-том `email_codes`) и шлёт письмо через Gmail.
+Наружу не опубликован, его вызывает только auth.
+
+- Регистрация: `POST /api/auth/register` (email, username, password) -> код на почту ->
+  `POST /api/auth/register/verify` (email, code). Пока код не подтверждён, пользователя в `members` нет
+  (данные лежат в `pending_registrations`, живут `PENDING_TTL` секунд, по умолчанию 15 минут).
+- Восстановление пароля: `POST /api/auth/password/recover` (email, new_password) -> код на почту ->
+  `POST /api/auth/password/recover/verify` (email, code). После этого все сессии пользователя разлогиниваются.
+
+Почта отправителя — `GMAIL` и `APP_PASSWORD` в `backend/email_verificator/.env`.
+`APP_PASSWORD` — пароль приложения Google (https://myaccount.google.com/apppasswords,
+нужна двухэтапная аутентификация), а не пароль от почты.
+Если они пустые — DEV-режим: письмо не отправляется, код печатается в лог:
+`docker compose logs email_verificator`.
+
+## Служебный аккаунт
+
+`SERVICE_ADMIN_EMAIL` / `SERVICE_ADMIN_PASSWORD` в `.env` в корне проекта (по умолчанию `admin@gmail.com` / `admin`).
+При старте auth создаётся пользователь с ролью admin (без кода с почты); если он уже есть — пароль и роль
+приводятся к значениям из `.env`. Если хоть одно значение пустое — аккаунт не создаётся
+(уже созданный не удаляется). После изменения: `docker compose up -d auth`.

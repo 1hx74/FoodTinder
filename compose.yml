@@ -25,6 +25,9 @@ services:
       - ./backend/auth/.env
     environment:
       JWT_PRIVATE_KEY_PATH: /run/secrets/jwt_private_key
+      # служебный admin — задаётся в .env в корне проекта; пусто = не создаётся
+      SERVICE_ADMIN_EMAIL: ${SERVICE_ADMIN_EMAIL:-}
+      SERVICE_ADMIN_PASSWORD: ${SERVICE_ADMIN_PASSWORD:-}
     secrets:
       - jwt_private_key
     ports:
@@ -32,6 +35,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      email_verificator:
+        condition: service_started
     networks:
       - food-tinder-net
 
@@ -115,6 +120,23 @@ services:
     networks:
       - food-tinder-net
 
+  email_verificator:
+    build:
+      context: ./backend/email_verificator
+      dockerfile: Dockerfile
+    container_name: ft-email-verificator
+    restart: unless-stopped
+    env_file:
+      - ./backend/email_verificator/.env
+    # коды подтверждения почты; вызывается только из auth внутри docker-сети,
+    # через nginx НЕ доступен. Порт только на localhost хоста — для /docs
+    ports:
+      - "127.0.0.1:8003:8000"
+    volumes:
+      - email_codes:/data
+    networks:
+      - food-tinder-net
+
   nginx:
     image: nginx:1.27-alpine
     container_name: ft-nginx
@@ -136,6 +158,7 @@ volumes:
   pgdata:
   minio_data:
   fileloud_data:
+  email_codes:
 
 networks:
   food-tinder-net:

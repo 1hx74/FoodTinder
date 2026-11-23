@@ -1,4 +1,5 @@
 import uuid
+from datetime import datetime
 
 import fastapi
 from fastapi import APIRouter, Cookie, Depends, Response
@@ -6,16 +7,22 @@ from fastapi.exceptions import HTTPException
 from sqlalchemy.orm import Session
 
 import config
+import email_verificator
 import security
+from errors import ApiError
 from models import get_db
-from repos import MemberRepository, RefreshTokenRepository
+from repos import MemberRepository, PendingRepository, RefreshTokenRepository
 from schemas import (
     AuthResponse,
     LoginRequest,
     MeResponse,
     OkResponse,
+    PasswordRecoverRequest,
+    PasswordRecoverVerifyRequest,
     RefreshResponse,
     RegisterRequest,
+    RegisterVerifyRequest,
+    StateResponse,
 )
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -48,31 +55,151 @@ def _issue_session(
 
 # ------------------------------------------------------------------ auth
 
-@router.post("/register", response_model=AuthResponse)
-async def register(
-    body: RegisterRequest, response: Response, db: Session = Depends(get_db)
-):
+# --- регистрация в 2 шага: данные -> код с почты -> только тогда запись в members
+
+@router.post(
+    "/register",
+    response_model=StateResponse,
+    responses={409: {"model": StateResponse}, 400: {"model": StateResponse},
+               429: {"model": StateResponse}, 503: {"model": StateResponse}},
+)
+async def register(body: RegisterRequest, db: Session = Depends(get_db)):
+    """Шаг 1: проверяет данные, запоминает регистрацию и шлёт код на почту.
+    В members пользователь НЕ попадает, пока код не подтверждён (/register/verify)."""
     members = MemberRepository(db)
+    pending = PendingRepository(db)
+    pending.purge_expired()
 
-    if members.name_exists(body.username):
-        raise HTTPException(409, "User already exists")
+    if members.name_exists(body.username) or pending.name_pending(body.username, body.email):
+        raise ApiError(409, "User already exists")
     if members.email_exists(body.email):
-        raise HTTPException(409, "Email already registered")
+        raise ApiError(409, "Email already registered")
 
-    user_id = str(uuid.uuid4())
     password_hash, salt = security.hash_new_password(body.password)
-
-    members.create(
-        user_id=user_id,
+    pending.put_registration(
         email=body.email,
         name=body.username,
         password_hash=password_hash,
         salt=salt,
+        expires_at=datetime.now() + config.PENDING_TTL,
     )
+    try:
+        await email_verificator.send_code(body.email)
+    except ApiError:
+        db.rollback()
+        raise
+    db.commit()
+    return {"code": 200, "state": "OK"}
+
+
+@router.post(
+    "/register/verify",
+    response_model=AuthResponse,
+    responses={400: {"model": StateResponse}, 404: {"model": StateResponse},
+               409: {"model": StateResponse}, 410: {"model": StateResponse},
+               429: {"model": StateResponse}, 503: {"model": StateResponse}},
+)
+async def register_verify(
+    body: RegisterVerifyRequest, response: Response, db: Session = Depends(get_db)
+):
+    """Шаг 2: проверяет код с почты, создаёт пользователя и сразу логинит его."""
+    pending = PendingRepository(db)
+    reg = pending.get_registration(body.email)
+    if reg is None:
+        raise ApiError(404, "Registration not found")
+
+    await email_verificator.check_code(body.email, body.code)
+
+    members = MemberRepository(db)
+    # пока ждали код, имя/почту мог занять кто-то другой
+    if members.name_exists(reg.name):
+        pending.delete_registration(body.email)
+        db.commit()
+        raise ApiError(409, "User already exists")
+    if members.email_exists(reg.email):
+        pending.delete_registration(body.email)
+        db.commit()
+        raise ApiError(409, "Email already registered")
+
+    user_id = str(uuid.uuid4())
+    name = reg.name
+    members.create(
+        user_id=user_id,
+        email=reg.email,
+        name=name,
+        password_hash=reg.password_hash,
+        salt=reg.salt,
+    )
+    pending.delete_registration(body.email)
     # MemberDataRepository(db).create_empty(user_id)
     db.commit()
 
-    return _issue_session(response, db, user_id, body.username, "user")
+    return _issue_session(response, db, user_id, name, "user")
+
+
+# --- восстановление пароля в 2 шага: почта + новый пароль -> код с почты -> смена
+
+@router.post(
+    "/password/recover",
+    response_model=StateResponse,
+    responses={400: {"model": StateResponse}, 404: {"model": StateResponse},
+               429: {"model": StateResponse}, 503: {"model": StateResponse}},
+)
+async def password_recover(body: PasswordRecoverRequest, db: Session = Depends(get_db)):
+    """Шаг 1: запоминает новый пароль и шлёт код на почту. Пароль ещё НЕ меняется."""
+    pending = PendingRepository(db)
+    pending.purge_expired()
+
+    if not MemberRepository(db).email_exists(body.email):
+        # Скрывать нет смысла: /register и так отвечает 409 на занятую почту
+        raise ApiError(404, "User not found")
+
+    password_hash, salt = security.hash_new_password(body.new_password)
+    pending.put_reset(
+        email=body.email,
+        password_hash=password_hash,
+        salt=salt,
+        expires_at=datetime.now() + config.PENDING_TTL,
+    )
+    try:
+        await email_verificator.send_code(body.email)
+    except ApiError:
+        db.rollback()
+        raise
+    db.commit()
+    return {"code": 200, "state": "OK"}
+
+
+@router.post(
+    "/password/recover/verify",
+    response_model=StateResponse,
+    responses={400: {"model": StateResponse}, 404: {"model": StateResponse},
+               410: {"model": StateResponse}, 429: {"model": StateResponse},
+               503: {"model": StateResponse}},
+)
+async def password_recover_verify(
+    body: PasswordRecoverVerifyRequest, db: Session = Depends(get_db)
+):
+    """Шаг 2: проверяет код, ставит новый пароль и разлогинивает все сессии."""
+    pending = PendingRepository(db)
+    reset = pending.get_reset(body.email)
+    if reset is None:
+        raise ApiError(404, "Password recovery not found")
+
+    await email_verificator.check_code(body.email, body.code)
+
+    members = MemberRepository(db)
+    member = members.get_by_email(body.email)
+    if member is None:
+        pending.delete_reset(body.email)
+        db.commit()
+        raise ApiError(404, "User not found")
+
+    members.set_password(member.id, reset.password_hash, reset.salt)
+    RefreshTokenRepository(db).revoke_all_for_user(member.id)
+    pending.delete_reset(body.email)
+    db.commit()
+    return {"code": 200, "state": "OK"}
 
 
 @router.post("/login", response_model=AuthResponse)
