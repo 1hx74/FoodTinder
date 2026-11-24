@@ -133,8 +133,8 @@ function formatIngredientMeasure(rawQuantity, rawCount) {
 
 /* 2. getUserPreferences()
  *
-- Всегда берет данные об оборудовании напрямую из localStorage (кеша),
-- исключая любые сетевые запросы на бэкенд.
+- Берет данные об оборудовании из localStorage (кеша),
+- а при необходимости догружает с сервера через AuthAPI.getCachedEquipment().
  */
 function getUserPreferences() {
     try {
@@ -146,6 +146,21 @@ function getUserPreferences() {
         console.error("[swipe.js] Ошибка чтения кеша оборудования:", e);
     }
     return { kitchen_equipment: [], allergies: [], diets: [], religions: [] };
+}
+
+async function ensureUserPreferencesLoaded() {
+    try {
+        const cached = localStorage.getItem("global_cache_equipment");
+        if (cached) {
+            return JSON.parse(cached);
+        }
+        if (window.AuthAPI && typeof window.AuthAPI.getCachedEquipment === "function") {
+            return await window.AuthAPI.getCachedEquipment();
+        }
+    } catch (e) {
+        console.error("[swipe.js] Ошибка загрузки настроек пользователя:", e);
+    }
+    return getUserPreferences();
 }
 
 /* 3. getQueue()
@@ -304,10 +319,13 @@ async function renderRecipe(recipe) {
     if (equipmentContainer) {
         equipmentContainer.innerHTML = "";
         if (Array.isArray(recipe.equipment) && recipe.equipment.length > 0) {
-            const prefs = getUserPreferences();
-            const userEquipment = prefs.kitchen_equipment || [];
+            const prefs = await ensureUserPreferencesLoaded();
+            const userEquipment = Array.isArray(prefs?.kitchen_equipment) ? prefs.kitchen_equipment : [];
 
-            recipe.equipment.forEach(itemKey => {
+            recipe.equipment.forEach(rawKey => {
+                const itemKey = String(rawKey || "").trim();
+                if (!itemKey) return;
+
                 const pill = document.createElement("div");
                 const isAvailable = userEquipment.includes(itemKey);
 
@@ -788,7 +806,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("btn-like")?.addEventListener("click", () => handleReaction("like"));
 
     initTouchSwipe();
-    getUserPreferences();
+    await ensureUserPreferencesLoaded();
 
     const queue = getQueue();
     if (queue.length > 0) {

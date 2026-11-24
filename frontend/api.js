@@ -21,6 +21,21 @@ const tokenStorage = {
     clear() { localStorage.removeItem("accessToken"); }
 };
 
+function clearAllSessionCache() {
+    tokenStorage.clear();
+    localStorage.removeItem("username");
+    localStorage.removeItem("email");
+    localStorage.removeItem("global_cache_profile");
+    localStorage.removeItem("global_cache_equipment");
+    localStorage.removeItem("guest_cache_liked_ids");
+    localStorage.removeItem("guest_cache_disliked_ids");
+    localStorage.removeItem("auth_cache_reaction_like");
+    localStorage.removeItem("auth_cache_reaction_dislike");
+    localStorage.removeItem("auth_cache_reaction_favorite");
+    sessionStorage.removeItem("recipeQueue");
+    sessionStorage.removeItem("selectedRecipe");
+}
+
 function formatAuthErrorMessage(status, rawState) {
     const state = String(rawState || "").trim();
 
@@ -58,6 +73,9 @@ function formatAuthErrorMessage(status, rawState) {
     }
     if (status === 410) {
         return "Срок действия кода истёк (5 минут). Запросите новый код.";
+    }
+    if (status === 422) {
+        return state || "Некорректные данные настроек (Unprocessable Entity).";
     }
     if (status === 429) {
         if (state === "Too many verification attempts") {
@@ -118,6 +136,11 @@ const AuthAPI = {
         return data;
     },
 
+    logout() {
+        clearAllSessionCache();
+        this.updateHeaderUI();
+    },
+
     // Шаг 1 регистрации: отправляет код на почту, возвращает { code: 200, state: "OK" }
     async register(email, username, password, customEndpoint = "/api/auth/register") {
         return await rawRequest(customEndpoint, {
@@ -140,7 +163,6 @@ const AuthAPI = {
             localStorage.setItem("email", email);
 
             // Стираем гостевые кэши после успешной регистрации
-            
             localStorage.removeItem("guest_cache_liked_ids");
             localStorage.removeItem("guest_cache_disliked_ids");
         }
@@ -161,20 +183,30 @@ const AuthAPI = {
             method: "POST",
             body: { email, code }
         });
-        tokenStorage.clear();
-        localStorage.removeItem("username");
-        localStorage.removeItem("email");
-        localStorage.removeItem("global_cache_profile");
-        localStorage.removeItem("global_cache_equipment");
+        clearAllSessionCache();
         return data;
     },
 
     async updatePreferences(preferencesData, customEndpoint = "/api/db/me/preferences") {
+        const normalized = {
+            allergies: preferencesData?.allergies || [],
+            diets: preferencesData?.diets || [],
+            religions: preferencesData?.religions || [],
+            kitchen_equipment: preferencesData?.kitchen_equipment || []
+        };
+
+        if (!this.isAuthenticated()) {
+            localStorage.setItem("global_cache_equipment", JSON.stringify(normalized));
+            sessionStorage.removeItem("recipeQueue");
+            return { code: 200, state: "OK (Guest Cached)" };
+        }
+
         const data = await rawRequest(customEndpoint, {
             method: "PATCH",
-            body: preferencesData
+            body: normalized
         });
         localStorage.removeItem("global_cache_equipment");
+        sessionStorage.removeItem("recipeQueue");
         return data;
     },
 
@@ -192,7 +224,7 @@ const AuthAPI = {
         }
 
         if (!this.isAuthenticated()) {
-            const emptyEq = { kitchen_equipment: [] };
+            const emptyEq = { allergies: [], diets: [], religions: [], kitchen_equipment: [] };
             localStorage.setItem(cacheKey, JSON.stringify(emptyEq));
             return emptyEq;
         }
@@ -206,7 +238,7 @@ const AuthAPI = {
         } catch (e) {
             console.error("[api.js] Ошибка загрузки оборудования:", e);
         }
-        return { kitchen_equipment: [] };
+        return { allergies: [], diets: [], religions: [], kitchen_equipment: [] };
     },
 
     getGuestReactionIds(actionType) {
@@ -297,42 +329,6 @@ const AuthAPI = {
         return data;
     },
 
-    async getMyAvatarUrl() {
-        const headers = {};
-        const token = tokenStorage.get();
-        if (token) {
-            headers["Authorization"] = `Bearer ${token}`;
-        }
-
-        let response;
-        try {
-            response = await fetch(`${API_BASE}/api/db/me/avatar`, {
-                method: "GET",
-                headers
-            });
-        } catch (e) {
-            throw new ApiError("Ошибка соединения: сервер недоступен", 0, null);
-        }
-
-        if (response.status === 404) {
-            return null;
-        }
-
-        let data = null;
-        try { data = await response.json(); } catch (_) {}
-
-        if (!response.ok) {
-            const rawError = data?.state || data?.message || data?.detail;
-            const readableMessage =
-                typeof rawError === "string"
-                    ? formatAuthErrorMessage(response.status, rawError)
-                    : `Ошибка получения аватарки (${response.status})`;
-            throw new ApiError(readableMessage, response.status, data);
-        }
-
-        return data?.avatar_url || null;
-    },
-
     async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {
         if (!this.isAuthenticated()) {
             const liked = this.getGuestReactionIds('liked');
@@ -348,9 +344,10 @@ const AuthAPI = {
                 body: {
                     liked: liked,
                     disliked: disliked,
-                    exclude: prefs.exclude || [],
-                    forbidden: prefs.forbidden || [],
-                    religions: prefs.religions || []
+                    allergies: prefs.allergies || [],
+                    diets: prefs.diets || [],
+                    religions: prefs.religions || [],
+                    kitchen_equipment: prefs.kitchen_equipment || []
                 }
             });
         }
@@ -369,19 +366,10 @@ const AuthAPI = {
             return { code: 200, state: "OK (Guest Cached)" };
         }
 
-        const res = await rawRequest(customEndpoint, {
+        return await rawRequest(customEndpoint, {
             method: "PUT",
             body: { recipe_id: recipeId, action }
         });
-
-        const cacheKey = `auth_cache_reaction_${action}`;
-        let cached = JSON.parse(localStorage.getItem(cacheKey) || "[]");
-        if (!cached.includes(recipeId)) {
-            cached.push(recipeId);
-            localStorage.setItem(cacheKey, JSON.stringify(cached));
-        }
-
-        return res;
     },
 
     async getMyAvatarUrl() {
@@ -497,7 +485,7 @@ const AuthAPI = {
             showFallback();
         }
     },
-    
+
     updateHeaderUI() {
         const authContainer = document.getElementById("auth-container");
         const profileLetter = document.getElementById("profile-letter");
@@ -529,7 +517,7 @@ const AuthAPI = {
             this.setHeaderAvatar(null);
         }
     },
-    
+
     isAuthenticated() {
         return !!tokenStorage.get();
     }
