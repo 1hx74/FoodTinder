@@ -5,7 +5,7 @@
 Данные пользователя лежат в общей БД у разных сервисов:
   members          — auth    (имя, почта, роль, дата регистрации)
   user_avatars     — media   (id файла аватара в fileloud)
-  user_preferences — recipes (фильтры: аллергии, религия/диеты, оборудование)
+  user_preferences — recipes (фильтры: аллергии, диеты, религия, оборудование)
   user_profiles    — recipes (анкета: дата рождения, пол, рост, вес)
 GET /api/db/me собирает их в один ответ, PATCH /api/db/me меняет имя и анкету.
 """
@@ -27,7 +27,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_session
 from jwks import get_required_user_id
 from models import UserPreferences, UserProfile
-from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RELIGION_CODES, clean_codes
+from vocab import ALLERGY_CODES, DIET_CODES, EQUIPMENT_CODES, RELIGION_CODES, clean_codes
 
 logger = logging.getLogger(__name__)
 
@@ -62,9 +62,10 @@ async def load_preferences(session: AsyncSession, user_id: str) -> dict[str, lis
         await session.execute(select(UserPreferences).where(UserPreferences.user_id == user_id))
     ).scalar_one_or_none()
     if row is None:
-        return {"forbidden": [], "religions": [], "kitchen_equipment": []}
+        return {"allergies": [], "diets": [], "religions": [], "kitchen_equipment": []}
     return {
-        "forbidden": list(row.forbidden or []),
+        "allergies": list(row.allergies or []),
+        "diets": list(row.diets or []),
         "religions": list(row.religions or []),
         "kitchen_equipment": list(row.kitchen_equipment or []),
     }
@@ -74,13 +75,17 @@ class PreferencesPatch(BaseModel):
     """Каждое поле необязательно: не прислали -> не меняется,
     прислали список -> он ЗАМЕНЯЕТ сохранённый целиком ([] — очистить)."""
 
-    forbidden: list[str] | None = Field(
+    allergies: list[str] | None = Field(
         default=None, max_length=50,
-        description="аллергии: " + ", ".join(FORBIDDEN_CODES),
+        description="аллергии: " + ", ".join(ALLERGY_CODES),
+    )
+    diets: list[str] | None = Field(
+        default=None, max_length=10,
+        description="диеты: " + ", ".join(DIET_CODES),
     )
     religions: list[str] | None = Field(
         default=None, max_length=10,
-        description="религия и диеты: " + ", ".join(RELIGION_CODES),
+        description="религия: " + ", ".join(RELIGION_CODES),
     )
     kitchen_equipment: list[str] | None = Field(
         default=None, max_length=50,
@@ -89,7 +94,8 @@ class PreferencesPatch(BaseModel):
 
 
 _PREF_VOCAB = {
-    "forbidden": FORBIDDEN_CODES,
+    "allergies": ALLERGY_CODES,
+    "diets": DIET_CODES,
     "religions": RELIGION_CODES,
     "kitchen_equipment": EQUIPMENT_CODES,
 }
@@ -101,7 +107,7 @@ async def get_preferences(
     user_id: str = Depends(get_required_user_id),
     session: AsyncSession = Depends(get_session),
 ):
-    """Фильтры пользователя: {forbidden, religions, kitchen_equipment}."""
+    """Фильтры пользователя: {allergies, diets, religions, kitchen_equipment}."""
     return await load_preferences(session, user_id)
 
 

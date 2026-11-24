@@ -3,8 +3,13 @@
 TAGS — теги рецепта (отдаются фронту в поле "tags"). Общие, переиспользуемые,
 чтобы ими можно было разметить ~50 рецептов и строить по ним рекомендации.
 
-FORBIDDEN_CODES и RELIGION_CODES — те же коды, что у пользователя в контракте
-GET/PATCH /api/db/me/preferences (поля "forbidden" и "religions", см. frontend/filter).
+Пользователь (GET/PATCH /api/db/me/preferences, см. frontend/filter):
+  allergies -> ALLERGY_CODES, diets -> DIET_CODES, religions -> RELIGION_CODES,
+  kitchen_equipment -> EQUIPMENT_CODES.
+
+Рецепт хранит ограничения в двух полях (FORBIDDEN_CODES, RECIPE_RELIGION_CODES):
+recipe.forbidden = аллергии, recipe.religions = религия + диеты.
+Анонимный POST /next принимает те же два поля, что и рецепт (forbidden, religions).
 У рецепта эти поля означают «кому рецепт НЕ подходит» (что он нарушает):
   recipe.forbidden  — аллергены, которые есть в рецепте (у пользователя — его аллергии):
       nuts      — есть орехи
@@ -47,12 +52,20 @@ TAGS: tuple[str, ...] = (
 )
 
 # аллергии
-FORBIDDEN_CODES: tuple[str, ...] = (
+ALLERGY_CODES: tuple[str, ...] = (
     "nuts", "seafood", "lactose", "fish", "eggs", "wheat", "citruses",
 )
 
-# религия и диеты (vegan / vegetarian — тоже здесь: исключают группы продуктов)
-RELIGION_CODES: tuple[str, ...] = ("halal", "lenten", "vegan", "vegetarian")
+# диеты
+DIET_CODES: tuple[str, ...] = ("vegan", "vegetarian")
+
+# религия
+RELIGION_CODES: tuple[str, ...] = ("halal", "lenten")
+
+# поля рецепта (и анонимного POST /next):
+#   recipe.forbidden — аллергии, recipe.religions — религия + диеты
+FORBIDDEN_CODES: tuple[str, ...] = ALLERGY_CODES
+RECIPE_RELIGION_CODES: tuple[str, ...] = RELIGION_CODES + DIET_CODES
 
 EQUIPMENT_CODES: tuple[str, ...] = (
     "oven",           # духовка

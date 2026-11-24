@@ -156,11 +156,15 @@ class UserPreferences(Base):
 
     # sub из JWT (members.id в auth)
     user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
-    # аллергии (FORBIDDEN_CODES)
-    forbidden: Mapped[list[str]] = mapped_column(
+    # аллергии (ALLERGY_CODES)
+    allergies: Mapped[list[str]] = mapped_column(
         ARRAY(String(32)), nullable=False, server_default=text("'{}'")
     )
-    # религия и диеты vegan/vegetarian (RELIGION_CODES)
+    # диеты (DIET_CODES)
+    diets: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, server_default=text("'{}'")
+    )
+    # религия (RELIGION_CODES)
     religions: Mapped[list[str]] = mapped_column(
         ARRAY(String(32)), nullable=False, server_default=text("'{}'")
     )
