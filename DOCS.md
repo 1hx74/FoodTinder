@@ -70,17 +70,23 @@ MinIO (S3 для fileloud) и Postgres наружу не опубликован�
   (не прислали или `null` — не меняется). Проверки: имя 1..32 символа и не занято (иначе 409),
   дата `ГГГГ-ММ-ДД` не в будущем, пол `men`/`women`, рост 50..250, вес 20..300 — иначе 422.
   Имя меняется в `members.name`. Аватар сюда не передаётся — `POST /api/db/me/avatar`.
-- `GET /api/db/me/preferences` — фильтры `{forbidden, religions, kitchen_equipment}`; ничего не сохранено — пустые списки.
+- `GET /api/db/me/preferences` — фильтры `{allergies, diets, religions, kitchen_equipment}`
+  (в списках только включённые ограничения); ничего не сохранено — пустые списки.
 - `PATCH /api/db/me/preferences` — каждое поле необязательно: не прислали — не меняется, прислали список —
-  он заменяет сохранённый целиком (`[]` — очистить). Неизвестный код -> 422.
-  - `forbidden` — аллергии: `nuts, seafood, lactose, fish, eggs, wheat, citruses`
-  - `religions` — религия и диеты: `halal, lenten, vegan, vegetarian`
-  - `kitchen_equipment` — оборудование (коды в `backend/recipes/vocab.py`)
+  он заменяет сохранённый целиком (`[]` — очистить). Неизвестный код или код не из своего поля -> 422.
+  - `allergies` — аллергии: `nuts, seafood, lactose, fish, eggs, wheat, citruses`
+  - `diets` — диеты: `vegan, vegetarian`
+  - `religions` — религия: `halal, lenten`
+  - `kitchen_equipment` — оборудование: `oven, stove, microwave, multicooker, air_fryer, toaster, waffle_maker,
+    mixer, blender, meat_grinder, backing_dish, backind_sheet, grater, wisk, rolling_scale` (опечатки — как во фронте)
 - `GET /api/db/recipes/next` для авторизованного не выдаёт рецепты, которые нарушают его сохранённые
-  `forbidden` и `religions` (как анонимный `POST /next`). По оборудованию бэк не фильтрует.
+  `allergies`, `diets` и `religions`. По оборудованию бэк не фильтрует.
+- Анонимный `POST /api/db/recipes/next` не менялся: `forbidden` (= аллергии) и `religions`
+  (= религия + диеты: `halal, lenten, vegan, vegetarian`), как поля рецепта.
 
-`vegan` / `vegetarian` раньше были в `forbidden`; при старте recipes они сами переносятся в `religions`
-у рецептов и у сохранённых фильтров пользователей (`backend/recipes/migrations.py`).
+Миграция (`backend/recipes/migrations.py`, сама при старте recipes): в `user_preferences` колонка
+`forbidden` переименовывается в `allergies`, добавляется `diets`, а `vegan` / `vegetarian` из `religions`
+(и `allergies`) переносятся в `diets`. У рецептов `vegan` / `vegetarian` по-прежнему лежат в `religions`.
 
 ## Служебный аккаунт
 

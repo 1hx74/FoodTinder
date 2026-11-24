@@ -13,7 +13,7 @@ from models import IngredientQuantity, ReactionAction, Recipe
 from repos import RecipeRepository
 from jwks import get_optional_user_id, get_required_user_id
 from me import load_preferences
-from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RELIGION_CODES, TAGS, clean_codes
+from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RECIPE_RELIGION_CODES, TAGS, clean_codes
 
 logger = logging.getLogger(__name__)
 
@@ -80,8 +80,9 @@ class ReactionRequest(BaseModel):
 
 class AnonymousNextRequest(BaseModel):
     """Тело POST /next для незарегистрированного пользователя:
-    его лайки/дизлайки из локального кэша клиента, а также аллергии
-    и религия/диеты — те же поля и коды, что в /api/db/me/preferences."""
+    его лайки/дизлайки из локального кэша клиента, а также ограничения:
+    forbidden = allergies из /api/db/me/preferences,
+    religions = religions + diets из /api/db/me/preferences."""
 
     liked: list[int] = Field(default_factory=list, max_length=10000)
     disliked: list[int] = Field(default_factory=list, max_length=10000)
@@ -98,7 +99,7 @@ class AnonymousNextRequest(BaseModel):
     religions: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="религия и диеты: " + ", ".join(RELIGION_CODES),
+        description="религия и диеты: " + ", ".join(RECIPE_RELIGION_CODES),
     )
 
 
@@ -145,7 +146,7 @@ class RecipeCreate(BaseModel):
         default_factory=list, description="нарушает: " + ", ".join(FORBIDDEN_CODES)
     )
     religions: list[str] = Field(
-        default_factory=list, description="нарушает: " + ", ".join(RELIGION_CODES)
+        default_factory=list, description="нарушает: " + ", ".join(RECIPE_RELIGION_CODES)
     )
     equipment_codes: list[str] = Field(
         default_factory=list, description="нужное оборудование: " + ", ".join(EQUIPMENT_CODES)
@@ -207,7 +208,7 @@ class RecipeUpdate(BaseModel):
 _RECIPE_CODES = {
     "tags": TAGS,
     "forbidden": FORBIDDEN_CODES,
-    "religions": RELIGION_CODES,
+    "religions": RECIPE_RELIGION_CODES,
     "equipment_codes": EQUIPMENT_CODES,
 }
 
@@ -241,8 +242,9 @@ async def get_next_recipe(
     recipe = await repo.get_next(
         user_id,
         exclude,
-        forbidden=prefs["forbidden"],
-        religions=prefs["religions"],
+        # у рецепта аллергии лежат в forbidden, религия и диеты — в religions
+        forbidden=prefs["allergies"],
+        religions=[*prefs["religions"], *prefs["diets"]],
     )
 
     if recipe is None:
@@ -268,7 +270,7 @@ async def post_next_recipe(
     Ничего в БД не записывается."""
     try:
         forbidden = clean_codes(body.forbidden, FORBIDDEN_CODES, "forbidden")
-        religions = clean_codes(body.religions, RELIGION_CODES, "religions")
+        religions = clean_codes(body.religions, RECIPE_RELIGION_CODES, "religions")
     except ValueError:
         return _error(422, "Unprocessable Entity")
     exclude = set(body.liked) | set(body.disliked) | set(body.exclude)
