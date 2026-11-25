@@ -216,6 +216,36 @@ class RecipeRepository:
 
     async def get_favourite(self, user_id:str) -> list[int]:
          return await self._recipe_ids_by_action(user_id, ReactionAction.FAVORITE)
+
+    async def get_favourite_brief(
+        self, user_id: str
+    ) -> list[tuple[int, str, list[str], list[str]]]:
+        """(id, title, tags, названия ингредиентов) избранного в том же порядке,
+        что get_favourite — для поиска по избранному (search.py)."""
+        stmt = (
+            select(Recipe.id, Recipe.title, Recipe.tags)
+            .join(RecipeReaction, RecipeReaction.recipe_id == Recipe.id)
+            .where(
+                RecipeReaction.user_id == user_id,
+                RecipeReaction.action == ReactionAction.FAVORITE,
+            )
+            .order_by(RecipeReaction.created_at.desc())
+        )
+        rows = (await self.session.execute(stmt)).all()
+        ingredients: dict[int, list[str]] = {}
+        if rows:
+            ing_rows = await self.session.execute(
+                select(RecipeIngredient.recipe_id, RecipeIngredient.name)
+                .where(RecipeIngredient.recipe_id.in_([r[0] for r in rows]))
+                .order_by(RecipeIngredient.id)
+            )
+            for rid, name in ing_rows:
+                ingredients.setdefault(rid, []).append(name)
+        return [
+            (rid, title, list(tags or []), ingredients.get(rid, []))
+            for rid, title, tags in rows
+        ]
+
     # ---------- управление рецептами ----------
 
     async def create(self, data: dict) -> Recipe:

@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_session
 from models import IngredientQuantity, ReactionAction, Recipe
 from repos import RecipeRepository
+from search import search_recipes
 from jwks import get_optional_user_id, get_required_user_id
 from me import load_preferences
 from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RECIPE_RELIGION_CODES, TAGS, clean_codes
@@ -383,6 +384,25 @@ async def get_favorite(
 ):
     ids = await RecipeRepository(session).get_favourite(user_id)
     return {"code": 200, "state": "OK", "recipes": ids}
+
+
+@router.get("/favorite/search")
+@handle_db_errors
+async def search_favorite(
+    q: str | None = Query(
+        default=None,
+        description="Что ищем: слова из названия, теги по-русски, категории "
+        "(«лимоны», «суп», «алкоголь»). Пусто — всё избранное.",
+    ),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Поиск по избранному текущего пользователя. Возвращает только id —
+    карточки фронт берёт из своего кэша. Сортировка по релевантности
+    (правила — в search.py), пустой q — всё избранное в порядке GET /favorite."""
+    recipes = await RecipeRepository(session).get_favourite_brief(user_id)
+    return {"code": 200, "state": "OK", "recipes": search_recipes(q, recipes)}
+
 
 @router.get("/{recipe_id}")
 @handle_db_errors

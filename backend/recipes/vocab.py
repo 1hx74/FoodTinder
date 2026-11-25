@@ -41,6 +41,7 @@ equipment_codes пока только хранится (по оборудова�
 TAGS: tuple[str, ...] = (
     # тип блюда
     "breakfast", "soup", "salad", "main", "side", "dessert", "baking", "drink",
+    "alcohol",     # алкогольный напиток / блюдо с алкоголем (для поиска по избранному)
     # основной ингредиент
     "meat", "chicken", "fish", "seafood", "pasta", "rice", "eggs", "dairy",
     "vegetables", "fruit", "chocolate",
