@@ -93,8 +93,19 @@ MinIO (S3 для fileloud) и Postgres наружу не опубликован�
     mixer, blender, meat_grinder, backing_dish, backind_sheet, grater, wisk, rolling_scale` (опечатки — как во фронте)
 - `GET /api/db/recipes/next` для авторизованного не выдаёт рецепты, которые нарушают его сохранённые
   `allergies`, `diets` и `religions`. По оборудованию бэк не фильтрует.
-- Анонимный `POST /api/db/recipes/next` не менялся: `forbidden` (= аллергии) и `religions`
+  Дальше выбор делает рекомендательная система
+  (`backend/recipes/recommender_system/recommender.py`, подключение —
+  `backend/recipes/recommender_adapter.py`): скор по тегам из лайков/дизлайков,
+  штраф за недавний показ, избранное учитывается как лайк. Лента циклическая —
+  уже показанный или оценённый рецепт может вернуться (дизлайкнутый — с штрафом,
+  не исключается насовсем). `exclude` — только id, которые клиент уже держит
+  в очереди. Показ по-прежнему пишется в `recipe_impressions`.
+- Анонимный `POST /api/db/recipes/next`: `forbidden` (= аллергии) и `religions`
   (= религия + диеты: `halal, lenten, vegan, vegetarian`), как поля рецепта.
+  `liked` / `disliked` из тела идут в тот же рекомендатель (не выкидывают
+  рецепт из круга), `exclude` — очередь клиента. В БД ничего не пишется.
+  Формат ответа тот же: `{recipe_id, code, state}` или `{recipes: []}`, если
+  подходящих не осталось. Ошибки — `{"code":N,"state":"..."}`, 401 без изменений.
 
 Миграция (`backend/recipes/migrations.py`, сама при старте recipes): в `user_preferences` колонка
 `forbidden` переименовывается в `allergies`, добавляется `diets`, а `vegan` / `vegetarian` из `religions`
@@ -155,7 +166,8 @@ Query:
 
 Сервис recipes. Снимает реакцию текущего пользователя; сам рецепт не удаляется.
 Лайк и избранное независимы: сняли одно — второе остаётся. Дизлайк при снятии
-impression не трогает, поэтому рецепт в `GET /next` сам не вернётся.
+impression не трогает; в циклической ленте `GET /next` рецепт может вернуться
+позже (у рекомендателя за дизлайк штраф, но не жёсткий бан).
 
 ```
 DELETE /api/db/recipes/favorite/{recipe_id}

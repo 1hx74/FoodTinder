@@ -81,7 +81,8 @@ class ReactionRequest(BaseModel):
 
 class AnonymousNextRequest(BaseModel):
     """Тело POST /next для незарегистрированного пользователя:
-    его лайки/дизлайки из локального кэша клиента, а также ограничения:
+    его лайки/дизлайки из локального кэша клиента (для скора рекомендателя),
+    а также ограничения:
     forbidden = allergies из /api/db/me/preferences,
     religions = religions + diets из /api/db/me/preferences."""
 
@@ -262,7 +263,9 @@ async def get_next_recipe(
 ):
     """Только для авторизованных. Аноним без токена получит 401
     и должен использовать POST /next. Рецепты, которые нарушают сохранённые
-    аллергии и религию/диеты пользователя, не выдаются."""
+    аллергии и религию/диеты пользователя, не выдаются.
+    Дальше выбор делает рекомендатель: лента циклическая, уже показанные
+    и оценённые могут вернуться (дизлайкнутые — с штрафом)."""
     repo = RecipeRepository(session)
     # сохранённые фильтры пользователя (GET/PATCH /api/db/me/preferences) —
     # как forbidden/religions в анонимном POST /next; по оборудованию не фильтруем
@@ -292,7 +295,9 @@ async def post_next_recipe(
     session: AsyncSession = Depends(get_session),
 ):
     """Выдача для незарегистрированного пользователя: клиент присылает
-    лайкнутые и дизлайкнутые id из своего кэша, мы их исключаем из выдачи.
+    лайкнутые и дизлайкнутые id из своего кэша — их передаём в рекомендатель
+    (лайк повышает теги, дизлайк понижает, но рецепт из круга не выкидываем).
+    exclude — id, которые клиент уже держит в очереди, сейчас не отдаём.
     forbidden / religions — аллергии и религия/диеты пользователя:
     рецепты, которые их нарушают, не выдаются. Неизвестный код -> 422.
     Ничего в БД не записывается."""
@@ -301,12 +306,13 @@ async def post_next_recipe(
         religions = clean_codes(body.religions, RECIPE_RELIGION_CODES, "religions")
     except ValueError:
         return _error(422, "Unprocessable Entity")
-    exclude = set(body.liked) | set(body.disliked) | set(body.exclude)
     recipe = await RecipeRepository(session).get_next(
         None,
-        list(exclude),
+        list(body.exclude),
         forbidden=forbidden,
         religions=religions,
+        liked=body.liked,
+        disliked=body.disliked,
     )
 
     if recipe is None:
