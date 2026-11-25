@@ -139,7 +139,62 @@ Query:
 В список тегов (`vocab.TAGS`) добавлен `alcohol` (алкогольные напитки/блюда), чтобы его можно
 было ставить рецептам при создании/редактировании.
 
+## Удаление из избранного, лайков и дизлайков
+
+Сервис recipes. Снимает реакцию текущего пользователя; сам рецепт не удаляется.
+Лайк и избранное независимы: сняли одно — второе остаётся. Дизлайк при снятии
+impression не трогает, поэтому рецепт в `GET /next` сам не вернётся.
+
+```
+DELETE /api/db/recipes/favorite/{recipe_id}
+DELETE /api/db/recipes/liked/{recipe_id}
+DELETE /api/db/recipes/disliked/{recipe_id}
+Auth: Authorization: Bearer <access_token>
+
+200 OK, реакция была и удалена:
+{"code": 200, "state": "OK", "removed": true}
+
+200 OK, такой реакции не было (повторный вызов, идемпотентно):
+{"code": 200, "state": "OK", "removed": false}
+
+404 Not Found (рецепта с таким id нет):
+{"code": 404, "state": "Not Found"}
+
+401 Unauthorized (нет токена или он невалидный):
+{"detail": "..."}
+```
+
+Пачкой — выбранные id или весь список:
+
+```
+DELETE /api/db/recipes/favorite?ids=1,2,3
+DELETE /api/db/recipes/liked?ids=1,2,3
+DELETE /api/db/recipes/disliked?ids=1,2,3
+DELETE /api/db/recipes/favorite          # без ids — очистить весь список
+Auth: Authorization: Bearer <access_token>
+
+Query:
+  ids   необязательный. id через запятую (?ids=1,2,3) или повторно (?ids=1&ids=2).
+        Не больше 1000. Не передан — удаляется весь список этой реакции.
+        Пустой (?ids=) — ничего не удаляем, "recipes": [].
+
+200 OK:
+{"code": 200, "state": "OK", "recipes": [1, 3]}
+  recipes — id, которые реально были удалены (для заданных ids — в том же порядке,
+            без дублей; при очистке всего списка — как в GET, свежие первыми).
+            Несуществующие id и те, на которых реакции не было, в список не попадают.
+
+422 Unprocessable Entity (мусор в ids, не целое, число вне int32, больше 1000 id):
+{"code": 422, "state": "Unprocessable Entity"}
+
+401 Unauthorized:
+{"detail": "..."}
+```
+
+`DELETE /api/db/recipes/{recipe_id}` по-прежнему удаляет сам рецепт (вместе с реакциями).
+
 ## Служебный аккаунт
+
 
 `SERVICE_ADMIN_EMAIL` / `SERVICE_ADMIN_PASSWORD` в `.env` в корне проекта (по умолчанию `admin@gmail.com` / `admin`).
 При старте auth создаётся пользователь с ролью admin (без кода с почты); если он уже есть — пароль и роль

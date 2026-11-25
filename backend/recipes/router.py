@@ -225,6 +225,33 @@ def _clean_equipment(items: list[str]) -> list[str]:
     return cleaned
 
 
+_MAX_REACTION_IDS = 1000
+_INT32_MIN, _INT32_MAX = -2_147_483_648, 2_147_483_647
+
+
+def _parse_reaction_ids(raw: list[str] | None) -> list[int] | None:
+    """None — параметр ids не передан (очистить весь список).
+    ValueError — мусор в ids или больше 1000 значений."""
+    if raw is None:
+        return None
+    parts: list[str] = []
+    for item in raw:
+        parts.extend(p.strip() for p in item.split(","))
+    parts = [p for p in parts if p]
+    if len(parts) > _MAX_REACTION_IDS:
+        raise ValueError("too many ids")
+    ids: list[int] = []
+    for p in parts:
+        try:
+            n = int(p)
+        except ValueError as exc:
+            raise ValueError("invalid id") from exc
+        if n < _INT32_MIN or n > _INT32_MAX:
+            raise ValueError("invalid id")
+        ids.append(n)
+    return ids
+
+
 # ---------- endpoints ----------
 @router.get("/next")
 @handle_db_errors
@@ -402,6 +429,103 @@ async def search_favorite(
     (правила — в search.py), пустой q — всё избранное в порядке GET /favorite."""
     recipes = await RecipeRepository(session).get_favourite_brief(user_id)
     return {"code": 200, "state": "OK", "recipes": search_recipes(q, recipes)}
+
+
+def _ids_query(
+    ids: list[str] | None = Query(
+        default=None,
+        description="id через запятую (?ids=1,2,3) или повторно (?ids=1&ids=2). "
+        "Не передан — очистить весь список. Не больше 1000.",
+    ),
+) -> list[str] | None:
+    return ids
+
+
+async def _delete_one_reaction(
+    user_id: str, recipe_id: int, action: ReactionAction, session: AsyncSession
+):
+    removed = await RecipeRepository(session).remove_reaction(user_id, recipe_id, action)
+    if removed is None:
+        return _error(404, "Not Found")
+    return {"code": 200, "state": "OK", "removed": removed}
+
+
+async def _delete_reactions_bulk(
+    user_id: str, raw_ids: list[str] | None, action: ReactionAction, session: AsyncSession
+):
+    try:
+        ids = _parse_reaction_ids(raw_ids)
+    except ValueError:
+        return _error(422, "Unprocessable Entity")
+    removed = await RecipeRepository(session).remove_reactions(user_id, action, ids)
+    return {"code": 200, "state": "OK", "recipes": removed}
+
+
+@router.delete("/favorite/{recipe_id}")
+@handle_db_errors
+async def delete_favorite(
+    recipe_id: int,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Убрать рецепт из избранного. Лайк/дизлайк на нём не трогаем."""
+    return await _delete_one_reaction(user_id, recipe_id, ReactionAction.FAVORITE, session)
+
+
+@router.delete("/liked/{recipe_id}")
+@handle_db_errors
+async def delete_liked(
+    recipe_id: int,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Снять лайк. Избранное и дизлайк не трогаем."""
+    return await _delete_one_reaction(user_id, recipe_id, ReactionAction.LIKE, session)
+
+
+@router.delete("/disliked/{recipe_id}")
+@handle_db_errors
+async def delete_disliked(
+    recipe_id: int,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Снять дизлайк. Impression не удаляется: рецепт в /next не вернётся."""
+    return await _delete_one_reaction(user_id, recipe_id, ReactionAction.DISLIKE, session)
+
+
+@router.delete("/favorite")
+@handle_db_errors
+async def delete_favorites(
+    ids: list[str] | None = Depends(_ids_query),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Удалить выбранные id из избранного или очистить весь список."""
+    return await _delete_reactions_bulk(user_id, ids, ReactionAction.FAVORITE, session)
+
+
+@router.delete("/liked")
+@handle_db_errors
+async def delete_liked_list(
+    ids: list[str] | None = Depends(_ids_query),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Удалить выбранные id из лайков или очистить весь список."""
+    return await _delete_reactions_bulk(user_id, ids, ReactionAction.LIKE, session)
+
+
+@router.delete("/disliked")
+@handle_db_errors
+async def delete_disliked_list(
+    ids: list[str] | None = Depends(_ids_query),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Удалить выбранные id из дизлайков или очистить весь список.
+    Impression не трогаем."""
+    return await _delete_reactions_bulk(user_id, ids, ReactionAction.DISLIKE, session)
 
 
 @router.get("/{recipe_id}")

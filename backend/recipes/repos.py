@@ -246,6 +246,68 @@ class RecipeRepository:
             for rid, title, tags in rows
         ]
 
+    async def remove_reaction(
+        self,
+        user_id: str,
+        recipe_id: int,
+        action: ReactionAction,
+    ) -> bool | None:
+        """Снять одну реакцию. None, если рецепта нет;
+        True — строка удалена, False — такой реакции не было.
+        Другие реакции на этот рецепт и impressions не трогаем."""
+        exists = await self.session.execute(
+            select(Recipe.id).where(Recipe.id == recipe_id)
+        )
+        if exists.scalar_one_or_none() is None:
+            return None
+
+        result = await self.session.execute(
+            delete(RecipeReaction)
+            .where(
+                RecipeReaction.user_id == user_id,
+                RecipeReaction.recipe_id == recipe_id,
+                RecipeReaction.action == action,
+            )
+            .returning(RecipeReaction.recipe_id)
+        )
+        removed = result.scalar_one_or_none() is not None
+        await self.session.commit()
+        return removed
+
+    async def remove_reactions(
+        self,
+        user_id: str,
+        action: ReactionAction,
+        recipe_ids: Sequence[int] | None = None,
+    ) -> list[int]:
+        """Удаляет реакции пользователя. recipe_ids=None — весь список.
+        Возвращает id, которые реально были удалены:
+        для заданных id — в том же порядке, без дублей;
+        при очистке всего списка — как в GET (по убыванию created_at).
+        Impression не трогаем."""
+        stmt = delete(RecipeReaction).where(
+            RecipeReaction.user_id == user_id,
+            RecipeReaction.action == action,
+        )
+        if recipe_ids is not None:
+            ids = list(dict.fromkeys(recipe_ids))
+            if not ids:
+                return []
+            stmt = stmt.where(RecipeReaction.recipe_id.in_(ids))
+
+        result = await self.session.execute(
+            stmt.returning(RecipeReaction.recipe_id, RecipeReaction.created_at)
+        )
+        rows = result.all()
+        await self.session.commit()
+
+        if recipe_ids is not None:
+            removed = {rid for rid, _ in rows}
+            return [i for i in ids if i in removed]
+
+        rows.sort(key=lambda r: r[1], reverse=True)
+        return [rid for rid, _ in rows]
+
     # ---------- управление рецептами ----------
 
     async def create(self, data: dict) -> Recipe:
