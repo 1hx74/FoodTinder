@@ -33,6 +33,18 @@ MinIO (S3 для fileloud) и Postgres наружу не опубликован�
 Пересоздать демо-рецепты с нуля: `docker compose down -v && docker compose up --build -d`
 (удалит ВСЕ данные: пользователей, рецепты, файлы).
 
+Кроме 16 демо-рецептов, сид берёт ещё ~144 рецепта с eda.ru из `backend/recipes/recipes200.json`
+(загрузчик — `backend/recipes/seed_extra.py`; файла нет — только 16 демо). Они тоже вставляются
+только в пустую таблицу. При первом старте качается ~1500 картинок, recipes поднимается несколько
+минут; `SEED_MEDIA=false` — без скачивания (фото по ссылкам источника, без гипертекста).
+`SEED_EXTRA=false` — не грузить recipes200.json.
+
+КБЖУ рецепта (`kalories`, `belki`, `fats`, `uglevods`) — **на 100 г** готового блюда,
+`final_weight` — вес всего блюда в граммах. КБЖУ порции весом `weight` г:
+`kalories * weight / 100` (так же белки, жиры, углеводы); всё блюдо — `weight = final_weight`.
+Админские `POST /api/db/recipes` и `PATCH /api/db/recipes/{id}` принимают КБЖУ `>= 0`
+(например, жиры у напитков — 0), `final_weight` — `>= 1`.
+
 ## Подтверждение почты (регистрация и восстановление пароля)
 
 Сервис `backend/email_verificator` (взят из https://github.com/1hx74/email_verificator)

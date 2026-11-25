@@ -15,6 +15,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from media_seed import build_media
 from models import IngredientQuantity, Recipe, RecipeEquipment, RecipeIngredient
 from seed_content import RECIPE_MEDIA
+from seed_extra import load_extra
 
 # запасные ссылки — если для рецепта нет данных в seed_content.py
 _IMG = "https://placehold.co/600x400?text="
@@ -25,7 +26,7 @@ ML = IngredientQuantity.MILLILITER.value
 IT = IngredientQuantity.ITEM.value
 
 # title, description, cooking_time (мин), difficulty (1..5), stars (0..5),
-# kalories, belki, fats, uglevods, final_weight (г),
+# kalories, belki, fats, uglevods — КБЖУ НА 100 г; final_weight — вес всего блюда (г),
 # ingredients [(name, quantity, count)], equipment [code]
 # name — продукт на русском в именительном падеже, ед. числе ("Помидор", "Молоко"),
 # quantity — только gramm / milliliter / item, чтобы фронт мог вывести
@@ -35,7 +36,7 @@ IT = IngredientQuantity.ITEM.value
 _DEMO = [
     (
         "Борщ", "Классический борщ со сметаной", 90, 3, 5,
-        180, 9, 8, 18, 400,
+        45, 2, 2, 5, 400,
         [("Свёкла", IT, 2), ("Говядина", G, 300), ("Капуста", G, 200),
          ("Картофель", IT, 3), ("Сметана", G, 40)],
         ["stove", "grater"],  # кастрюля, тёрка
@@ -48,7 +49,7 @@ _DEMO = [
     ),
     (
         "Паста карбонара", "Спагетти, бекон, яйцо и пармезан", 25, 2, 5,
-        520, 22, 24, 55, 350,
+        149, 6, 7, 16, 350,
         [("Спагетти", G, 200), ("Бекон", G, 100), ("Яичный желток", IT, 3),
          ("Пармезан", G, 50)],
         ["stove"],  # кастрюля / сковорода
@@ -61,14 +62,14 @@ _DEMO = [
     ),
     (
         "Плов с курицей", "Рассыпчатый рис с курицей и морковью", 70, 3, 4,
-        420, 24, 14, 50, 400,
+        105, 6, 4, 13, 400,
         [("Рис", G, 300), ("Куриное бедро", G, 500), ("Морковь", IT, 2),
          ("Лук", IT, 2)],
         ["stove"],  # казан
     ),
     (
         "Греческий салат", "Овощи, оливки и фета", 15, 1, 4,
-        190, 6, 15, 8, 250,
+        76, 2, 6, 3, 250,
         [("Помидор", IT, 3), ("Огурец", IT, 2), ("Фета", G, 100),
          ("Оливка", G, 50), ("Оливковое масло", ML, 30)],
         [],  # миска и нож не из списка оборудования
@@ -82,7 +83,7 @@ _DEMO = [
     ),
     (
         "Лосось на гриле", "Стейк лосося с лимоном", 30, 2, 4,
-        350, 30, 24, 1, 220,
+        159, 14, 11, 0, 220,
         [("Лосось", G, 400), ("Лимон", IT, 1), ("Оливковое масло", ML, 20)],
         ["stove"],  # гриль-сковорода
     ),
@@ -140,7 +141,7 @@ _DEMO = [
     ),
     (
         "Курица терияки", "Курица в сладком соусе терияки с рисом", 30, 2, 4,
-        280, 20, 8, 30, 350,
+        80, 6, 2, 9, 350,
         [("Куриное филе", G, 400), ("Соус терияки", ML, 80), ("Рис", G, 200),
          ("Кунжут", G, 10), ("Зелёный лук", G, 20)],
         ["stove"],  # вок / кастрюля
@@ -234,6 +235,14 @@ _META: dict[str, tuple[list[str], list[str], list[str]]] = {
         ["halal", "lenten", "vegetarian", "vegan"],  # в терияки мирин/саке — алкоголь
     ),
 }
+
+
+# Дополнительные рецепты из recipes200.json (если файл есть, см. seed_extra.py):
+# дописываются в те же _DEMO / _META / RECIPE_MEDIA, дальше всё как для демо-рецептов.
+_extra_demo, _extra_meta, _extra_media = load_extra({row[0] for row in _DEMO})
+_DEMO += _extra_demo
+_META.update(_extra_meta)
+RECIPE_MEDIA.update(_extra_media)
 
 
 # Коды оборудования демо-рецептов = списки equipment в _DEMO

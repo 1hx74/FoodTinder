@@ -131,10 +131,10 @@ class RecipeCreate(BaseModel):
     hypertext_url: str = Field(alias="hyper-text", min_length=1)
     cooking_time: int = Field(ge=1, description="минуты")
     difficulty: int = Field(ge=1, le=5)
-    kalories: int = Field(ge=1, default=100)
-    belki: int = Field(ge=1, default=10)
-    fats: int = Field(ge=1, default=10)
-    uglevods: int = Field(ge=1, default=10)
+    kalories: int = Field(ge=0, default=100)  # на 100 г
+    belki: int = Field(ge=0, default=10)  # на 100 г
+    fats: int = Field(ge=0, default=10)  # на 100 г
+    uglevods: int = Field(ge=0, default=10)  # на 100 г
     final_weight: int = Field(ge=1, default=100)
     ingredients: list[IngredientSchema] = Field(default_factory=list)
     equipment: list[str] = Field(
@@ -177,10 +177,10 @@ class RecipeUpdate(BaseModel):
     hypertext_url: str | None = Field(default=None, alias="hyper-text", min_length=1)
     cooking_time: int | None = Field(default=None, ge=1, description="минуты")
     difficulty: int | None = Field(default=None, ge=1, le=5)
-    kalories: int | None = Field(default=None, ge=1)
-    belki: int | None = Field(default=None, ge=1)
-    fats: int | None = Field(default=None, ge=1)
-    uglevods: int | None = Field(default=None, ge=1)
+    kalories: int | None = Field(default=None, ge=0)  # на 100 г
+    belki: int | None = Field(default=None, ge=0)  # на 100 г
+    fats: int | None = Field(default=None, ge=0)  # на 100 г
+    uglevods: int | None = Field(default=None, ge=0)  # на 100 г
     final_weight: int | None = Field(default=None, ge=1)
     ingredients: list[IngredientSchema] | None = None
     equipment: list[str] | None = None

@@ -53,11 +53,11 @@ class Recipe(Base):
     hypertext_url: Mapped[str] = mapped_column(String)  # ссылка на html-файл рецепта
     cooking_time: Mapped[int] = mapped_column(Integer)  # минуты
     difficulty: Mapped[int] = mapped_column(Integer)  # 1..5
-    kalories: Mapped[int] = mapped_column(Integer) # калории
-    belki: Mapped[int] = mapped_column(Integer) # белки
-    fats: Mapped[int] = mapped_column(Integer) # жиры
-    uglevods: Mapped[int] = mapped_column(Integer) # углеводы
-    final_weight: Mapped[int] = mapped_column(Integer) # финальный вес
+    kalories: Mapped[int] = mapped_column(Integer) # калории на 100 г
+    belki: Mapped[int] = mapped_column(Integer) # белки на 100 г, г
+    fats: Mapped[int] = mapped_column(Integer) # жиры на 100 г, г
+    uglevods: Mapped[int] = mapped_column(Integer) # углеводы на 100 г, г
+    final_weight: Mapped[int] = mapped_column(Integer) # финальный вес всего блюда, г
 
     # коды из vocab.py. tags отдаются фронту; forbidden и religions — нет,
     # они для рекомендаций: что рецепт НАРУШАЕТ (аллергии/диеты и религии)
