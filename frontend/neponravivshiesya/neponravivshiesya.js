@@ -1,10 +1,10 @@
-/* global window, document, AuthAPI */
+/* global window, document, AuthAPI, rawRequest */
 
 (function () {
   "use strict";
 
   const BATCH_SIZE = 5;
-  let allLikedIds = null;
+  let allDislikedIds = null;
   let loadedCount = 0;
   let isLoadingBatch = false;
   let hasMore = true;
@@ -42,35 +42,6 @@
   function createRecipeCard(recipe, userEquipment = []) {
     const card = document.createElement("article");
     card.className = "frame-16";
-
-    // Кнопка удаления (крестик)
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "remove-favorite-btn";
-    removeBtn.title = "Удалить из понравившихся";
-    removeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
-    
-    removeBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      removeBtn.disabled = true;
-      
-      try {
-        await AuthAPI.removeFromLiked(recipe.recipe_id);
-        card.style.transition = "all 0.3s ease";
-        card.style.opacity = "0";
-        card.style.transform = "scale(0.9)";
-        setTimeout(() => {
-          card.remove();
-          checkAndLoadMore();
-        }, 300);
-      } catch (error) {
-        console.error("Не удалось удалить лайк:", error);
-        alert("Ошибка при удалении. Попробуйте позже.");
-        removeBtn.disabled = false;
-      }
-    });
-    card.appendChild(removeBtn);
 
     const titleText = recipe.title || "Без названия";
     const fallbackPlaceholder = `https://placehold.co/600x400?text=${encodeURIComponent(titleText)}`;
@@ -153,10 +124,54 @@
 
     expandable.append(ingSection, stepsSection);
 
+    const btnRow = document.createElement("div");
+    btnRow.style.display = "flex";
+    btnRow.style.gap = "10px";
+    btnRow.style.width = "100%";
+
     const toggleBtn = document.createElement("button");
     toggleBtn.type = "button";
     toggleBtn.className = "div5";
+    toggleBtn.style.flex = "1"; 
     toggleBtn.innerHTML = `<span class="div6">Посмотреть рецепт</span>`;
+
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "div5";
+    removeBtn.style.flex = "0 0 52px"; 
+    removeBtn.title = "Удалить рецепт";
+    removeBtn.innerHTML = `<span class="div6" style="font-size: 20px; font-weight: 400;">✕</span>`;
+
+    removeBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      removeBtn.disabled = true;
+      
+      try {
+        if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
+            await AuthAPI.removeFromDisliked(recipe.recipe_id);
+        } else {
+            // Удаление у гостя из localStorage
+            const disliked = AuthAPI.getGuestReactionIds("disliked");
+            const updated = disliked.filter(id => String(id) !== String(recipe.recipe_id));
+            localStorage.setItem("guest_cache_disliked_ids", JSON.stringify(updated));
+        }
+        
+        card.style.transition = "all 0.3s ease";
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.9)";
+        setTimeout(() => {
+          card.remove();
+          checkAndLoadMore();
+        }, 300);
+      } catch (error) {
+        console.error("Не удалось удалить дизлайк:", error);
+        alert("Ошибка при удалении. Попробуйте позже.");
+        removeBtn.disabled = false;
+      }
+    });
+
+    btnRow.append(toggleBtn, removeBtn);
 
     let stepsLoaded = false;
     toggleBtn.addEventListener("click", async () => {
@@ -172,7 +187,7 @@
 
     inner.append(textBlock, metaCol);
     if (equipmentSection) inner.appendChild(equipmentSection);
-    inner.append(expandable, toggleBtn);
+    inner.append(expandable, btnRow);
     card.append(img, inner);
     return card;
   }
@@ -189,22 +204,25 @@
       let userEq = [];
       try { userEq = JSON.parse(localStorage.getItem("global_cache_equipment"))?.kitchen_equipment || []; } catch(e){}
 
-      if (allLikedIds === null) {
-        // Получаем список лайкнутых ID
-        const response = await rawRequest("/api/db/recipes/liked", { method: "GET" });
-        allLikedIds = Array.isArray(response) ? response : (response?.recipes || []);
+      if (allDislikedIds === null) {
+        if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
+          const response = await rawRequest("/api/db/recipes/disliked", { method: "GET" });
+          allDislikedIds = Array.isArray(response) ? response : (response?.recipes || []);
+        } else {
+          allDislikedIds = window.AuthAPI ? window.AuthAPI.getGuestReactionIds("disliked") : [];
+        }
       }
 
-      if (allLikedIds.length === 0) {
+      if (allDislikedIds.length === 0) {
         hasMore = false;
         if (emptyEl) emptyEl.style.display = "flex";
         if (sentinelEl) sentinelEl.style.display = "none";
         return;
       }
 
-      const slice = allLikedIds.slice(loadedCount, loadedCount + BATCH_SIZE);
+      const slice = allDislikedIds.slice(loadedCount, loadedCount + BATCH_SIZE);
       loadedCount += slice.length;
-      if (loadedCount >= allLikedIds.length) hasMore = false;
+      if (loadedCount >= allDislikedIds.length) hasMore = false;
 
       const fullRecipes = await Promise.all(slice.map(async (item) => {
         const id = typeof item === "object" ? item.recipe_id : item;
@@ -217,6 +235,7 @@
 
     } catch (error) {
       console.error("Ошибка загрузки:", error);
+      if (emptyEl) emptyEl.style.display = "flex";
     } finally {
       isLoadingBatch = false;
       if (sentinelEl) sentinelEl.style.display = hasMore ? "block" : "none";
@@ -233,10 +252,14 @@
   }
 
   document.addEventListener("DOMContentLoaded", async () => {
-    if (!window.AuthAPI || !window.AuthAPI.isAuthenticated()) {
-      window.location.href = "../vxod/index.html";
-      return;
+    const goBtn = document.getElementById("go-to-recipes-btn");
+    if (goBtn) {
+      goBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        window.location.href = "../glavnaya/index.html";
+      });
     }
+
     await loadNextBatch();
     checkAndLoadMore();
     window.addEventListener("scroll", checkAndLoadMore, { passive: true });

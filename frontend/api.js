@@ -377,6 +377,20 @@ const AuthAPI = {
         });
     },
 
+    // Удаление лайка
+    async removeFromLiked(recipeId) {
+        return await rawRequest(`/api/db/recipes/liked/${encodeURIComponent(recipeId)}`, {
+            method: "DELETE"
+        });
+    },
+
+    // Удаление дизлайка
+    async removeFromDisliked(recipeId) {
+        return await rawRequest(`/api/db/recipes/disliked/${encodeURIComponent(recipeId)}`, {
+            method: "DELETE"
+        });
+    },
+
     async sendRecipeReaction(recipeId, action, customEndpoint = "/api/db/recipes/reaction") {
         if (!this.isAuthenticated() && (action === "like" || action === "dislike")) {
             const actionType = action === "like" ? "liked" : "disliked";

@@ -19,7 +19,7 @@
       }
       menu, ol, ul { list-style-type: none; margin: 0; padding: 0; }
     </style>
-    <title>FOODTINDER — Понравившиеся</title>
+    <title>FOODTINDER — Непонравившиеся</title>
   </head>
   <body>
     <div class="div">
@@ -43,7 +43,7 @@
 
       <!-- КОНТЕНТ -->
       <main class="main-content">
-        <h1 class="page-title">Понравившиеся рецепты</h1>
+        <h1 class="page-title">Непонравившиеся рецепты</h1>
 
         <div id="recipes-list" class="recipes-list"></div>
 
@@ -52,11 +52,11 @@
         </div>
 
         <div id="empty-state" class="empty-state" style="display: none;">
-          <div class="empty-title">Здесь пока пусто</div>
+          <div class="empty-title">Нет непонравившихся рецептов</div>
           <div class="empty-subtitle">
-            Ставьте лайки на странице рецептов, чтобы не потерять их.
+            Вы пока не дизлайкнули ни одного рецепта. Все рецепты вам нравятся!
           </div>
-          <a href="../glavnaya/index.html" class="div5" style="margin-top: 8px;">
+          <a href="#" id="go-to-recipes-btn" class="div5" style="margin-top: 8px;">
             <span class="div6">Перейти к рецептам</span>
           </a>
         </div>
@@ -64,6 +64,6 @@
     </div>
 
     <script src="../api.js"></script>
-    <script src="./ponravivshiesa.js"></script>
+    <script src="./neponravivshiesya.js"></script>
   </body>
 </html>
