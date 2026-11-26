@@ -3,8 +3,10 @@
  * Он управляет сетевыми запросами и глобальным кешем в localStorage.
  */
 
-const API = "localhost:8000";
-const API_BASE = `http://${API}`;
+//const API = "localhost:8000";
+//const API_BASE = `http://${API}`;
+
+const API_BASE = window.location.origin;
 
 class ApiError extends Error {
     constructor(message, status, data) {
@@ -65,25 +67,23 @@ async function rawRequest(endpoint, { method = "GET", body } = {}) {
 const AuthAPI = {
 
     // ДОБАВЛЕНО: Метод для авторизации по логину/почте
-    async login(username, password) {
-        // Отправляем данные на сервер (сервер ждет поле username, даже если там почта)
+       async login(loginValue, password) {
+        // Сервер ждет поле "email", даже если пользователь ввел логин
         const data = await rawRequest("/api/auth/login", {
             method: "POST",
-            body: { username, password }
+            body: { email: loginValue, password }
         });
 
         console.log("[api.js] Ответ входа:", data);
 
-        // Сохраняем токен и имя пользователя в память
         if (data && data.access_token) {
             tokenStorage.set(data.access_token);
             
-            // Берем имя из ответа сервера. Если сервер его не вернул — 
-            // берем то, что ввел пользователь, и отрезаем всё после @ (если это почта).
-            const extractedUsername = data.username || username.split("@")[0];
+            // Берем имя из ответа или отрезаем @ от почты
+            const extractedUsername = data.username || loginValue.split("@")[0];
             
             localStorage.setItem("username", extractedUsername);
-            localStorage.setItem("email", username); 
+            localStorage.setItem("email", loginValue); 
         }
 
         return data;
