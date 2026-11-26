@@ -927,23 +927,58 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (!cardEl) return;
 
+    function withTimeout(promise, ms = 1200) {
+        return Promise.race([
+            promise,
+            new Promise((resolve) => setTimeout(resolve, ms))
+        ]);
+    }
+
+    function waitForImagesInContainer(containerEl) {
+        const imgs = Array.from(containerEl?.querySelectorAll("img") || []);
+        if (imgs.length === 0) return Promise.resolve();
+
+        const loadPromises = imgs.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+                const done = () => resolve();
+                img.addEventListener("load", done, { once: true });
+                img.addEventListener("error", done, { once: true });
+            });
+        });
+
+        return withTimeout(Promise.all(loadPromises), 1200);
+    }
+
     if (toggleBtn) {
-        toggleBtn.addEventListener("click", (e) => {
+        toggleBtn.addEventListener("click", async (e) => {
             e.preventDefault();
+            if (toggleBtn.dataset.loading === "true") return;
 
-            const isExpanded = cardEl.classList.toggle("expanded");
+            const isCurrentlyExpanded = cardEl.classList.contains("expanded");
 
-            if (isExpanded) {
-                loadCurrentRecipeHyperText();
-            }
+            if (!isCurrentlyExpanded) {
+                toggleBtn.dataset.loading = "true";
+                toggleBtn.disabled = true;
+                if (btnText) btnText.innerText = "Загрузка...";
 
-            if (btnText) {
-                btnText.innerText = isExpanded
-                    ? "Назад"
-                    : "Посмотреть рецепт";
-            }
-
-            if (!isExpanded) {
+                try {
+                    if (typeof loadCurrentRecipeHyperText === "function") {
+                        await withTimeout(loadCurrentRecipeHyperText(), 1500);
+                    }
+                    const stepsContainer = document.getElementById("recipe-hyper-text");
+                    await waitForImagesInContainer(stepsContainer);
+                } catch (err) {
+                    console.error("[swipe.js] Ошибка при раскрытии рецепта:", err);
+                } finally {
+                    toggleBtn.dataset.loading = "false";
+                    toggleBtn.disabled = false;
+                    cardEl.classList.add("expanded");
+                    if (btnText) btnText.innerText = "Назад";
+                }
+            } else {
+                cardEl.classList.remove("expanded");
+                if (btnText) btnText.innerText = "Посмотреть рецепт";
                 window.scrollTo({
                     top: 0,
                     behavior: "smooth"
