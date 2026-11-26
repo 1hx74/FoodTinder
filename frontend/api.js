@@ -335,7 +335,7 @@ const AuthAPI = {
         return data;
     },
 
-    async getNextRecipeId(customEndpoint = "/api/db/recipes/next") {
+    async getNextRecipeId(excludedRecipeIds = [], customEndpoint = "/api/db/recipes/next") {
         if (!this.isAuthenticated()) {
             const liked = this.getGuestReactionIds('liked');
             const disliked = this.getGuestReactionIds('disliked');
@@ -346,14 +346,17 @@ const AuthAPI = {
             } catch (_) {}
 
             return await rawRequest(customEndpoint, {
-                method: "POST",
+                method: "PATCH",
                 body: {
                     liked: liked,
                     disliked: disliked,
                     allergies: prefs.allergies || [],
                     diets: prefs.diets || [],
                     religions: prefs.religions || [],
-                    kitchen_equipment: prefs.kitchen_equipment || []
+                    kitchen_equipment: prefs.kitchen_equipment || [],
+                    excluded_recipe_ids: Array.isArray(excludedRecipeIds)
+                        ? excludedRecipeIds.slice(-50)
+                        : []
                 }
             });
         }
