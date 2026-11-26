@@ -1,50 +1,55 @@
-/* global AuthAPI, localStorage, document, window */
+/**
+ * ДЛЯ ЧЕГО: Контроллер страницы Входа.
+ * Валидирует форму и отправляет POST /api/auth/login.
+ * Выводит уведомления об ошибках в стиле страницы Регистрации (через alert).
+ */
 
-(function () {
-  "use strict";
+document.querySelector('.form-container').addEventListener('submit', async (event) => {
+  event.preventDefault();
 
-  const form = document.querySelector(".form-container");
-  if (!form) return;
+  // Получаем значения полей
+  const loginValue = document.getElementById('email').value.trim();
+  const password = document.getElementById('password').value;
+  const submitBtn = document.querySelector('.submit-btn');
+  const submitLabel = submitBtn ? submitBtn.querySelector('.div7') : null;
 
-  const loginInput = document.getElementById("email");
-  const passwordInput = document.getElementById("password");
-  const submitBtn = document.querySelector(".submit-btn");
-  const submitLabel = submitBtn ? submitBtn.querySelector(".div7") : null;
+  // 1. ВАЛИДАЦИЯ (как в регистрации)
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+  // Если пользователь ввел почту (есть @), но она кривая — ругаемся
+  if (loginValue.includes('@') && !emailRegex.test(loginValue)) {
+    alert("Ошибка: Некорректный формат Email! Проверьте адрес.");
+    return;
+  }
 
-  // Блок для вывода ошибок
-  const errorBox = document.createElement("div");
-  errorBox.style.cssText = "color: red; font-size: 14px; text-align: center; margin-top: 10px; font-weight: bold;";
-  form.appendChild(errorBox);
+  if (!loginValue) {
+    alert("Ошибка: Введите логин или Email!");
+    return;
+  }
 
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    errorBox.textContent = "";
+  if (password.length < 6) {
+    alert("Ошибка: Пароль слишком короткий! Пароль должен быть от 6 символов.");
+    return;
+  }
 
-    const loginValue = loginInput.value.trim();
-    const password = passwordInput.value;
+  // 2. ОТПРАВКА НА СЕРВЕР
+  if (submitLabel) submitLabel.textContent = "Вход...";
+  if (submitBtn) submitBtn.disabled = true;
 
-    if (!loginValue || !password) {
-      errorBox.textContent = "Заполните все поля";
-      return;
-    }
+  try {
+    // Вызываем метод из api.js
+    await window.AuthAPI.login(loginValue, password);
+    
+    // api.js уже сохранил токен и имя. Переходим на главную
+    window.location.href = "../glavnaya/index.html";
 
-    if (submitLabel) submitLabel.textContent = "Вход...";
-    if (submitBtn) submitBtn.disabled = true;
+  } catch (error) {
+    // 3. ОБРАБОТКА ОШИБОК СЕРВЕРА (через alert)
+    alert(`Ошибка входа: ${error.message}`);
+    console.error("Детали сбоя:", error);
 
-    try {
-      // Вызываем красивый метод из api.js. 
-      // Вся логика эндпоинта, запроса и сохранения токена скрыта внутри api.js.
-      const data = await AuthAPI.login(loginValue, password);
-      
-      // api.js уже сохранил и токен, и имя. Нам остается только перейти.
-      window.location.href = "../glavnaya/index.html";
-
-    } catch (error) {
-      // Обработка ошибок (ApiError из api.js имеет поле message)
-      errorBox.textContent = error.message || "Не удалось войти";
-      
-      if (submitLabel) submitLabel.textContent = "Войти";
-      if (submitBtn) submitBtn.disabled = false;
-    }
-  });
-})();
+    // Возвращаем кнопку в исходное состояние
+    if (submitLabel) submitLabel.textContent = "Войти";
+    if (submitBtn) submitBtn.disabled = false;
+  }
+});
