@@ -103,12 +103,17 @@ class RecipeRepository:
         religions: Sequence[str] = (),
         liked: Sequence[int] = (),
         disliked: Sequence[int] = (),
+        excluded_recipe_ids: Sequence[int] = (),
     ) -> Recipe | None:
         """
         Следующий рецепт через рекомендатель Войтовой.
         user_id задан -> реакции и история показов из БД.
-        user_id=None  -> liked/disliked из тела анонимного POST /next.
+        user_id=None  -> liked/disliked и excluded_recipe_ids из тела
+        анонимного POST/PATCH /next.
         exclude — id, которые клиент уже держит в очереди (сейчас не отдаём).
+        excluded_recipe_ids — уже показанные гостю: идут в историю recency
+        (порядок как прислали, свежие в конце). Пока есть другие кандидаты,
+        показанные не возвращаем; если остались только они — самый давний.
         forbidden / religions — жёсткий фильтр (оператор &&), как раньше.
         Показанные и оценённые больше не выкидываются насовсем: лента циклическая.
         """
@@ -134,7 +139,8 @@ class RecipeRepository:
             liked_ids = list(liked)
             disliked_ids = list(disliked)
             favorite_ids = []
-            seen_history = []
+            # порядок как прислал клиент: старые первые, свежие в конце
+            seen_history = list(excluded_recipe_ids)
 
         # очередь клиента — в конце истории, чтобы рекомендатель считал их недавними
         seen_history = list(seen_history)
@@ -161,7 +167,9 @@ class RecipeRepository:
             seen_history=seen_history,
             known_items=reaction_items,
         )
-        picked_id = recommend_recipe_id(items, user)
+        picked_id = recommend_recipe_id(
+            items, user, excluded_recipe_ids=excluded_recipe_ids
+        )
         if picked_id is None:
             return None
         return next((r for r in candidates if r.id == picked_id), None)

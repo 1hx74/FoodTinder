@@ -80,11 +80,12 @@ class ReactionRequest(BaseModel):
 
 
 class AnonymousNextRequest(BaseModel):
-    """Тело POST /next для незарегистрированного пользователя:
+    """Тело POST/PATCH /next для незарегистрированного пользователя:
     его лайки/дизлайки из локального кэша клиента (для скора рекомендателя),
-    а также ограничения:
-    forbidden = allergies из /api/db/me/preferences,
-    religions = religions + diets из /api/db/me/preferences."""
+    уже показанные рецепты и ограничения.
+    Предпочтения можно прислать как у /api/db/me/preferences
+    (allergies, diets, religions, kitchen_equipment) или в старом виде
+    (forbidden = аллергии, religions = религия + диеты)."""
 
     liked: list[int] = Field(default_factory=list, max_length=10000)
     disliked: list[int] = Field(default_factory=list, max_length=10000)
@@ -93,15 +94,35 @@ class AnonymousNextRequest(BaseModel):
         max_length=10000,
         description="id, которые клиент уже держит в очереди",
     )
+    excluded_recipe_ids: list[int] = Field(
+        default_factory=list,
+        max_length=10000,
+        description="уже показанные гостю id, свежие в конце (обычно последние 50)",
+    )
     forbidden: list[str] = Field(
         default_factory=list,
         max_length=50,
-        description="аллергии: " + ", ".join(FORBIDDEN_CODES),
+        description="аллергии (старое имя поля): " + ", ".join(FORBIDDEN_CODES),
+    )
+    allergies: list[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description="аллергии, как в preferences: " + ", ".join(FORBIDDEN_CODES),
     )
     religions: list[str] = Field(
         default_factory=list,
         max_length=10,
-        description="религия и диеты: " + ", ".join(RECIPE_RELIGION_CODES),
+        description="религия и/или диеты: " + ", ".join(RECIPE_RELIGION_CODES),
+    )
+    diets: list[str] = Field(
+        default_factory=list,
+        max_length=10,
+        description="диеты, объединяются с religions",
+    )
+    kitchen_equipment: list[str] = Field(
+        default_factory=list,
+        max_length=50,
+        description="оборудование клиента; бэк по нему не фильтрует",
     )
 
 
@@ -262,13 +283,13 @@ async def get_next_recipe(
     session: AsyncSession = Depends(get_session),
 ):
     """Только для авторизованных. Аноним без токена получит 401
-    и должен использовать POST /next. Рецепты, которые нарушают сохранённые
+    и должен использовать POST или PATCH /next. Рецепты, которые нарушают сохранённые
     аллергии и религию/диеты пользователя, не выдаются.
     Дальше выбор делает рекомендатель: лента циклическая, уже показанные
     и оценённые могут вернуться (дизлайкнутые — с штрафом)."""
     repo = RecipeRepository(session)
     # сохранённые фильтры пользователя (GET/PATCH /api/db/me/preferences) —
-    # как forbidden/religions в анонимном POST /next; по оборудованию не фильтруем
+    # как forbidden/religions в анонимном POST/PATCH /next; по оборудованию не фильтруем
     prefs = await load_preferences(session, user_id)
     recipe = await repo.get_next(
         user_id,
@@ -288,22 +309,15 @@ async def get_next_recipe(
     return {"recipe_id": recipe.id, "code": 200, "state": "OK"}
 
 
-@router.post("/next")
-@handle_db_errors
-async def post_next_recipe(
-    body: AnonymousNextRequest,
-    session: AsyncSession = Depends(get_session),
-):
-    """Выдача для незарегистрированного пользователя: клиент присылает
-    лайкнутые и дизлайкнутые id из своего кэша — их передаём в рекомендатель
-    (лайк повышает теги, дизлайк понижает, но рецепт из круга не выкидываем).
-    exclude — id, которые клиент уже держит в очереди, сейчас не отдаём.
-    forbidden / religions — аллергии и религия/диеты пользователя:
-    рецепты, которые их нарушают, не выдаются. Неизвестный код -> 422.
-    Ничего в БД не записывается."""
+async def _anonymous_next(body: AnonymousNextRequest, session: AsyncSession):
+    """Общая выдача /next для гостя (POST и PATCH)."""
     try:
-        forbidden = clean_codes(body.forbidden, FORBIDDEN_CODES, "forbidden")
-        religions = clean_codes(body.religions, RECIPE_RELIGION_CODES, "religions")
+        forbidden = clean_codes(
+            [*body.forbidden, *body.allergies], FORBIDDEN_CODES, "forbidden"
+        )
+        religions = clean_codes(
+            [*body.religions, *body.diets], RECIPE_RELIGION_CODES, "religions"
+        )
     except ValueError:
         return _error(422, "Unprocessable Entity")
     recipe = await RecipeRepository(session).get_next(
@@ -313,12 +327,43 @@ async def post_next_recipe(
         religions=religions,
         liked=body.liked,
         disliked=body.disliked,
+        excluded_recipe_ids=body.excluded_recipe_ids,
     )
 
     if recipe is None:
         return {"recipes": []}
 
     return {"recipe_id": recipe.id, "code": 200, "state": "OK"}
+
+
+@router.post("/next")
+@handle_db_errors
+async def post_next_recipe(
+    body: AnonymousNextRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """Выдача для незарегистрированного пользователя: клиент присылает
+    лайкнутые и дизлайкнутые id из своего кэша — их передаём в рекомендатель
+    (лайк повышает теги, дизлайк понижает, но рецепт из круга не выкидываем).
+    excluded_recipe_ids — уже показанные (свежие в конце): штраф recency,
+    пока есть другие кандидаты их не отдаём, иначе цикл с самого давнего.
+    exclude — id, которые клиент уже держит в очереди, сейчас не отдаём.
+    allergies / diets / religions (или старые forbidden / religions) —
+    аллергии и религия/диеты: рецепты, которые их нарушают, не выдаются.
+    kitchen_equipment принимается, но по нему не фильтруем.
+    Неизвестный код -> 422. Ничего в БД не записывается.
+    POST сохранён для совместимости; фронт шлёт PATCH."""
+    return await _anonymous_next(body, session)
+
+
+@router.patch("/next")
+@handle_db_errors
+async def patch_next_recipe(
+    body: AnonymousNextRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """То же, что POST /next: гостевая выдача со списком уже показанных."""
+    return await _anonymous_next(body, session)
 
 
 @router.put("/reaction")

@@ -76,10 +76,41 @@ def build_user_state(
     return user
 
 
+def least_recent_recipe_id(
+    candidates: Sequence[RecipeItem],
+    seen_history: Sequence[int],
+) -> int | None:
+    """Самый давно показанный из кандидатов.
+
+    История идёт в порядке показа: старые первые, свежие в конце.
+    Если один id встречался несколько раз, берём последнее вхождение.
+    Кандидаты, которых в истории нет, считаются старше всех показанных.
+    """
+    if not candidates:
+        return None
+    last_pos: dict[int, int] = {}
+    for index, recipe_id in enumerate(seen_history):
+        last_pos[recipe_id] = index
+    return min(candidates, key=lambda item: last_pos.get(item.recipe_id, -1)).recipe_id
+
+
 def recommend_recipe_id(
     candidates: Sequence[RecipeItem],
     user: UserState,
+    excluded_recipe_ids: Sequence[int] = (),
 ) -> int | None:
-    """Следующий рецепт её алгоритмом. None — подходящих не осталось."""
-    picked = _engine.next_recipe(list(candidates), user)
-    return None if picked is None else picked.recipe_id
+    """Следующий рецепт её алгоритмом. None — подходящих не осталось.
+
+    excluded_recipe_ids — уже показанные гостю: пока среди кандидатов есть
+    не показанные, возвращаем только из них; если остались только показанные —
+    берём самый давно показанный (цикл), а не ошибку и не пустой ответ.
+    """
+    excluded_set = set(excluded_recipe_ids)
+    fresh = [item for item in candidates if item.recipe_id not in excluded_set]
+    if fresh:
+        picked = _engine.next_recipe(list(fresh), user)
+        return None if picked is None else picked.recipe_id
+    if not candidates:
+        return None
+    history = user.seen_history if user.seen_history else excluded_recipe_ids
+    return least_recent_recipe_id(candidates, history)
