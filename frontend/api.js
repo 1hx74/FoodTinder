@@ -44,6 +44,12 @@ function formatAuthErrorMessage(status, rawState) {
         if (state === "Invalid email") return "Некорректный формат Email.";
         return state || "Некорректные данные запроса.";
     }
+    if (status === 401) {
+        if (state === "User not found" || state === "Unauthorized") {
+            return "Неверный логин или пароль. Проверьте введенные данные.";
+        }
+        return "Неверный логин или пароль.";
+    }
     if (status === 404) {
         if (state === "User not found") {
             return "Пользователь с таким Email не найден.";
@@ -123,14 +129,14 @@ const AuthAPI = {
     async login(email, password) {
         const data = await rawRequest("/api/auth/login", {
             method: "POST",
-            body: { email: loginValue, password }
+            body: { email: email, password } // <-- ЗДЕСЬ БЫЛО loginValue, СТАЛО email
         });
 
         if (data && data.access_token) {
             tokenStorage.set(data.access_token);
             const extractedUsername = data.username || email.split("@")[0];
             localStorage.setItem("username", extractedUsername);
-            localStorage.setItem("email", loginValue); 
+            localStorage.setItem("email", email); 
         }
 
         return data;

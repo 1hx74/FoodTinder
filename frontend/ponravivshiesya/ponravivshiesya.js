@@ -43,6 +43,43 @@
     const card = document.createElement("article");
     card.className = "frame-16";
 
+    // --- КРЕСТИК УДАЛЕНИЯ (КАК У ВТОРОГО ФРОНТА) ---
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-favorite-btn"; // Класс из CSS
+    removeBtn.title = "Удалить из понравившихся";
+    removeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    
+    removeBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      removeBtn.disabled = true;
+      
+      try {
+        if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
+            await AuthAPI.removeFromLiked(recipe.recipe_id);
+        } else {
+            const liked = AuthAPI.getGuestReactionIds("liked");
+            const updated = liked.filter(id => String(id) !== String(recipe.recipe_id));
+            localStorage.setItem("guest_cache_liked_ids", JSON.stringify(updated));
+        }
+        
+        card.style.transition = "all 0.3s ease";
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.9)";
+        setTimeout(() => {
+          card.remove();
+          checkAndLoadMore();
+        }, 300);
+      } catch (error) {
+        console.error("Не удалось удалить лайк:", error);
+        alert("Ошибка при удалении. Попробуйте позже.");
+        removeBtn.disabled = false;
+      }
+    });
+    card.appendChild(removeBtn);
+    // ------------------------------------------------
+
     const titleText = recipe.title || "Без названия";
     const fallbackPlaceholder = `https://placehold.co/600x400?text=${encodeURIComponent(titleText)}`;
     const imageUrl = recipe.image_url || fallbackPlaceholder;
@@ -124,55 +161,12 @@
 
     expandable.append(ingSection, stepsSection);
 
-    const btnRow = document.createElement("div");
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "10px";
-    btnRow.style.width = "100%";
-
+    // КНОПКА (снова широкая, на всю карточку)
     const toggleBtn = document.createElement("button");
     toggleBtn.type = "button";
     toggleBtn.className = "div5";
-    toggleBtn.style.flex = "1"; 
+    toggleBtn.style.width = "100%"; // На всю ширину
     toggleBtn.innerHTML = `<span class="div6">Посмотреть рецепт</span>`;
-
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "div5";
-    removeBtn.style.flex = "0 0 52px"; 
-    removeBtn.title = "Удалить рецепт";
-    removeBtn.innerHTML = `<span class="div6" style="font-size: 20px; font-weight: 400;">✕</span>`;
-
-    removeBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      removeBtn.disabled = true;
-      
-      try {
-        // Если пользователь авторизован, удаляем с сервера
-        if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
-            await AuthAPI.removeFromLiked(recipe.recipe_id);
-        } else {
-            // Если гость, удаляем из localStorage
-            const liked = AuthAPI.getGuestReactionIds("liked");
-            const updated = liked.filter(id => String(id) !== String(recipe.recipe_id));
-            localStorage.setItem("guest_cache_liked_ids", JSON.stringify(updated));
-        }
-        
-        card.style.transition = "all 0.3s ease";
-        card.style.opacity = "0";
-        card.style.transform = "scale(0.9)";
-        setTimeout(() => {
-          card.remove();
-          checkAndLoadMore();
-        }, 300);
-      } catch (error) {
-        console.error("Не удалось удалить лайк:", error);
-        alert("Ошибка при удалении. Попробуйте позже.");
-        removeBtn.disabled = false;
-      }
-    });
-
-    btnRow.append(toggleBtn, removeBtn);
 
     let stepsLoaded = false;
     toggleBtn.addEventListener("click", async () => {
@@ -188,7 +182,7 @@
 
     inner.append(textBlock, metaCol);
     if (equipmentSection) inner.appendChild(equipmentSection);
-    inner.append(expandable, btnRow);
+    inner.append(expandable, toggleBtn);
     card.append(img, inner);
     return card;
   }
@@ -207,11 +201,9 @@
 
       if (allLikedIds === null) {
         if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
-          // Берем с сервера для авторизованных
           const response = await rawRequest("/api/db/recipes/liked", { method: "GET" });
           allLikedIds = Array.isArray(response) ? response : (response?.recipes || []);
         } else {
-          // Берем из localStorage для гостей
           allLikedIds = window.AuthAPI ? window.AuthAPI.getGuestReactionIds("liked") : [];
         }
       }

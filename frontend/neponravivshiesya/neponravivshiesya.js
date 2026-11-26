@@ -43,6 +43,42 @@
     const card = document.createElement("article");
     card.className = "frame-16";
 
+    // Крестик удаления (как у второго фронта)
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-favorite-btn";
+    removeBtn.title = "Удалить из непонравившихся";
+    removeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    
+    removeBtn.addEventListener("click", async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      removeBtn.disabled = true;
+      
+      try {
+        if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
+            await AuthAPI.removeFromDisliked(recipe.recipe_id);
+        } else {
+            const disliked = AuthAPI.getGuestReactionIds("disliked");
+            const updated = disliked.filter(id => String(id) !== String(recipe.recipe_id));
+            localStorage.setItem("guest_cache_disliked_ids", JSON.stringify(updated));
+        }
+        
+        card.style.transition = "all 0.3s ease";
+        card.style.opacity = "0";
+        card.style.transform = "scale(0.9)";
+        setTimeout(() => {
+          card.remove();
+          checkAndLoadMore();
+        }, 300);
+      } catch (error) {
+        console.error("Не удалось удалить дизлайк:", error);
+        alert("Ошибка при удалении. Попробуйте позже.");
+        removeBtn.disabled = false;
+      }
+    });
+    card.appendChild(removeBtn);
+
     const titleText = recipe.title || "Без названия";
     const fallbackPlaceholder = `https://placehold.co/600x400?text=${encodeURIComponent(titleText)}`;
     const imageUrl = recipe.image_url || fallbackPlaceholder;
@@ -124,54 +160,12 @@
 
     expandable.append(ingSection, stepsSection);
 
-    const btnRow = document.createElement("div");
-    btnRow.style.display = "flex";
-    btnRow.style.gap = "10px";
-    btnRow.style.width = "100%";
-
+    // Кнопка "Посмотреть рецепт" (широкая)
     const toggleBtn = document.createElement("button");
     toggleBtn.type = "button";
     toggleBtn.className = "div5";
-    toggleBtn.style.flex = "1"; 
+    toggleBtn.style.width = "100%";
     toggleBtn.innerHTML = `<span class="div6">Посмотреть рецепт</span>`;
-
-    const removeBtn = document.createElement("button");
-    removeBtn.type = "button";
-    removeBtn.className = "div5";
-    removeBtn.style.flex = "0 0 52px"; 
-    removeBtn.title = "Удалить рецепт";
-    removeBtn.innerHTML = `<span class="div6" style="font-size: 20px; font-weight: 400;">✕</span>`;
-
-    removeBtn.addEventListener("click", async (e) => {
-      e.stopPropagation();
-      e.preventDefault();
-      removeBtn.disabled = true;
-      
-      try {
-        if (window.AuthAPI && window.AuthAPI.isAuthenticated()) {
-            await AuthAPI.removeFromDisliked(recipe.recipe_id);
-        } else {
-            // Удаление у гостя из localStorage
-            const disliked = AuthAPI.getGuestReactionIds("disliked");
-            const updated = disliked.filter(id => String(id) !== String(recipe.recipe_id));
-            localStorage.setItem("guest_cache_disliked_ids", JSON.stringify(updated));
-        }
-        
-        card.style.transition = "all 0.3s ease";
-        card.style.opacity = "0";
-        card.style.transform = "scale(0.9)";
-        setTimeout(() => {
-          card.remove();
-          checkAndLoadMore();
-        }, 300);
-      } catch (error) {
-        console.error("Не удалось удалить дизлайк:", error);
-        alert("Ошибка при удалении. Попробуйте позже.");
-        removeBtn.disabled = false;
-      }
-    });
-
-    btnRow.append(toggleBtn, removeBtn);
 
     let stepsLoaded = false;
     toggleBtn.addEventListener("click", async () => {
@@ -187,7 +181,7 @@
 
     inner.append(textBlock, metaCol);
     if (equipmentSection) inner.appendChild(equipmentSection);
-    inner.append(expandable, btnRow);
+    inner.append(expandable, toggleBtn);
     card.append(img, inner);
     return card;
   }
