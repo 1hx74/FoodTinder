@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../vars.css">
+  <link rel="stylesheet" href="./style.css">
+  
+  <style>
+   a, button, input, select, h1, h2, h3, h4, h5, * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+       border: none;
+       text-decoration: none;
+       background: none;
+       -webkit-font-smoothing: antialiased;
+   }
+   menu, ol, ul {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+  </style>
+  <title>Планировщик</title>
+</head>
+<body>
+  <div class="div">
+    
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+      <div class="frame-4">
+        <a href="../katalog_vkladok/index.html" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
+          <div class="ellipse-2" style="background: var(--brand-text); border-radius: 50%;"></div>
+          <img id="header-avatar-img" class="header-avatar-img" src="" alt="" style="display: none;">
+          <span class="div2" id="profile-letter">Г</span>
+
+        </a>
+        <div class="div3" id="auth-container">
+           <a href="../vxod/index.html" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="../registration/index.html" class="div4">Регистрация</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. ЦЕНТРАЛЬНЫЙ БЛОК ПЛАНИРОВЩИКА -->
+    <main class="main-content">
+      <div class="scheduler-header">
+        <h1 class="scheduler-title">Планировщик</h1>
+        <button type="button" class="calc-norm-btn" id="calc-norm-btn">
+          Рассчитать дневную норму КБЖУ
+        </button>
+      </div>
+
+      <div class="days-list" id="days-list"></div>
+
+      <div class="add-day-row">
+        <button type="button" class="add-day-btn" id="add-day-btn">
+          <span class="square-plus-btn" aria-hidden="true">+</span>
+          <span>Добавить день</span>
+        </button>
+      </div>
+
+      <div class="scheduler-actions">
+        <button type="button" class="action-pill-btn" id="shopping-list-btn">
+          Список покупок
+        </button>
+        <button type="button" class="action-pill-btn" id="clear-week-btn">
+          Очистить неделю
+        </button>
+      </div>
+    </main>
+
+    <!-- Модалка выбора образа жизни -->
+    <div class="lifestyle-modal-backdrop" id="lifestyle-modal" aria-hidden="true">
+      <div class="lifestyle-modal" role="dialog" aria-modal="true" aria-labelledby="lifestyle-modal-title">
+        <div class="lifestyle-modal-header">
+          <h2 class="lifestyle-modal-title" id="lifestyle-modal-title">Образ жизни</h2>
+          <button type="button" class="lifestyle-close-btn" id="close-lifestyle-modal" aria-label="Закрыть">×</button>
+        </div>
+
+        <div class="lifestyle-list" id="life_type" role="radiogroup" aria-label="Образ жизни">
+          <button type="button" class="lifestyle-option" data-life-type="1" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">1. Сидячий и малоподвижный<br>Легкая активность (физические нагрузки 1-3 раза в неделю)</span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="2" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">2. Средняя активность (физические нагрузки 3-5 раз в неделю)</span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="3" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">3. Высокая активность (физические нагрузки 6-7 раз в неделю)</span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="4" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">4. Очень высокая активность (постоянно высокая физическая нагрузка)</span>
+          </button>
+        </div>
+
+        <button type="button" class="lifestyle-save-btn" id="save-lifestyle-btn">
+          Сохранить
+        </button>
+      </div>
+    </div>
+
+  </div>
+  
+  <!-- Подключение скриптов -->
+  <script src="../api.js"></script>
+  <script src="./sсheduler.js"></script>
+</body>
+</html>

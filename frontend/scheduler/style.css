@@ -1,0 +1,479 @@
+.div,
+
+
+.div {
+  background: #ffffff;
+  min-height: 100vh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding-bottom: 36px;
+}
+
+/* Основной контент */
+.main-content {
+  flex: 1;
+  width: 100%;
+  max-width: 400px;
+  padding: 18px 24px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.scheduler-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.scheduler-title {
+  color: #000000;
+  font-size: 20px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.calc-norm-btn {
+  width: 100%;
+  min-height: 41px;
+  padding: 8px 12px;
+  border-radius: 5px;
+  border: 1px solid rgba(120, 27, 27, 0.35);
+  background: #f9f3f3;
+  color: #781b1b;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.calc-norm-btn:hover {
+  background: #f3e9e9;
+  border-color: rgba(120, 27, 27, 0.78);
+}
+
+.calc-norm-btn:active {
+  transform: scale(0.98);
+}
+
+.add-day-row {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 2px;
+}
+
+.add-day-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 29px;
+  color: #781b1b;
+  font-size: 14px;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  padding: 4px 2px;
+  background: transparent;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.add-day-btn:hover {
+  background: transparent;
+  opacity: 0.85;
+}
+
+.add-day-btn:active {
+  transform: scale(0.96);
+}
+
+.square-plus-btn,
+.add-day-btn:hover .square-plus-btn {
+  width: 21px;
+  height: 21px;
+  border-radius: 50%;
+  border: 1px solid rgba(120, 27, 27, 0.78);
+  background: transparent;
+  color: #781b1b;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.add-day-btn:hover .square-plus-btn {
+  background: rgba(120, 27, 27, 0.78);
+  color: #ffffff;
+}
+
+/* Список дней */
+.days-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.day-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.day-card.is-entering {
+  opacity: 0;
+  transform: translateY(-8px) scale(0.98);
+}
+
+.day-card.is-leaving {
+  opacity: 0;
+  transform: translateX(-14px) scale(0.97);
+  pointer-events: none;
+}
+
+.day-header-row {
+  background: #f9f3f3;
+  border-radius: 5px;
+  min-height: 41px;
+  padding: 6px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+}
+
+.day-header-row:hover {
+  background: #f3e9e9;
+}
+
+.day-title-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.day-title {
+  color: #000000;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.day-kbju {
+  color: rgba(0, 0, 0, 0.65);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.day-controls {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.weekday-input {
+  width: 116px;
+  height: 26px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: #ffffff;
+  border: 1px solid rgba(120, 27, 27, 0.28);
+  color: #000000;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.weekday-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+  font-weight: 500;
+}
+
+.weekday-input:focus {
+  outline: none;
+  border-color: #781b1b;
+}
+
+.remove-day-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 15px;
+  background: rgba(120, 27, 27, 0.78);
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.remove-day-btn:hover {
+  background: #781b1b;
+}
+
+.remove-day-btn:active {
+  transform: scale(0.9);
+}
+
+/* Список блюд внутри дня */
+.day-meals {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  max-height: 0;
+  opacity: 0;
+  transition: max-height 0.3s ease, opacity 0.25s ease;
+}
+
+.day-card.open .day-meals {
+  max-height: 600px;
+  opacity: 1;
+}
+
+.meal-row {
+  background: #f2ecec;
+  border-radius: 5px;
+  min-height: 35px;
+  padding: 6px 10px 6px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+}
+
+.meal-row.is-removing {
+  opacity: 0;
+  transform: translateX(12px);
+}
+
+.meal-title {
+  color: #000000;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.remove-meal-btn {
+  width: 22px;
+  height: 22px;
+  border-radius: 15px;
+  background: rgba(120, 27, 27, 0.78);
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.remove-meal-btn:hover {
+  background: #781b1b;
+}
+
+.remove-meal-btn:active {
+  transform: scale(0.9);
+}
+
+/* Нижние кнопки — всегда прижаты к низу с отступом */
+.scheduler-actions {
+  margin-top: auto;
+  padding-top: 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.action-pill-btn {
+  background: rgba(120, 27, 27, 0.78);
+  border-radius: 12px;
+  width: 306px;
+  max-width: 100%;
+  height: 55px;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-pill-btn:hover {
+  background: #781b1b;
+}
+
+.action-pill-btn:active {
+  transform: scale(0.98);
+}
+
+/* Модалка выбора образа жизни */
+.lifestyle-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 9999;
+}
+
+.lifestyle-modal-backdrop.is-open {
+  display: flex;
+}
+
+.lifestyle-modal {
+  width: 100%;
+  max-width: 352px;
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.lifestyle-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lifestyle-modal-title {
+  color: #000000;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.lifestyle-close-btn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(120, 27, 27, 0.78);
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.lifestyle-close-btn:hover {
+  background: #781b1b;
+}
+
+.lifestyle-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.lifestyle-option {
+  width: 100%;
+  background: #f9f3f3;
+  border: 1px solid rgba(120, 27, 27, 0.28);
+  border-radius: 8px;
+  padding: 10px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.lifestyle-option:hover,
+.lifestyle-option.is-selected {
+  background: #f2ecec;
+  border-color: #781b1b;
+}
+
+.lifestyle-dot {
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border-radius: 50%;
+  border: 2px solid #781b1b;
+  background: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.lifestyle-option.is-selected .lifestyle-dot::after {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #781b1b;
+}
+
+.lifestyle-text {
+  color: #000000;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.lifestyle-option.is-selected .lifestyle-text {
+  font-weight: 700;
+}
+
+.lifestyle-save-btn {
+  width: 100%;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(120, 27, 27, 0.78);
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.lifestyle-save-btn:hover {
+  background: #781b1b;
+}
