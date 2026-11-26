@@ -33,7 +33,7 @@
 - В текущей версии скрипта не используется.
  *
 - MAX_QUEUE_SIZE — максимальное количество рецептов
-- в очереди предварительной загрузки (5).
+- в очереди предварительной загрузки (3).
  *
 - currentRecipe — объект рецепта, который сейчас отображается
 - пользователю.
@@ -47,9 +47,14 @@
 */
 const QUEUE_STORAGE_KEY = "recipeQueue";
 const SELECTED_RECIPE_KEY = "selectedRecipe";
-const MAX_QUEUE_SIZE = 5;
+const VIEWED_RECIPES_KEY = "viewedRecipeIds";
+const MAX_QUEUE_SIZE = 3;
+const MAX_EXCLUDED_RECIPE_IDS = 50;
 
 let currentRecipe = null;
+let currentHyperTextValue = "";
+let loadedHyperTextRecipeId = null;
+let hyperTextLoadPromise = null;
 let isFetchingQueue = false;
 let noMoreRecipes = false;
 let isReacting = false;
@@ -189,6 +194,62 @@ function saveQueue(queue) {
     sessionStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
 }
 
+function getViewedRecipeIds() {
+    try {
+        const ids = JSON.parse(sessionStorage.getItem(VIEWED_RECIPES_KEY));
+        return Array.isArray(ids) ? ids : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function saveViewedRecipeId(recipeId) {
+    if (recipeId === undefined || recipeId === null) return;
+
+    const ids = getViewedRecipeIds().filter(id => String(id) !== String(recipeId));
+    ids.push(recipeId);
+    sessionStorage.setItem(
+        VIEWED_RECIPES_KEY,
+        JSON.stringify(ids.slice(-MAX_EXCLUDED_RECIPE_IDS))
+    );
+}
+
+/*
+- Собирает массив ID (до 50 штук) для гостя:
+- последние показанные рецепты + рецепты в очереди + текущий рецепт на экране.
+ */
+function getGuestExcludedRecipeIds() {
+    const queueIds = getQueue()
+        .map(recipe => recipe?.recipe_id)
+        .filter(id => id !== undefined && id !== null);
+
+    const currentId = currentRecipe?.recipe_id;
+    const activeIds = [
+        ...queueIds,
+        ...(currentId !== undefined && currentId !== null ? [currentId] : [])
+    ];
+
+    const activeKeys = new Set(activeIds.map(String));
+    const historyIds = getViewedRecipeIds().filter(
+        id => id !== undefined && id !== null && !activeKeys.has(String(id))
+    );
+
+    const uniqueActive = [];
+    const seenActive = new Set();
+    for (const id of activeIds) {
+        const key = String(id);
+        if (!seenActive.has(key)) {
+            seenActive.add(key);
+            uniqueActive.push(id);
+        }
+    }
+
+    const historyLimit = Math.max(0, MAX_EXCLUDED_RECIPE_IDS - uniqueActive.length);
+    const result = [...historyIds.slice(-historyLimit), ...uniqueActive];
+    sessionStorage.setItem(VIEWED_RECIPES_KEY, JSON.stringify(result));
+    return result;
+}
+
 /* 5. loadHyperTextContent(hyperTextValue, containerEl) - мб будет изменена
  *
 - Загружает и отображает инструкцию по приготовлению.
@@ -202,16 +263,16 @@ function saveQueue(queue) {
  */
 async function loadHyperTextContent(hyperTextValue, containerEl) {
     if (!containerEl) return;
-    
+
     const value = String(hyperTextValue || "").trim();
-    
+
     // Проверяем, является ли значение ссылкой (начинается с http или содержит расширение .html/.htm)
     if (value.startsWith("http://") || value.startsWith("https://") || value.endsWith(".html") || value.endsWith(".htm")) {
         containerEl.innerHTML = "Загрузка рецепта...";
         try {
             const response = await fetch(value);
             if (!response.ok) throw new Error(`Ошибка загрузки: ${response.status}`);
-            
+
             const htmlContent = await response.text();
             // Вставляем полученный код/разметку внутрь блока
             containerEl.innerHTML = htmlContent;
@@ -222,6 +283,32 @@ async function loadHyperTextContent(hyperTextValue, containerEl) {
     } else {
         // Если это обычный текст, выводим как текст
         containerEl.innerText = value || "Инструкция приготовления отсутствует.";
+    }
+}
+
+async function loadCurrentRecipeHyperText() {
+    if (!currentRecipe) return;
+
+    const stepsContainer = document.getElementById("recipe-hyper-text");
+    if (!stepsContainer) return;
+
+    const recipeId = currentRecipe.recipe_id;
+    if (loadedHyperTextRecipeId === recipeId) return;
+    if (hyperTextLoadPromise) return hyperTextLoadPromise;
+
+    const valueToLoad = currentHyperTextValue;
+
+    hyperTextLoadPromise = (async () => {
+        await loadHyperTextContent(valueToLoad, stepsContainer);
+        if (currentRecipe?.recipe_id === recipeId) {
+            loadedHyperTextRecipeId = recipeId;
+        }
+    })();
+
+    try {
+        await hyperTextLoadPromise;
+    } finally {
+        hyperTextLoadPromise = null;
     }
 }
 
@@ -260,6 +347,12 @@ async function renderRecipe(recipe) {
     }
 
     currentRecipe = recipe;
+    saveViewedRecipeId(recipe.recipe_id);
+
+    currentHyperTextValue = recipe["hyper-text"] || recipe.hyper_text || "";
+    loadedHyperTextRecipeId = null;
+    hyperTextLoadPromise = null;
+
     if (cardEl) cardEl.style.display = "flex";
     if (controlsEl) controlsEl.style.display = "flex";
     if (emptyEl) emptyEl.style.display = "none";
@@ -365,11 +458,11 @@ async function renderRecipe(recipe) {
         }
     }
 
-    // Загрузка способа приготовления (поддерживает как текст, так и ссылку на внешний файл)
+    // Гипертекст и медиа внутри него грузятся только после нажатия «Посмотреть рецепт»
     const stepsContainer = document.getElementById("recipe-hyper-text");
     if (stepsContainer) {
-        const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
-        await loadHyperTextContent(rawHyperText, stepsContainer);
+        stepsContainer.innerHTML = "";
+        stepsContainer.innerText = "Нажмите «Посмотреть рецепт», чтобы загрузить инструкцию.";
     }
 
     if (cardEl) {
@@ -407,7 +500,8 @@ async function fetchSingleRecipe() {
 
         // Получаем следующий ID рецепта
         try {
-            nextRes = await window.AuthAPI.getNextRecipeId();
+            const excludedRecipeIds = getGuestExcludedRecipeIds();
+            nextRes = await window.AuthAPI.getNextRecipeId(excludedRecipeIds);
         } catch (error) {
             error.recipeEndpoint = "next";
 
@@ -463,9 +557,6 @@ async function fetchSingleRecipe() {
 - функция вызывает fetchSingleRecipe() и добавляет
 - полученные рецепты в sessionStorage.
  *
-- Проверяет дубликаты относительно текущего рецепта
-- и уже загруженной очереди.
- *
 - Не допускает одновременного запуска нескольких процессов
 - загрузки благодаря флагу isFetchingQueue.
  *
@@ -482,16 +573,8 @@ async function fillQueueInBackground() {
             if (!recipe) break;
 
             const queue = getQueue();
-            const isDuplicate =
-                queue.some(item => item.recipe_id === recipe.recipe_id) ||
-                currentRecipe?.recipe_id === recipe.recipe_id;
-
-            if (!isDuplicate) {
-                queue.push(recipe);
-                saveQueue(queue);
-            } else {
-                break;
-            }
+            queue.push(recipe);
+            saveQueue(queue);
         }
     } catch (error) {
         handleLoadError(error);
@@ -849,6 +932,10 @@ document.addEventListener("DOMContentLoaded", () => {
             e.preventDefault();
 
             const isExpanded = cardEl.classList.toggle("expanded");
+
+            if (isExpanded) {
+                loadCurrentRecipeHyperText();
+            }
 
             if (btnText) {
                 btnText.innerText = isExpanded
