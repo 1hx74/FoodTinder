@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_session
 from models import IngredientQuantity, ReactionAction, Recipe
 from repos import RecipeRepository
+from search import search_recipes
 from jwks import get_optional_user_id, get_required_user_id
 from me import load_preferences
 from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RECIPE_RELIGION_CODES, TAGS, clean_codes
@@ -80,7 +81,8 @@ class ReactionRequest(BaseModel):
 
 class AnonymousNextRequest(BaseModel):
     """Тело POST /next для незарегистрированного пользователя:
-    его лайки/дизлайки из локального кэша клиента, а также ограничения:
+    его лайки/дизлайки из локального кэша клиента (для скора рекомендателя),
+    а также ограничения:
     forbidden = allergies из /api/db/me/preferences,
     religions = religions + diets из /api/db/me/preferences."""
 
@@ -130,10 +132,10 @@ class RecipeCreate(BaseModel):
     hypertext_url: str = Field(alias="hyper-text", min_length=1)
     cooking_time: int = Field(ge=1, description="минуты")
     difficulty: int = Field(ge=1, le=5)
-    kalories: int = Field(ge=1, default=100)
-    belki: int = Field(ge=1, default=10)
-    fats: int = Field(ge=1, default=10)
-    uglevods: int = Field(ge=1, default=10)
+    kalories: int = Field(ge=0, default=100)  # на 100 г
+    belki: int = Field(ge=0, default=10)  # на 100 г
+    fats: int = Field(ge=0, default=10)  # на 100 г
+    uglevods: int = Field(ge=0, default=10)  # на 100 г
     final_weight: int = Field(ge=1, default=100)
     ingredients: list[IngredientSchema] = Field(default_factory=list)
     equipment: list[str] = Field(
@@ -176,10 +178,10 @@ class RecipeUpdate(BaseModel):
     hypertext_url: str | None = Field(default=None, alias="hyper-text", min_length=1)
     cooking_time: int | None = Field(default=None, ge=1, description="минуты")
     difficulty: int | None = Field(default=None, ge=1, le=5)
-    kalories: int | None = Field(default=None, ge=1)
-    belki: int | None = Field(default=None, ge=1)
-    fats: int | None = Field(default=None, ge=1)
-    uglevods: int | None = Field(default=None, ge=1)
+    kalories: int | None = Field(default=None, ge=0)  # на 100 г
+    belki: int | None = Field(default=None, ge=0)  # на 100 г
+    fats: int | None = Field(default=None, ge=0)  # на 100 г
+    uglevods: int | None = Field(default=None, ge=0)  # на 100 г
     final_weight: int | None = Field(default=None, ge=1)
     ingredients: list[IngredientSchema] | None = None
     equipment: list[str] | None = None
@@ -224,6 +226,33 @@ def _clean_equipment(items: list[str]) -> list[str]:
     return cleaned
 
 
+_MAX_REACTION_IDS = 1000
+_INT32_MIN, _INT32_MAX = -2_147_483_648, 2_147_483_647
+
+
+def _parse_reaction_ids(raw: list[str] | None) -> list[int] | None:
+    """None — параметр ids не передан (очистить весь список).
+    ValueError — мусор в ids или больше 1000 значений."""
+    if raw is None:
+        return None
+    parts: list[str] = []
+    for item in raw:
+        parts.extend(p.strip() for p in item.split(","))
+    parts = [p for p in parts if p]
+    if len(parts) > _MAX_REACTION_IDS:
+        raise ValueError("too many ids")
+    ids: list[int] = []
+    for p in parts:
+        try:
+            n = int(p)
+        except ValueError as exc:
+            raise ValueError("invalid id") from exc
+        if n < _INT32_MIN or n > _INT32_MAX:
+            raise ValueError("invalid id")
+        ids.append(n)
+    return ids
+
+
 # ---------- endpoints ----------
 @router.get("/next")
 @handle_db_errors
@@ -234,7 +263,9 @@ async def get_next_recipe(
 ):
     """Только для авторизованных. Аноним без токена получит 401
     и должен использовать POST /next. Рецепты, которые нарушают сохранённые
-    аллергии и религию/диеты пользователя, не выдаются."""
+    аллергии и религию/диеты пользователя, не выдаются.
+    Дальше выбор делает рекомендатель: лента циклическая, уже показанные
+    и оценённые могут вернуться (дизлайкнутые — с штрафом)."""
     repo = RecipeRepository(session)
     # сохранённые фильтры пользователя (GET/PATCH /api/db/me/preferences) —
     # как forbidden/religions в анонимном POST /next; по оборудованию не фильтруем
@@ -264,7 +295,9 @@ async def post_next_recipe(
     session: AsyncSession = Depends(get_session),
 ):
     """Выдача для незарегистрированного пользователя: клиент присылает
-    лайкнутые и дизлайкнутые id из своего кэша, мы их исключаем из выдачи.
+    лайкнутые и дизлайкнутые id из своего кэша — их передаём в рекомендатель
+    (лайк повышает теги, дизлайк понижает, но рецепт из круга не выкидываем).
+    exclude — id, которые клиент уже держит в очереди, сейчас не отдаём.
     forbidden / religions — аллергии и религия/диеты пользователя:
     рецепты, которые их нарушают, не выдаются. Неизвестный код -> 422.
     Ничего в БД не записывается."""
@@ -273,12 +306,13 @@ async def post_next_recipe(
         religions = clean_codes(body.religions, RECIPE_RELIGION_CODES, "religions")
     except ValueError:
         return _error(422, "Unprocessable Entity")
-    exclude = set(body.liked) | set(body.disliked) | set(body.exclude)
     recipe = await RecipeRepository(session).get_next(
         None,
-        list(exclude),
+        list(body.exclude),
         forbidden=forbidden,
         religions=religions,
+        liked=body.liked,
+        disliked=body.disliked,
     )
 
     if recipe is None:
@@ -383,6 +417,122 @@ async def get_favorite(
 ):
     ids = await RecipeRepository(session).get_favourite(user_id)
     return {"code": 200, "state": "OK", "recipes": ids}
+
+
+@router.get("/favorite/search")
+@handle_db_errors
+async def search_favorite(
+    q: str | None = Query(
+        default=None,
+        description="Что ищем: слова из названия, теги по-русски, категории "
+        "(«лимоны», «суп», «алкоголь»). Пусто — всё избранное.",
+    ),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Поиск по избранному текущего пользователя. Возвращает только id —
+    карточки фронт берёт из своего кэша. Сортировка по релевантности
+    (правила — в search.py), пустой q — всё избранное в порядке GET /favorite."""
+    recipes = await RecipeRepository(session).get_favourite_brief(user_id)
+    return {"code": 200, "state": "OK", "recipes": search_recipes(q, recipes)}
+
+
+def _ids_query(
+    ids: list[str] | None = Query(
+        default=None,
+        description="id через запятую (?ids=1,2,3) или повторно (?ids=1&ids=2). "
+        "Не передан — очистить весь список. Не больше 1000.",
+    ),
+) -> list[str] | None:
+    return ids
+
+
+async def _delete_one_reaction(
+    user_id: str, recipe_id: int, action: ReactionAction, session: AsyncSession
+):
+    removed = await RecipeRepository(session).remove_reaction(user_id, recipe_id, action)
+    if removed is None:
+        return _error(404, "Not Found")
+    return {"code": 200, "state": "OK", "removed": removed}
+
+
+async def _delete_reactions_bulk(
+    user_id: str, raw_ids: list[str] | None, action: ReactionAction, session: AsyncSession
+):
+    try:
+        ids = _parse_reaction_ids(raw_ids)
+    except ValueError:
+        return _error(422, "Unprocessable Entity")
+    removed = await RecipeRepository(session).remove_reactions(user_id, action, ids)
+    return {"code": 200, "state": "OK", "recipes": removed}
+
+
+@router.delete("/favorite/{recipe_id}")
+@handle_db_errors
+async def delete_favorite(
+    recipe_id: int,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Убрать рецепт из избранного. Лайк/дизлайк на нём не трогаем."""
+    return await _delete_one_reaction(user_id, recipe_id, ReactionAction.FAVORITE, session)
+
+
+@router.delete("/liked/{recipe_id}")
+@handle_db_errors
+async def delete_liked(
+    recipe_id: int,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Снять лайк. Избранное и дизлайк не трогаем."""
+    return await _delete_one_reaction(user_id, recipe_id, ReactionAction.LIKE, session)
+
+
+@router.delete("/disliked/{recipe_id}")
+@handle_db_errors
+async def delete_disliked(
+    recipe_id: int,
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Снять дизлайк. Impression не удаляется: рецепт в /next не вернётся."""
+    return await _delete_one_reaction(user_id, recipe_id, ReactionAction.DISLIKE, session)
+
+
+@router.delete("/favorite")
+@handle_db_errors
+async def delete_favorites(
+    ids: list[str] | None = Depends(_ids_query),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Удалить выбранные id из избранного или очистить весь список."""
+    return await _delete_reactions_bulk(user_id, ids, ReactionAction.FAVORITE, session)
+
+
+@router.delete("/liked")
+@handle_db_errors
+async def delete_liked_list(
+    ids: list[str] | None = Depends(_ids_query),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Удалить выбранные id из лайков или очистить весь список."""
+    return await _delete_reactions_bulk(user_id, ids, ReactionAction.LIKE, session)
+
+
+@router.delete("/disliked")
+@handle_db_errors
+async def delete_disliked_list(
+    ids: list[str] | None = Depends(_ids_query),
+    user_id: str = Depends(get_required_user_id),
+    session: AsyncSession = Depends(get_session),
+):
+    """Удалить выбранные id из дизлайков или очистить весь список.
+    Impression не трогаем."""
+    return await _delete_reactions_bulk(user_id, ids, ReactionAction.DISLIKE, session)
+
 
 @router.get("/{recipe_id}")
 @handle_db_errors

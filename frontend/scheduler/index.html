@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="../vars.css">
+  <link rel="stylesheet" href="./style.css">
+  
+  <style>
+   a, button, input, select, h1, h2, h3, h4, h5, * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+       border: none;
+       text-decoration: none;
+       background: none;
+       -webkit-font-smoothing: antialiased;
+   }
+   menu, ol, ul {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+  </style>
+  <title>Планировщик</title>
+</head>
+<body>
+  <div class="div">
+    
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+      </div>
+      <div class="frame-4">
+        <a href="../katalog_vkladok/index.html" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
+          <div class="ellipse-2" style="background: var(--brand-text); border-radius: 50%;"></div>
+          <img id="header-avatar-img" class="header-avatar-img" src="" alt="" style="display: none;">
+          <span class="div2" id="profile-letter">Г</span>
+
+        </a>
+        <div class="div3" id="auth-container">
+           <a href="../vxod/index.html" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="../registration/index.html" class="div4">Регистрация</a>
+        </div>
+      </div>
+    </header>
+
+    <!-- 2. ЦЕНТРАЛЬНЫЙ БЛОК ПЛАНИРОВЩИКА -->
+    <main class="main-content">
+      <div class="scheduler-header">
+        <h1 class="scheduler-title">Планировщик</h1>
+        <button type="button" class="calc-norm-btn" id="calc-norm-btn">
+          Рассчитать дневную норму КБЖУ
+        </button>
+      </div>
+
+      <div class="days-list" id="days-list"></div>
+
+      <div class="add-day-row">
+        <button type="button" class="add-day-btn" id="add-day-btn" aria-label="Добавить день" title="Добавить день">
+          <span class="square-plus-btn" aria-hidden="true">+</span>
+        </button>
+      </div>
+
+      <div class="scheduler-actions">
+        <button type="button" class="action-pill-btn" id="shopping-list-btn">
+          Список покупок
+        </button>
+        <button type="button" class="action-pill-btn" id="clear-week-btn">
+          Очистить неделю
+        </button>
+      </div>
+    </main>
+
+    <!-- Модалка выбора уровня активности -->
+    <div class="lifestyle-modal-backdrop" id="lifestyle-modal" aria-hidden="true">
+      <div class="lifestyle-modal" role="dialog" aria-modal="true" aria-labelledby="lifestyle-modal-title">
+        <div class="lifestyle-modal-header">
+          <h2 class="lifestyle-modal-title" id="lifestyle-modal-title">Уровень активности</h2>
+          <button type="button" class="lifestyle-close-btn" id="close-lifestyle-modal" aria-label="Закрыть">×</button>
+        </div>
+
+        <div class="goal-block" id="goal-block" hidden>
+          <div class="goal-label" id="goal-label">Цель</div>
+          <div class="goal-selector" role="radiogroup" aria-labelledby="goal-label">
+            <button type="button" class="goal-option is-selected" data-goal="maintain" role="radio" aria-checked="true">Поддержание</button>
+            <button type="button" class="goal-option" data-goal="gain" role="radio" aria-checked="false">Набор веса</button>
+            <button type="button" class="goal-option" data-goal="loss" role="radio" aria-checked="false">Сброс веса</button>
+          </div>
+        </div>
+
+        <p class="lifestyle-missing" id="lifestyle-missing" hidden></p>
+
+        <div class="lifestyle-list" id="life_type" role="radiogroup" aria-label="Уровень активности">
+          <button type="button" class="lifestyle-option" data-life-type="1" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Минимальная</span>
+              <span class="lifestyle-hint">Сидячий образ жизни</span>
+            </span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="2" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Лёгкая</span>
+              <span class="lifestyle-hint">Нагрузки 1–3 раза в неделю</span>
+            </span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="3" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Средняя</span>
+              <span class="lifestyle-hint">Нагрузки 3–5 раз в неделю</span>
+            </span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="4" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Высокая</span>
+              <span class="lifestyle-hint">Нагрузки 6–7 раз в неделю</span>
+            </span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="5" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Очень высокая</span>
+              <span class="lifestyle-hint">Тяжёлая нагрузка каждый день</span>
+            </span>
+          </button>
+        </div>
+
+        <a class="lifestyle-profile-link" id="lifestyle-profile-link" href="../osnov_inform_user/index.html">Данные устарели? Обновить в профиле</a>
+      </div>
+    </div>
+
+    <div class="lifestyle-modal-backdrop" id="shopping-modal" aria-hidden="true">
+      <div class="lifestyle-modal shopping-modal" role="dialog" aria-modal="true" aria-labelledby="shopping-modal-title">
+        <div class="lifestyle-modal-header">
+          <h2 class="lifestyle-modal-title" id="shopping-modal-title">Список покупок</h2>
+          <button type="button" class="lifestyle-close-btn" id="close-shopping-modal" aria-label="Закрыть">×</button>
+        </div>
+        <div class="shopping-list-body" id="shopping-list-body"></div>
+        <div class="shopping-list-actions" id="shopping-list-actions" hidden>
+          <button type="button" class="action-pill-btn shopping-action-btn" id="shopping-share-btn">Поделиться</button>
+          <button type="button" class="action-pill-btn shopping-action-btn" id="shopping-copy-btn">Скопировать</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  
+  <!-- Подключение скриптов -->
+  <script src="../api.js"></script>
+  <script src="./scheduler.js"></script>
+</body>
+</html>
