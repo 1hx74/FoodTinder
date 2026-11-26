@@ -4,3 +4,4 @@ __pycache__
 *.pem
 *.DS_Store
 web/.DS_Store
+.idea/

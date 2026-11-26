@@ -371,6 +371,12 @@ const AuthAPI = {
         return await rawRequest(endpoint, { method: "GET" });
     },
 
+    async removeFromFavorites(recipeId) {
+        return await rawRequest(`/api/db/recipes/favorite/${encodeURIComponent(recipeId)}`, {
+            method: "DELETE"
+        });
+    },
+
     async sendRecipeReaction(recipeId, action, customEndpoint = "/api/db/recipes/reaction") {
         if (!this.isAuthenticated() && (action === "like" || action === "dislike")) {
             const actionType = action === "like" ? "liked" : "disliked";

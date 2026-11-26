@@ -90,6 +90,7 @@ body {
 
 /* КАРТОЧКА РЕЦЕПТА */
 .frame-16 {
+  position: relative;
   background: #ffffff;
   border-radius: 15px;
   border: 1px solid #000000;
@@ -102,6 +103,43 @@ body {
   gap: 12px;
   transition: transform 0.25s ease;
   overflow: hidden;
+}
+
+/* Небольшой серый крестик в правом верхнем углу каждой карточки */
+.remove-favorite-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(240, 240, 240, 0.95);
+  border: 1px solid #d0d0d0;
+  color: #666666;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: background-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
+}
+
+.remove-favorite-btn:hover {
+  background: #e2e2e2;
+  color: #111111;
+  transform: scale(1.08);
+}
+
+.remove-favorite-btn:active {
+  transform: scale(0.94);
+}
+
+.remove-favorite-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
 }
 
 .frame-16.expanded {

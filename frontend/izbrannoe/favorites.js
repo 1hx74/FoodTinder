@@ -127,10 +127,80 @@ async function loadHyperTextContent(hyperTextValue, containerEl) {
     }
 }
 
+/* Удаление рецепта из избранного */
+async function handleRemoveFavorite(recipeId, cardEl, removeBtn) {
+    if (!recipeId || !cardEl) return;
+
+    if (removeBtn) {
+        removeBtn.disabled = true;
+    }
+
+    try {
+        await window.AuthAPI.removeFromFavorites(recipeId);
+    } catch (error) {
+        if (error.status === 401) {
+            alert("Вы не авторизованы. Пожалуйста, войдите в аккаунт!");
+            window.location.href = "../vxod/index.html";
+            return;
+        }
+        if (error.status !== 404) {
+            console.error("[favorites.js] Ошибка удаления из избранного:", error);
+            alert("Не удалось удалить рецепт из избранного. Попробуйте ещё раз.");
+            if (removeBtn) removeBtn.disabled = false;
+            return;
+        }
+    }
+
+    // Удаляем ID из локального списка allFavoriteIds, чтобы пагинация оставалась точной
+    if (Array.isArray(allFavoriteIds)) {
+        const idx = allFavoriteIds.findIndex((item) => {
+            const id = typeof item === "object" && item !== null ? item.recipe_id : item;
+            return String(id) === String(recipeId);
+        });
+        if (idx !== -1) {
+            allFavoriteIds.splice(idx, 1);
+            if (idx < loadedCount) {
+                loadedCount = Math.max(0, loadedCount - 1);
+            }
+        }
+    }
+
+    // Плавное исчезновение карточки из DOM
+    cardEl.classList.add("removing");
+    setTimeout(() => {
+        cardEl.remove();
+
+        const listEl = document.getElementById("favorites-list");
+        const emptyEl = document.getElementById("empty-state");
+
+        if (listEl && listEl.children.length === 0 && !hasMore && emptyEl) {
+            emptyEl.style.display = "flex";
+        } else {
+            checkAndLoadMore();
+        }
+    }, 240);
+}
+
 /* Создание DOM-элемента одной карточки */
 function createRecipeCard(recipe, userEquipment = []) {
     const card = document.createElement("article");
     card.className = "frame-16";
+    if (recipe.recipe_id !== undefined && recipe.recipe_id !== null) {
+        card.dataset.recipeId = String(recipe.recipe_id);
+    }
+
+    // Серый крестик в правом верхнем углу карточки
+    const removeBtn = document.createElement("button");
+    removeBtn.type = "button";
+    removeBtn.className = "remove-favorite-btn";
+    removeBtn.title = "Удалить из избранного";
+    removeBtn.setAttribute("aria-label", "Удалить из избранного");
+    removeBtn.innerHTML = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M1 1L13 13M13 1L1 13" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>`;
+    removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        handleRemoveFavorite(recipe.recipe_id, card, removeBtn);
+    });
+    card.appendChild(removeBtn);
 
     const titleText = recipe.title || "Без названия";
     const fallbackPlaceholder = `https://placehold.co/600x400?text=${encodeURIComponent(titleText)}`;
