@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -59,9 +59,8 @@
       <div class="days-list" id="days-list"></div>
 
       <div class="add-day-row">
-        <button type="button" class="add-day-btn" id="add-day-btn">
+        <button type="button" class="add-day-btn" id="add-day-btn" aria-label="Добавить день" title="Добавить день">
           <span class="square-plus-btn" aria-hidden="true">+</span>
-          <span>Добавить день</span>
         </button>
       </div>
 
@@ -75,36 +74,78 @@
       </div>
     </main>
 
-    <!-- Модалка выбора образа жизни -->
+    <!-- Модалка выбора уровня активности -->
     <div class="lifestyle-modal-backdrop" id="lifestyle-modal" aria-hidden="true">
       <div class="lifestyle-modal" role="dialog" aria-modal="true" aria-labelledby="lifestyle-modal-title">
         <div class="lifestyle-modal-header">
-          <h2 class="lifestyle-modal-title" id="lifestyle-modal-title">Образ жизни</h2>
+          <h2 class="lifestyle-modal-title" id="lifestyle-modal-title">Уровень активности</h2>
           <button type="button" class="lifestyle-close-btn" id="close-lifestyle-modal" aria-label="Закрыть">×</button>
         </div>
 
-        <div class="lifestyle-list" id="life_type" role="radiogroup" aria-label="Образ жизни">
+        <div class="goal-block" id="goal-block" hidden>
+          <div class="goal-label" id="goal-label">Цель</div>
+          <div class="goal-selector" role="radiogroup" aria-labelledby="goal-label">
+            <button type="button" class="goal-option is-selected" data-goal="maintain" role="radio" aria-checked="true">Поддержание</button>
+            <button type="button" class="goal-option" data-goal="gain" role="radio" aria-checked="false">Набор веса</button>
+            <button type="button" class="goal-option" data-goal="loss" role="radio" aria-checked="false">Сброс веса</button>
+          </div>
+        </div>
+
+        <p class="lifestyle-missing" id="lifestyle-missing" hidden></p>
+
+        <div class="lifestyle-list" id="life_type" role="radiogroup" aria-label="Уровень активности">
           <button type="button" class="lifestyle-option" data-life-type="1" role="radio" aria-checked="false">
             <span class="lifestyle-dot" aria-hidden="true"></span>
-            <span class="lifestyle-text">1. Сидячий и малоподвижный<br>Легкая активность (физические нагрузки 1-3 раза в неделю)</span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Минимальная</span>
+              <span class="lifestyle-hint">Сидячий образ жизни</span>
+            </span>
           </button>
           <button type="button" class="lifestyle-option" data-life-type="2" role="radio" aria-checked="false">
             <span class="lifestyle-dot" aria-hidden="true"></span>
-            <span class="lifestyle-text">2. Средняя активность (физические нагрузки 3-5 раз в неделю)</span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Лёгкая</span>
+              <span class="lifestyle-hint">Нагрузки 1–3 раза в неделю</span>
+            </span>
           </button>
           <button type="button" class="lifestyle-option" data-life-type="3" role="radio" aria-checked="false">
             <span class="lifestyle-dot" aria-hidden="true"></span>
-            <span class="lifestyle-text">3. Высокая активность (физические нагрузки 6-7 раз в неделю)</span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Средняя</span>
+              <span class="lifestyle-hint">Нагрузки 3–5 раз в неделю</span>
+            </span>
           </button>
           <button type="button" class="lifestyle-option" data-life-type="4" role="radio" aria-checked="false">
             <span class="lifestyle-dot" aria-hidden="true"></span>
-            <span class="lifestyle-text">4. Очень высокая активность (постоянно высокая физическая нагрузка)</span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Высокая</span>
+              <span class="lifestyle-hint">Нагрузки 6–7 раз в неделю</span>
+            </span>
+          </button>
+          <button type="button" class="lifestyle-option" data-life-type="5" role="radio" aria-checked="false">
+            <span class="lifestyle-dot" aria-hidden="true"></span>
+            <span class="lifestyle-text">
+              <span class="lifestyle-name">Очень высокая</span>
+              <span class="lifestyle-hint">Тяжёлая нагрузка каждый день</span>
+            </span>
           </button>
         </div>
 
-        <button type="button" class="lifestyle-save-btn" id="save-lifestyle-btn">
-          Сохранить
-        </button>
+        <a class="lifestyle-profile-link" id="lifestyle-profile-link" href="../osnov_inform_user/index.html">Данные устарели? Обновить в профиле</a>
+      </div>
+    </div>
+
+    <div class="lifestyle-modal-backdrop" id="shopping-modal" aria-hidden="true">
+      <div class="lifestyle-modal shopping-modal" role="dialog" aria-modal="true" aria-labelledby="shopping-modal-title">
+        <div class="lifestyle-modal-header">
+          <h2 class="lifestyle-modal-title" id="shopping-modal-title">Список покупок</h2>
+          <button type="button" class="lifestyle-close-btn" id="close-shopping-modal" aria-label="Закрыть">×</button>
+        </div>
+        <div class="shopping-list-body" id="shopping-list-body"></div>
+        <div class="shopping-list-actions" id="shopping-list-actions" hidden>
+          <button type="button" class="action-pill-btn shopping-action-btn" id="shopping-share-btn">Поделиться</button>
+          <button type="button" class="action-pill-btn shopping-action-btn" id="shopping-copy-btn">Скопировать</button>
+        </div>
       </div>
     </div>
 
@@ -112,6 +153,6 @@
   
   <!-- Подключение скриптов -->
   <script src="../api.js"></script>
-  <script src="./sсheduler.js"></script>
+  <script src="./scheduler.js"></script>
 </body>
 </html>

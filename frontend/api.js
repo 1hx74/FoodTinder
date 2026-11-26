@@ -359,6 +359,14 @@ const AuthAPI = {
         return await rawRequest(`/api/db/recipes/${recipeId}`, { method: "GET" });
     },
 
+    async searchFavoriteRecipes(query = "") {
+        const trimmed = String(query || "").trim();
+        const endpoint = trimmed
+            ? `/api/db/recipes/favorite/search?q=${encodeURIComponent(trimmed)}`
+            : "/api/db/recipes/favorite/search";
+        return await rawRequest(endpoint, { method: "GET" });
+    },
+
     async sendRecipeReaction(recipeId, action, customEndpoint = "/api/db/recipes/reaction") {
         if (!this.isAuthenticated() && (action === "like" || action === "dislike")) {
             const actionType = action === "like" ? "liked" : "disliked";
