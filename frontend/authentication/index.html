@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Подключаем глобальные стили и локальные стили авторизации -->
   <link rel="stylesheet" href="../vars.css">
   <link rel="stylesheet" href="./auth.css">
   
@@ -24,13 +23,12 @@
        padding: 0;
    }
    </style>
-  <title>Подтверждение регистрации</title>
+  <title>Подтверждение кода</title>
 </head>
 <body>
-  <!-- Глобальный каркас мобильного приложения из vars.css -->
   <div class="div">
     
-    <!-- 1. АДАПТИВНАЯ ГЛОБАЛЬНАЯ ШАПКА (ПОЛНОСТЬЮ ИЗ VARS.CSS) -->
+    <!-- 1. АДАПТИВНАЯ ГЛОБАЛЬНАЯ ШАПКА -->
     <header class="header-wrapper">
       <div class="foodtinder">
         <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
@@ -50,27 +48,29 @@
 
     <!-- 2. ЦЕНТРАЛЬНЫЙ КОНТЕНТНЫЙ БЛОК ФОРМЫ ВЕРИФИКАЦИИ -->
     <main class="main-content">
-      <h2 class="form-title">Подтвердите регистрацию</h2>
+      <h2 class="form-title" id="auth-form-title">Подтвердите регистрацию</h2>
       
       <form class="form-container">
         <!-- Поле ввода кода подтверждения -->
         <div class="input-group">
           <label class="input-label">Код</label>
-          <!-- Обертку убрали, инпут теперь лежит прямо внутри input-group -->
-          <input type="text" id="verification_code" class="custom-input" placeholder="Введите пароль, который прислали на почту" required />
+          <input type="text" id="verification_code" class="custom-input" placeholder="Введите код, который прислали на почту" required />
         </div>
 
-
         <!-- Кнопка подтверждения -->
-        <button type="submit" class="submit-btn">
+        <button type="submit" class="submit-btn" id="auth-submit-btn">
           <span>Зарегистрироваться</span>
+        </button>
+
+        <!-- Кнопка повторной отправки кода с таймером на 60 секунд -->
+        <button type="button" class="resend-btn" id="resend-code-btn" disabled>
+          Отправить код ещё раз (60 с)
         </button>
       </form>
     </main>
 
   </div>
 
-  <!-- Подключение скрипта управления глобальной сессией (api.js) и локальной логики страницы -->
   <script src="../api.js"></script>
   <script src="./auth.js"></script>
 </body>

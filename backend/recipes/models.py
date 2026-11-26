@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import enum
-from datetime import datetime
+from datetime import date, datetime
 
 from sqlalchemy import (
     CheckConstraint,
+    Date,
     DateTime,
     Float,
     ForeignKey,
     Integer,
+    SmallInteger,
     String,
     UniqueConstraint,
     func,
@@ -51,11 +53,11 @@ class Recipe(Base):
     hypertext_url: Mapped[str] = mapped_column(String)  # ссылка на html-файл рецепта
     cooking_time: Mapped[int] = mapped_column(Integer)  # минуты
     difficulty: Mapped[int] = mapped_column(Integer)  # 1..5
-    kalories: Mapped[int] = mapped_column(Integer) # калории
-    belki: Mapped[int] = mapped_column(Integer) # белки
-    fats: Mapped[int] = mapped_column(Integer) # жиры
-    uglevods: Mapped[int] = mapped_column(Integer) # углеводы
-    final_weight: Mapped[int] = mapped_column(Integer) # финальный вес
+    kalories: Mapped[int] = mapped_column(Integer) # калории на 100 г
+    belki: Mapped[int] = mapped_column(Integer) # белки на 100 г, г
+    fats: Mapped[int] = mapped_column(Integer) # жиры на 100 г, г
+    uglevods: Mapped[int] = mapped_column(Integer) # углеводы на 100 г, г
+    final_weight: Mapped[int] = mapped_column(Integer) # финальный вес всего блюда, г
 
     # коды из vocab.py. tags отдаются фронту; forbidden и religions — нет,
     # они для рекомендаций: что рецепт НАРУШАЕТ (аллергии/диеты и религии)
@@ -145,3 +147,48 @@ class RecipeImpression(Base):
         ForeignKey("recipes.id", ondelete="CASCADE"), index=True
     )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+class UserPreferences(Base):
+    """Фильтры пользователя (страница «Фильтры», GET/PATCH /api/db/me/preferences).
+    Коды — из vocab.py. Нет строки -> у пользователя ничего не выбрано."""
+
+    __tablename__ = "user_preferences"
+
+    # sub из JWT (members.id в auth)
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    # аллергии (ALLERGY_CODES)
+    allergies: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, server_default=text("'{}'")
+    )
+    # диеты (DIET_CODES)
+    diets: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, server_default=text("'{}'")
+    )
+    # религия (RELIGION_CODES)
+    religions: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, server_default=text("'{}'")
+    )
+    # кухонное оборудование (EQUIPMENT_CODES); только хранится, по нему фильтрует фронт
+    kitchen_equipment: Mapped[list[str]] = mapped_column(
+        ARRAY(String(32)), nullable=False, server_default=text("'{}'")
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class UserProfile(Base):
+    """Анкета пользователя со страницы профиля (PATCH /api/db/me).
+    Имя хранится в members.name (auth), аватар — в user_avatars (media).
+    Нет строки / null в поле -> пользователь это ещё не заполнял."""
+
+    __tablename__ = "user_profiles"
+
+    user_id: Mapped[str] = mapped_column(String(128), primary_key=True)
+    birth_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    gender: Mapped[str | None] = mapped_column(String(16), nullable=True)  # men / women
+    height: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)  # см
+    weight: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)  # кг
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )

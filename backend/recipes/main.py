@@ -6,6 +6,8 @@ from fastapi import FastAPI
 from db import SessionFactory, engine
 from models import Base
 from router import router
+from fastapi.exceptions import RequestValidationError
+from me import router as me_router, validation_error_handler
 from migrations import upgrade_schema
 from seed import backfill_demo_meta, seed_demo_recipes
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,11 +32,13 @@ app = FastAPI(title="Recipes service", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
     allow_headers=["*"],
 )
 
 app.include_router(router)
+app.include_router(me_router)
+app.add_exception_handler(RequestValidationError, validation_error_handler)
 
 @app.get("/health")
 async def health():
