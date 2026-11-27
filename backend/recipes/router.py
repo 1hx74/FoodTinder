@@ -12,10 +12,10 @@ from db import get_session
 from models import IngredientQuantity, ReactionAction, Recipe
 from repos import RecipeRepository
 from search import search_recipes
-from jwks import get_optional_user_id, get_required_user_id
+from jwks import get_optional_user_id, get_required_user_id, require_recipe_manager
 from me import load_preferences
 from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RECIPE_RELIGION_CODES, TAGS, clean_codes
-from public_urls import to_public_media_url
+from public_urls import require_public_hypertext_url, require_public_image_url, to_public_media_url
 
 logger = logging.getLogger(__name__)
 
@@ -178,8 +178,10 @@ class RecipeCreate(BaseModel):
 
     @field_validator("image_url", "hypertext_url")
     @classmethod
-    def _rel_media_urls(cls, v: str) -> str:
-        return to_public_media_url(v) or v
+    def _rel_media_urls(cls, v: str, info) -> str:
+        if info.field_name == "image_url":
+            return require_public_image_url(v)
+        return require_public_hypertext_url(v)
 
     @model_validator(mode="after")
     def _check_equipment(self):
@@ -219,8 +221,12 @@ class RecipeUpdate(BaseModel):
 
     @field_validator("image_url", "hypertext_url")
     @classmethod
-    def _rel_media_urls(cls, v: str | None) -> str | None:
-        return None if v is None else (to_public_media_url(v) or v)
+    def _rel_media_urls(cls, v: str | None, info) -> str | None:
+        if v is None:
+            return None
+        if info.field_name == "image_url":
+            return require_public_image_url(v)
+        return require_public_hypertext_url(v)
 
     @field_validator("tags", "forbidden", "religions", "equipment_codes")
     @classmethod
@@ -398,7 +404,7 @@ async def put_reaction(
 @handle_db_errors
 async def create_recipe(
     body: RecipeCreate,
-    user_id: str | None = Depends(get_required_user_id),
+    _claims: dict = Depends(require_recipe_manager),
     session: AsyncSession = Depends(get_session),
 ):
     recipe = await RecipeRepository(session).create(body.model_dump())
@@ -607,7 +613,7 @@ async def get_recipe(
 async def update_recipe(
     recipe_id: int,
     body: RecipeUpdate,
-    user_id: str | None = Depends(get_required_user_id),
+    _claims: dict = Depends(require_recipe_manager),
     session: AsyncSession = Depends(get_session),
 ):
     recipe = await RecipeRepository(session).update(recipe_id, body.model_dump(exclude_unset=True))
@@ -620,7 +626,7 @@ async def update_recipe(
 @handle_db_errors
 async def delete_recipe(
     recipe_id: int,
-    user_id: str | None = Depends(get_required_user_id),
+    _claims: dict = Depends(require_recipe_manager),
     session: AsyncSession = Depends(get_session),
 ):
     if not await RecipeRepository(session).delete(recipe_id):

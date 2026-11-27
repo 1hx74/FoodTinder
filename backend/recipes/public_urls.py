@@ -41,3 +41,27 @@ def rewrite_media_urls_in_html(html: str) -> str:
         return f"{match.group('attr')}={match.group('q')}{match.group('path')}{match.group('q')}"
 
     return _HTML_ABS.sub(repl, html)
+
+
+# в запросах на создание/правку рецепта принимаем только наши uuid-ссылки
+_UUID = re.compile(
+    r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+)
+
+
+def _require_kind_url(value: str, kind: str) -> str:
+    """После снятия хоста должна остаться только /api/db/{kind}/<uuid>."""
+    text = to_public_media_url(value) or ""
+    prefix = f"{MEDIA_PREFIX}{kind}/"
+    file_id = text[len(prefix):] if text.startswith(prefix) else ""
+    if not _UUID.fullmatch(file_id):
+        raise ValueError(f"нужна ссылка {prefix}<uuid>")
+    return prefix + file_id
+
+
+def require_public_image_url(value: str) -> str:
+    return _require_kind_url(value, "image")
+
+
+def require_public_hypertext_url(value: str) -> str:
+    return _require_kind_url(value, "hyper-text")
