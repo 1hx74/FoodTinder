@@ -27,11 +27,6 @@ document.querySelector('.form-container').addEventListener('submit', async (even
     return;
   }
 
-  if (password.length < 6) {
-    alert("Ошибка: Пароль слишком короткий! Пароль должен быть от 6 символов.");
-    return;
-  }
-
   // 2. ОТПРАВКА НА СЕРВЕР
   if (submitLabel) submitLabel.textContent = "Вход...";
   if (submitBtn) submitBtn.disabled = true;
