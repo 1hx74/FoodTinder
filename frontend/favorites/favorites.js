@@ -1,6 +1,6 @@
 /* =========================================================
    СКРИПТ СТРАНИЦЫ «ИЗБРАННОЕ» (FOODTINDER)
-   - Загрузка пачками по 5 штук с дозагрузкой при прокрутке
+- Загрузка пачками по 5 штук с дозагрузкой при прокрутке
    ========================================================= */
 
 const BATCH_SIZE = 5;
@@ -101,6 +101,29 @@ async function ensureUserEquipmentLoaded() {
         console.error("[favorites.js] Ошибка загрузки настроек пользователя:", e);
     }
     return getUserEquipment();
+}
+
+function withTimeout(promise, ms = 1200) {
+    return Promise.race([
+        promise,
+        new Promise((resolve) => setTimeout(resolve, ms))
+    ]);
+}
+
+function waitForImagesInContainer(containerEl) {
+    const imgs = Array.from(containerEl?.querySelectorAll("img") || []);
+    if (imgs.length === 0) return Promise.resolve();
+
+    const loadPromises = imgs.map((img) => {
+        if (img.complete) return Promise.resolve();
+        return new Promise((resolve) => {
+            const done = () => resolve();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", done, { once: true });
+        });
+    });
+
+    return withTimeout(Promise.all(loadPromises), 1200);
 }
 
 async function loadHyperTextContent(hyperTextValue, containerEl) {
@@ -375,30 +398,45 @@ function createRecipeCard(recipe, userEquipment = []) {
 
     let stepsLoaded = false;
     toggleBtn.addEventListener("click", async () => {
-        const isExpanded = card.classList.toggle("expanded");
+        if (toggleBtn.dataset.loading === "true") return;
+
+        const isCurrentlyExpanded = card.classList.contains("expanded");
         const btnLabel = toggleBtn.querySelector(".div6");
 
-        if (btnLabel) {
-            btnLabel.innerText = isExpanded ? "Назад" : "Посмотреть рецепт";
-        }
+        if (!isCurrentlyExpanded) {
+            toggleBtn.dataset.loading = "true";
+            toggleBtn.disabled = true;
+            if (btnLabel) btnLabel.innerText = "Загрузка...";
 
-        if (isExpanded) {
-            // Прокручиваем к началу карточки
-            const yOffset = -80;
-            const y = card.getBoundingClientRect().top +
-                        window.pageYOffset +
-                        yOffset;
+            try {
+                if (!stepsLoaded) {
+                    stepsLoaded = true;
+                    const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
+                    await withTimeout(loadHyperTextContent(rawHyperText, stepsText), 1500);
+                }
+                await waitForImagesInContainer(stepsText);
+            } catch (err) {
+                console.error("[favorites.js] Ошибка при раскрытии рецепта:", err);
+            } finally {
+                toggleBtn.dataset.loading = "false";
+                toggleBtn.disabled = false;
+                card.classList.add("expanded");
+                if (btnLabel) btnLabel.innerText = "Назад";
 
-            window.scrollTo({
+                const yOffset = -80;
+                const y = card.getBoundingClientRect().top +
+                            window.pageYOffset +
+                            yOffset;
+
+                window.scrollTo({
                     top: y,
                     behavior: "smooth"
-    });
-            if (!stepsLoaded) {
-                stepsLoaded = true;
-                const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
-                await loadHyperTextContent(rawHyperText, stepsText);
+                });
             }
         } else {
+            card.classList.remove("expanded");
+            if (btnLabel) btnLabel.innerText = "Посмотреть рецепт";
+
             // Возвращаем пользователя к карточке,
             // из которой он открыл полный рецепт.
             const yOffset = -80;
