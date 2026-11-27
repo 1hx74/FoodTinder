@@ -20,7 +20,7 @@ html, body {
 .div {
   background: #ffffff;
   width: 100%;
-  min-width: 390px;
+  min-width: 340px;
   max-width: 520px; 
   height: 100vh; 
   max-height: 880px; 
