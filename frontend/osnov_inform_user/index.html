@@ -5,6 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>FOODTINDER — Профиль</title>
   <link rel="stylesheet" href="./style.css">
+  <!-- Скрываем страницу до проверки авторизации -->
+  <style>
+    html.auth-checking body {
+      visibility: hidden;
+    }
+  </style>
+  <!-- Проверка авторизации -->
+  <script>
+    document.documentElement.classList.add("auth-checking");
+  </script>
+  <script src="../api.js" defer></script>
+  <script src="../auth-guard.js" defer></script>
 </head>
 <body>
   <div class="div">

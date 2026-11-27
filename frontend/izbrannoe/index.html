@@ -20,7 +20,20 @@
       menu, ol, ul { list-style-type: none; margin: 0; padding: 0; }
     </style>
     <title>FOODTINDER — Избранное</title>
+    <!-- Скрываем страницу до проверки авторизации -->
+  <style>
+    html.auth-checking body {
+      visibility: hidden;
+    }
+  </style>
+  <!-- Проверка авторизации -->
+  <script>
+    document.documentElement.classList.add("auth-checking");
+  </script>
+  <script src="../api.js" defer></script>
+  <script src="../auth-guard.js" defer></script>
   </head>
+  
   <body>
     <div class="div">
       <!-- 1. АДАПТИВНАЯ ШАПКА -->
