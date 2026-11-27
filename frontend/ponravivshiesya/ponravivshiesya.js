@@ -172,11 +172,25 @@
     toggleBtn.addEventListener("click", async () => {
       const isExpanded = card.classList.toggle("expanded");
       const btnLabel = toggleBtn.querySelector(".div6");
-      if (btnLabel) btnLabel.innerText = isExpanded ? "Назад" : "Посмотреть рецепт";
-      if (isExpanded && !stepsLoaded) {
-        stepsLoaded = true;
-        const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
-        await loadHyperTextContent(rawHyperText, stepsText);
+      
+      if (btnLabel) {
+        btnLabel.innerText = isExpanded ? "Назад" : "Посмотреть рецепт";
+      }
+
+      if (isExpanded) {
+        // Если раскрываем — подгружаем инструкцию (если еще не загружали)
+        if (!stepsLoaded) {
+          stepsLoaded = true;
+          const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
+          await loadHyperTextContent(rawHyperText, stepsText);
+        }
+      } else {
+        // Если сворачиваем — плавно скроллим страницу к началу этой карточки
+        // 80 — это примерный отступ, чтобы шапка не перекрывала карточку
+        const yOffset = -80; 
+        const y = card.getBoundingClientRect().top + window.pageYOffset + yOffset;
+        
+        window.scrollTo({ top: y, behavior: "smooth" });
       }
     });
 

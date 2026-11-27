@@ -4,25 +4,6 @@
   box-sizing: border-box;
 }
 
-/* Переопределяем обрезку высоты из vars.css для длинной ленты избранного */
-html {
-  height: auto !important;
-  min-height: 100%;
-  overflow-x: hidden;
-  overflow-y: auto !important;
-  background-color: #f5f5f5;
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  height: auto !important;@import url('../vars.css');
-
-*, *::before, *::after {
-  box-sizing: border-box;
-}
-
 html {
   height: auto !important;
   min-height: 100%;
@@ -80,7 +61,8 @@ body {
   margin: 0 0 20px 0;
 }
 
-.favorites-list {
+/* СПИСОК КАРТОЧЕК (ЗДЕСЬ ЗАДАЕТСЯ 15px) */
+.recipes-list {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -105,7 +87,7 @@ body {
   overflow: hidden;
 }
 
-/* Небольшой серый крестик в правом верхнем углу каждой карточки */
+/* Кнопка удаления (крестик) */
 .remove-favorite-btn {
   position: absolute;
   top: 8px;
@@ -142,6 +124,7 @@ body {
   cursor: wait;
 }
 
+/* СОСТОЯНИЕ РАСКРЫТОЙ КАРТОЧКИ */
 .frame-16.expanded {
   height: auto !important;
   max-height: none !important;
@@ -217,7 +200,7 @@ body {
   overflow: visible !important;
 }
 
-/* Метаданные (Сложность, калории, время, вес, КБЖУ) */
+/* Метаданные */
 .recipe-meta-column {
   display: flex;
   flex-direction: column;
@@ -272,7 +255,7 @@ body {
   color: #666666;
 }
 
-/* ЗВЁЗДЫ СЛОЖНОСТИ */
+/* Звёзды */
 .stars-row {
   display: flex;
   flex-direction: row;
@@ -290,7 +273,7 @@ body {
   height: 18px;
 }
 
-/* БЛОК ОБОРУДОВАНИЯ */
+/* Блок оборудования */
 .equipment-section {
   display: flex;
   flex-direction: column;
@@ -337,7 +320,7 @@ body {
   opacity: 0.7;
 }
 
-/* РАСКРЫВАЮЩИЕСЯ СЕКЦИИ (ИНГРЕДИЕНТЫ И СПОСОБ ПРИГОТОВЛЕНИЯ) */
+/* Раскрывающиеся секции */
 .expandable-section {
   max-height: 0;
   opacity: 0;
@@ -420,321 +403,6 @@ body {
   white-space: pre-line;
 }
 
-/* КНОПКА ПЕРЕКЛЮЧЕНИЯ (Посмотреть рецепт / Назад) */
-.div5 {
-  background: var(--primary-color);
-  border-radius: 12px;
-  width: 100%;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  cursor: pointer;
-  border: none;
-  transition: opacity 0.2s ease;
-}
-
-.div5:hover {
-  opacity: 0.9;
-}
-
-.div6 {
-  color: #ffffff;
-  font-family: var(--main-font);
-  font-size: 16px;
-  font-weight: 700;
-  text-align: center;
-}
-
-.loading-sentinel {
-  margin-top: 20px;
-  font-family: var(--main-font);
-  font-size: 14px;
-  color: #666666;
-}
-
-.empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  max-width: 320px;
-  margin-top: 40px;
-  gap: 12px;
-  font-family: var(--main-font);
-}
-
-.empty-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #000000;
-}
-
-.empty-subtitle {
-  font-size: 14px;
-  color: #555555;
-}
-
-  min-height: 100vh;
-  background-color: #f5f5f5;
-  display: flex;
-  justify-content: center;
-  align-items: flex-start !important; /* чтобы шапка всегда была прижата к верху экрана */
-  overflow: visible !important;
-}
-
-/* Белая центральная колонка тянется по высоте всего списка карточек */
-.div {
-  background: #ffffff;
-  width: 100%;
-  min-width: 390px;
-  max-width: 520px;
-  height: auto !important;
-  min-height: 100vh;
-  max-height: none !important; /* убираем ограничение 880px из vars.css */
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  overflow: visible !important;
-  box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.1);
-}
-
-.main-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  padding: 20px 24px 56px 24px;
-}
-
-/* Заголовок страницы */
-.page-title {
-  font-family: var(--main-font);
-  font-size: 20px;
-  font-weight: 700;
-  color: #000000;
-  text-align: center;
-  margin: 0 0 20px 0;
-}
-
-/* Вертикальный список карточек с разделением строго 15px */
-.favorites-list {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  width: 100%;
-}
-
-/* КАРТОЧКА РЕЦЕПТА (как на странице свайпов) */
-.frame-16 {
-  background: #ffffff;
-  border-radius: 15px;
-  border: 1px solid #000000;
-  width: 100%;
-  max-width: 351px;
-  padding: 20px 22px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 12px;
-  overflow: hidden;
-}
-
-.rectangle-14 {
-  border-radius: 16px;
-  width: 100%;
-  height: 225px;
-  object-fit: cover;
-  flex-shrink: 0;
-  background: #f5f5f5;
-}
-
-.recipe-inner-content {
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  gap: 12px;
-  width: 100%;
-}
-
-/* Название и описание */
-.div7 {
-  color: #000000;
-  text-align: left;
-  font-family: var(--main-font);
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  width: 100%;
-}
-
-.recipe-title {
-  font-size: 16px;
-  font-weight: 700;
-  line-height: 1.25;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.recipe-desc {
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 1.35;
-  color: #222222;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* Звёзды рейтинга */
-.stars-row {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  gap: 6px;
-  height: 24px;
-}
-
-.star-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 22px;
-  height: 20px;
-}
-
-/* Раскрывающаяся часть с подробным рецептом */
-.expandable-section {
-  max-height: 0;
-  opacity: 0;
-  overflow: hidden;
-  transition: max-height 0.35s ease, opacity 0.3s ease, padding 0.3s ease;
-  padding-top: 0;
-  border-top: none;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.frame-16.expanded .recipe-title {
-  white-space: normal;
-  overflow: visible;
-}
-
-.frame-16.expanded .recipe-desc {
-  display: block;
-  -webkit-line-clamp: unset;
-  overflow: visible;
-}
-
-.frame-16.expanded .expandable-section {
-  max-height: 5000px;
-  opacity: 1;
-  padding-top: 10px;
-  border-top: 1px solid #ececec;
-}
-
-.recipe-meta-column {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  width: 100%;
-}
-
-.recipe-meta-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-family: var(--main-font);
-  font-size: 13px;
-  color: #444444;
-}
-
-.calories-box {
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--primary-color);
-}
-
-.meta-label {
-  font-family: var(--main-font);
-  font-size: 14px;
-  font-weight: 700;
-  color: #000000;
-}
-
-.equipment-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.equipment-pill {
-  font-family: var(--main-font);
-  font-size: 12px;
-  font-weight: 700;
-  padding: 6px 12px;
-  border-radius: 20px;
-  background-color: var(--primary-color);
-  color: #ffffff;
-}
-
-.equipment-pill.unavailable {
-  background-color: #e0e0e0;
-  color: #777777;
-  opacity: 0.7;
-}
-
-.ingredients-list {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.ingredient-item {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 10px;
-  font-family: var(--main-font);
-  font-size: 14px;
-  color: #222222;
-}
-
-.ingredient-name {
-  font-weight: 500;
-  color: #000000;
-}
-
-.ingredient-dots {
-  flex: 1;
-  border-bottom: 1px dotted #cccccc;
-  min-width: 16px;
-}
-
-.ingredient-amount {
-  font-weight: 700;
-  color: var(--primary-color);
-  white-space: nowrap;
-}
-
-.recipe-steps-text {
-  font-family: var(--main-font);
-  font-size: 14px;
-  line-height: 1.5;
-  color: #222222;
-  white-space: pre-line;
-}
-
 /* Кнопка «Посмотреть рецепт» */
 .div5 {
   background: var(--primary-color);
@@ -762,6 +430,7 @@ body {
   text-align: center;
 }
 
+/* Служебные элементы */
 .loading-sentinel {
   margin-top: 20px;
   font-family: var(--main-font);
