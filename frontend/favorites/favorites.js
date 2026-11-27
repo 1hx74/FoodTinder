@@ -110,6 +110,7 @@ async function loadHyperTextContent(hyperTextValue, containerEl) {
     if (
         value.startsWith("http://") ||
         value.startsWith("https://") ||
+        value.startsWith("/") ||
         value.endsWith(".html") ||
         value.endsWith(".htm")
     ) {

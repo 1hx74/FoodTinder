@@ -81,7 +81,7 @@
 
         const value = String(hyperTextValue || "").trim();
 
-        if (value.startsWith("http://") || value.startsWith("https://") || value.endsWith(".html") || value.endsWith(".htm")) {
+        if (value.startsWith("http://") || value.startsWith("https://") || value.startsWith("/") || value.endsWith(".html") || value.endsWith(".htm")) {
             containerEl.innerHTML = "Загрузка рецепта...";
             try {
                 const response = await fetch(value);

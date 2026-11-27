@@ -8,6 +8,6 @@
 docker compose up -d --build
 ```
 
-Затем откройте http://localhost/ (на сервере — `http://<IP из PUBLIC_BASE_URL>/`).
+Затем откройте http://localhost/ (на сервере — `http://<IP или домен>/`).
 
 Подробности — в [DOCS.md](DOCS.md): сервисы, демо-рецепты, адрес сайта, API.

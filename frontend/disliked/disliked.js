@@ -25,7 +25,7 @@
   async function loadHyperTextContent(hyperTextValue, containerEl) {
     if (!containerEl) return;
     const value = String(hyperTextValue || "").trim();
-    if (value.startsWith("http") || value.endsWith(".html") || value.endsWith(".htm")) {
+    if (value.startsWith("http") || value.startsWith("/") || value.endsWith(".html") || value.endsWith(".htm")) {
       containerEl.innerHTML = "Загрузка рецепта...";
       try {
         const response = await fetch(value);

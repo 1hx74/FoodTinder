@@ -61,6 +61,17 @@ _STATEMENTS = [
         allergies = array_remove(array_remove(allergies, 'vegan'), 'vegetarian')
     WHERE (religions || allergies) && ARRAY['vegan', 'vegetarian']::VARCHAR(32)[]
     """,
+    # С наших медиа-ссылок снимаем схему и хост (старые абсолютные значения).
+    """
+    UPDATE recipes
+    SET image_url = regexp_replace(image_url, '^https?://[^/]+', '')
+    WHERE image_url ~ '^https?://[^/]+/api/db/'
+    """,
+    """
+    UPDATE recipes
+    SET hypertext_url = regexp_replace(hypertext_url, '^https?://[^/]+', '')
+    WHERE hypertext_url ~ '^https?://[^/]+/api/db/'
+    """,
 ]
 
 

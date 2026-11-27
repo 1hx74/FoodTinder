@@ -27,16 +27,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from db import get_session
 from jwks import get_required_user_id
 from models import UserPreferences, UserProfile
+from public_urls import media_url
 from vocab import ALLERGY_CODES, DIET_CODES, EQUIPMENT_CODES, RELIGION_CODES, clean_codes
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/db/me", tags=["me"])
-
-# Публичный адрес сайта (из .env в корне проекта) — для абсолютной ссылки avatar_url,
-# как у сервиса media.
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
-
 
 def _error(code: int, state: str) -> JSONResponse:
     return JSONResponse(status_code=code, content={"code": code, "state": state})
@@ -186,7 +182,7 @@ async def get_me(
             )
         ).scalar_one_or_none()
         if file_id:
-            avatar_url = f"{PUBLIC_BASE_URL}/api/db/avatar/{file_id}"
+            avatar_url = media_url("avatar", file_id)
 
     profile = (
         await session.execute(select(UserProfile).where(UserProfile.user_id == user_id))

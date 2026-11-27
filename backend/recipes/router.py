@@ -15,6 +15,7 @@ from search import search_recipes
 from jwks import get_optional_user_id, get_required_user_id
 from me import load_preferences
 from vocab import EQUIPMENT_CODES, FORBIDDEN_CODES, RECIPE_RELIGION_CODES, TAGS, clean_codes
+from public_urls import to_public_media_url
 
 logger = logging.getLogger(__name__)
 
@@ -48,11 +49,11 @@ def _recipe_payload(recipe: Recipe, code: int = 200, state: str = "OK") -> dict:
     # где ingredients и equipment уже загружены
     return {
         "recipe_id": recipe.id,
-        "image_url": recipe.image_url,
+        "image_url": to_public_media_url(recipe.image_url),
         "title": recipe.title,
         "description": recipe.description,
         "stars": recipe.stars,
-        "hyper-text": recipe.hypertext_url,
+        "hyper-text": to_public_media_url(recipe.hypertext_url),
         "cooking_time": recipe.cooking_time,
         "difficulty": recipe.difficulty,
         "kalories": recipe.kalories,
@@ -175,6 +176,11 @@ class RecipeCreate(BaseModel):
         default_factory=list, description="нужное оборудование: " + ", ".join(EQUIPMENT_CODES)
     )
 
+    @field_validator("image_url", "hypertext_url")
+    @classmethod
+    def _rel_media_urls(cls, v: str) -> str:
+        return to_public_media_url(v) or v
+
     @model_validator(mode="after")
     def _check_equipment(self):
         self.equipment = _clean_equipment(self.equipment)
@@ -210,6 +216,11 @@ class RecipeUpdate(BaseModel):
     forbidden: list[str] | None = None
     religions: list[str] | None = None
     equipment_codes: list[str] | None = None
+
+    @field_validator("image_url", "hypertext_url")
+    @classmethod
+    def _rel_media_urls(cls, v: str | None) -> str | None:
+        return None if v is None else (to_public_media_url(v) or v)
 
     @field_validator("tags", "forbidden", "religions", "equipment_codes")
     @classmethod

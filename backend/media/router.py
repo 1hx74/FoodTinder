@@ -12,6 +12,7 @@ import fileloud_client as fl
 from db import get_session
 from jwks import get_required_user_id, require_recipe_manager
 from models import UserAvatar
+from public_urls import media_url, rewrite_media_urls_in_html
 
 logger = logging.getLogger(__name__)
 
@@ -36,28 +37,17 @@ async def _read_limited(file: UploadFile, limit: int) -> bytes | None:
     return None if len(data) > limit else data
 
 
-# Публичный адрес сайта (nginx), например http://localhost.
-# Задаётся один раз в .env в корне проекта, compose передаёт его сюда.
-# Все ссылки в ответах собираются от него, поэтому их можно вставлять как есть:
-# <img src="{image_url}"> откроется с любой страницы, без доп. обработки на фронте.
-# Пусто — ссылки будут относительными (/api/db/...).
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
-
-
-def _public_url(path: str) -> str:
-    return f"{PUBLIC_BASE_URL}/api/db/{path}"
-
-
+# Ссылки без хоста — работают с любого IP и домена через nginx.
 def _avatar_url(file_id: str) -> str:
-    return _public_url(f"avatar/{file_id}")
+    return media_url("avatar", file_id)
 
 
 def _image_url(file_id: str) -> str:
-    return _public_url(f"image/{file_id}")
+    return media_url("image", file_id)
 
 
 def _hypertext_url(file_id: str) -> str:
-    return _public_url(f"hyper-text/{file_id}")
+    return media_url("hyper-text", file_id)
 
 
 # ---------- аватар ----------
@@ -224,4 +214,6 @@ async def get_hyper_text(file_id: str):
         return _error(500, "Internal Server Error")
     if not content_type.startswith("text/html"):
         return _error(404, "Not Found")
-    return Response(content=data, media_type="text/html; charset=utf-8")
+    html = data.decode("utf-8", errors="replace")
+    html = rewrite_media_urls_in_html(html)
+    return Response(content=html.encode("utf-8"), media_type="text/html; charset=utf-8")

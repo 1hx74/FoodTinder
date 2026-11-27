@@ -48,10 +48,6 @@ services:
     container_name: ft-recipes
     env_file:
       - ./backend/recipes/.env
-    environment:
-      # задаётся в одном месте — в .env в корне проекта
-      # (нужен для ссылок на фото и гипертекст демо-рецептов)
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost}
     ports:
       - "8000:8000"
     depends_on:
@@ -106,9 +102,6 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/media/.env
-    environment:
-      # задаётся в одном месте — в .env в корне проекта
-      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://localhost}
     # только localhost хоста (для /docs); снаружи — через nginx
     ports:
       - "127.0.0.1:8002:8000"

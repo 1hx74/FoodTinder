@@ -6,8 +6,7 @@
 3. кладём их в fileloud (POST /media/images);
 4. собираем почти голый html с шагами и картинками и кладём его в fileloud
      (POST /media/texts);
-5. отдаём публичные ссылки вида {PUBLIC_BASE_URL}/api/db/image/{id}
-     и {PUBLIC_BASE_URL}/api/db/hyper-text/{id} (их раздаёт сервис media).
+5. отдаём относительные ссылки /api/db/image/{id} и /api/db/hyper-text/{id}.
 
 Любая ошибка (нет интернета, fileloud лежит) не роняет старт: рецепты всё равно
 создаются, а в лог пишется warning. Если не удалось сохранить главное фото —
@@ -21,13 +20,12 @@ import time
 
 import httpx
 
+from public_urls import media_url
 from seed_content import RECIPE_MEDIA
 
 logger = logging.getLogger("uvicorn.error")
 
 FILELOUD_URL = os.getenv("FILELOUD_URL", "http://fileloud:8000").rstrip("/")
-# задаётся в одном месте — в .env в корне проекта (compose прокидывает его сюда)
-PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 SEED_MEDIA = os.getenv("SEED_MEDIA", "true").lower() == "true"
 FILELOUD_WAIT_SECONDS = float(os.getenv("FILELOUD_WAIT_SECONDS", "60"))
 CONCURRENCY = 8
@@ -48,11 +46,11 @@ _STYLE = (
 
 
 def public_image_url(file_id: str) -> str:
-    return f"{PUBLIC_BASE_URL}/api/db/image/{file_id}"
+    return media_url("image", file_id)
 
 
 def public_hypertext_url(file_id: str) -> str:
-    return f"{PUBLIC_BASE_URL}/api/db/hyper-text/{file_id}"
+    return media_url("hyper-text", file_id)
 
 
 def _file_id(fileloud_url: str) -> str:
