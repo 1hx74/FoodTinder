@@ -369,20 +369,36 @@ function createRecipeCard(recipe, userEquipment = []) {
     const toggleBtn = document.createElement("button");
     toggleBtn.type = "button";
     toggleBtn.className = "div5";
+    toggleBtn.style.width = "100%";
     toggleBtn.innerHTML = `<span class="div6">Посмотреть рецепт</span>`;
 
     let stepsLoaded = false;
     toggleBtn.addEventListener("click", async () => {
         const isExpanded = card.classList.toggle("expanded");
         const btnLabel = toggleBtn.querySelector(".div6");
+
         if (btnLabel) {
             btnLabel.innerText = isExpanded ? "Назад" : "Посмотреть рецепт";
         }
 
-        if (isExpanded && !stepsLoaded) {
-            stepsLoaded = true;
-            const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
-            await loadHyperTextContent(rawHyperText, stepsText);
+        if (isExpanded) {
+            if (!stepsLoaded) {
+                stepsLoaded = true;
+                const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;
+                await loadHyperTextContent(rawHyperText, stepsText);
+            }
+        } else {
+            // Возвращаем пользователя к карточке,
+            // из которой он открыл полный рецепт.
+            const yOffset = -80;
+            const y = card.getBoundingClientRect().top +
+                     window.pageYOffset +
+                     yOffset;
+
+            window.scrollTo({
+                top: y,
+                behavior: "smooth"
+            });
         }
     });
 
