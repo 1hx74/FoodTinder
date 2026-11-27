@@ -382,6 +382,16 @@ function createRecipeCard(recipe, userEquipment = []) {
         }
 
         if (isExpanded) {
+            // Прокручиваем к началу карточки
+            const yOffset = -80;
+            const y = card.getBoundingClientRect().top +
+                        window.pageYOffset +
+                        yOffset;
+
+            window.scrollTo({
+                    top: y,
+                    behavior: "smooth"
+    });
             if (!stepsLoaded) {
                 stepsLoaded = true;
                 const rawHyperText = recipe["hyper-text"] || recipe.hyper_text;

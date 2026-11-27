@@ -178,6 +178,16 @@
       }
 
       if (isExpanded) {
+        // Прокручиваем к началу карточки
+        const yOffset = -80;
+        const y = card.getBoundingClientRect().top +
+                  window.pageYOffset +
+                  yOffset;
+
+        window.scrollTo({
+              top: y,
+              behavior: "smooth"
+    });
         // Если раскрываем — подгружаем инструкцию (если еще не загружали)
         if (!stepsLoaded) {
           stepsLoaded = true;
