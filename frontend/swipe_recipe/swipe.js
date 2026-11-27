@@ -59,88 +59,10 @@ let isFetchingQueue = false;
 let noMoreRecipes = false;
 let isReacting = false;
 
-const EQUIPMENT_TRANSLATIONS = {
-    oven: "Духовка",
-    stove: "Плита",
-    microwave: "Микроволновка",
-    multicooker: "Мультиварка",
-    air_fryer: "Аэрогриль",
-    toaster: "Тостер",
-    waffle_maker: "Вафельница",
-    mixer: "Миксер",
-    blender: "Блендер",
-    meat_grinder: "Мясорубка",
-    backing_dish: "Форма для запекания",
-    backind_sheet: "Противень",
-    grater: "Терка",
-    wisk: "Венчик",
-    rolling_scale: "Скалка",
-    pot: "Кастрюля"
-};
-
-const UNIT_DICTIONARY = {
-    "g": "гр",
-    "gr": "гр",
-    "gram": "гр",
-    "gramm": "гр",
-    "гр": "гр",
-    "ml": "мл",
-    "milliliter": "мл",
-    "milliliters": "мл",
-    "мл": "мл",
-    "it": "шт",
-    "item": "шт",
-    "items": "шт",
-    "шт": "шт",
-    "kg": "кг",
-    "kilogram": "кг",
-    "кг": "кг",
-    "l": "л",
-    "liter": "л",
-    "liters": "л",
-    "л": "л",
-    "tsp": "ч. л.",
-    "tbsp": "ст. л.",
-    "cup": "ст."
-};
-
-
-/* 1. formatIngredientMeasure(rawQuantity, rawCount)
- *
-- Форматирует количество и единицу измерения ингредиента.
-- Переводит единицы измерения в сокращённый русский формат
-- (например, g → гр, ml → мл).
- *
-- Дополнительно переводит граммы в килограммы, а миллилитры
-- в литры, если количество достигает 1000.
- */
-
 function formatIngredientMeasure(rawQuantity, rawCount) {
-    const key = String(rawQuantity || "").trim().toLowerCase();
-    const unit = UNIT_DICTIONARY[key] || rawQuantity || "";
-    const count = Number(rawCount);
-
-    if (Number.isNaN(count) || count <= 0) {
-        return unit;
-    }
-
-    if (unit === "гр" && count >= 1000) {
-        const kg = Number((count / 1000).toFixed(2));
-        return `${kg} кг`;
-    }
-    if (unit === "мл" && count >= 1000) {
-        const liters = Number((count / 1000).toFixed(2));
-        return `${liters} л`;
-    }
-
-    return `${count} ${unit}`.trim();
+    return window.RecipeCard.formatIngredientMeasure(rawQuantity, rawCount);
 }
 
-/* 2. getUserPreferences()
- *
-- Берет данные об оборудовании из localStorage (кеша),
-- а при необходимости догружает с сервера через AuthAPI.getCachedEquipment().
- */
 function getUserPreferences() {
     try {
         const cached = localStorage.getItem("global_cache_equipment");
@@ -262,28 +184,7 @@ function getGuestExcludedRecipeIds() {
 - об ошибке.
  */
 async function loadHyperTextContent(hyperTextValue, containerEl) {
-    if (!containerEl) return;
-
-    const value = String(hyperTextValue || "").trim();
-
-    // Проверяем, является ли значение ссылкой (начинается с http или содержит расширение .html/.htm)
-    if (value.startsWith("http://") || value.startsWith("https://") || value.endsWith(".html") || value.endsWith(".htm")) {
-        containerEl.innerHTML = "Загрузка рецепта...";
-        try {
-            const response = await fetch(value);
-            if (!response.ok) throw new Error(`Ошибка загрузки: ${response.status}`);
-
-            const htmlContent = await response.text();
-            // Вставляем полученный код/разметку внутрь блока
-            containerEl.innerHTML = htmlContent;
-        } catch (error) {
-            console.error("[swipe.js] Не удалось загрузить контент по ссылке:", error);
-            containerEl.innerText = "Не удалось загрузить инструкции по приготовлению.";
-        }
-    } else {
-        // Если это обычный текст, выводим как текст
-        containerEl.innerText = value || "Инструкция приготовления отсутствует.";
-    }
+    return window.RecipeCard.loadHyperTextContent(hyperTextValue, containerEl);
 }
 
 async function loadCurrentRecipeHyperText() {
@@ -357,112 +258,12 @@ async function renderRecipe(recipe) {
     if (controlsEl) controlsEl.style.display = "flex";
     if (emptyEl) emptyEl.style.display = "none";
 
-    const imageEl = document.getElementById("recipe-image");
-    const titleText = recipe.title || "Без названия";
-    const fallbackPlaceholder = `https://placehold.co/${encodeURIComponent(titleText)}`;
-    const imageUrl = recipe.image_url || fallbackPlaceholder;
-
-    if (imageEl) {
-        imageEl.onerror = () => {
-            imageEl.onerror = null;
-            imageEl.src = fallbackPlaceholder;
-        };
-        imageEl.src = imageUrl;
-        imageEl.alt = titleText;
-    }
-
-    const titleEl = document.getElementById("recipe-title");
-    if (titleEl) titleEl.innerText = titleText;
-
-    const descEl = document.getElementById("recipe-description");
-    if (descEl) descEl.innerText = recipe.description || "";
-
-    const caloriesEl = document.getElementById("recipe-calories");
-    if (caloriesEl) caloriesEl.innerText = recipe.kalories ? `${recipe.kalories} ккал` : "";
-
-    const timeEl = document.getElementById("recipe-time");
-    if (timeEl) timeEl.innerText = recipe.cooking_time || "0";
-
-    const weightEl = document.getElementById("recipe-weight");
-    if (weightEl) weightEl.innerText = recipe.final_weight || "0";
-
-    const belkiEl = document.getElementById("recipe-belki");
-    if (belkiEl) belkiEl.innerText = recipe.belki || "0";
-
-    const fatsEl = document.getElementById("recipe-fats");
-    if (fatsEl) fatsEl.innerText = recipe.fats || "0";
-
-    const uglevodsEl = document.getElementById("recipe-uglevods");
-    if (uglevodsEl) uglevodsEl.innerText = recipe.uglevods || "0";
-
-    const starsContainer = document.getElementById("recipe-stars");
-    if (starsContainer) {
-        const starsCount = Math.max(0, Math.min(5, Number(recipe.stars) || 0));
-        starsContainer.innerHTML = "";
-        for (let i = 0; i < starsCount; i++) {
-            const starImg = document.createElement("img");
-            starImg.className = "star-icon";
-            starImg.src = "star-10.svg";
-            starImg.alt = "★";
-            starsContainer.appendChild(starImg);
-        }
-    }
-
-    const equipmentContainer = document.getElementById("recipe-equipment");
-    if (equipmentContainer) {
-        equipmentContainer.innerHTML = "";
-        if (Array.isArray(recipe.equipment) && recipe.equipment.length > 0) {
-            const prefs = await ensureUserPreferencesLoaded();
-            const userEquipment = Array.isArray(prefs?.kitchen_equipment) ? prefs.kitchen_equipment : [];
-
-            recipe.equipment.forEach(rawKey => {
-                const itemKey = String(rawKey || "").trim();
-                if (!itemKey) return;
-
-                const pill = document.createElement("div");
-                const isAvailable = userEquipment.includes(itemKey);
-
-                pill.className = `equipment-pill ${isAvailable ? "available" : "unavailable"}`;
-                pill.innerText = EQUIPMENT_TRANSLATIONS[itemKey] || itemKey;
-                equipmentContainer.appendChild(pill);
-            });
-        }
-    }
-
-    const ingredientsContainer = document.getElementById("recipe-ingredients");
-    if (ingredientsContainer) {
-        ingredientsContainer.innerHTML = "";
-        if (Array.isArray(recipe.ingredients) && recipe.ingredients.length > 0) {
-            recipe.ingredients.forEach(item => {
-                const li = document.createElement("li");
-                li.className = "ingredient-item";
-
-                const nameSpan = document.createElement("span");
-                nameSpan.className = "ingredient-name";
-                nameSpan.innerText = item.name || "";
-
-                const dotsSpan = document.createElement("span");
-                dotsSpan.className = "ingredient-dots";
-
-                const amountSpan = document.createElement("span");
-                amountSpan.className = "ingredient-amount";
-                amountSpan.innerText = formatIngredientMeasure(item.quantity, item.count);
-
-                li.appendChild(nameSpan);
-                li.appendChild(dotsSpan);
-                li.appendChild(amountSpan);
-                ingredientsContainer.appendChild(li);
-            });
-        } else {
-            ingredientsContainer.innerHTML = `<li class="ingredient-item">Список продуктов не указан</li>`;
-        }
-    }
-
-    // Гипертекст и медиа внутри него грузятся только после нажатия «Посмотреть рецепт»
-    const stepsContainer = document.getElementById("recipe-hyper-text");
-    if (stepsContainer) {
-        stepsContainer.innerHTML = "";
-        stepsContainer.innerText = "Нажмите «Посмотреть рецепт», чтобы загрузить инструкцию.";
+    if (cardEl && window.RecipeCard && typeof window.RecipeCard.fill === "function") {
+        await window.RecipeCard.fill(cardEl, recipe, {
+            starSrc: "star-10.svg",
+            loadHyperText: false,
+            hyperTextPlaceholder: "Нажмите «Посмотреть рецепт», чтобы загрузить инструкцию."
+        });
     }
 
     if (cardEl) {

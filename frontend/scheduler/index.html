@@ -5,6 +5,7 @@
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="../vars.css">
+  <link rel="stylesheet" href="../recipe-card.css">
   <link rel="stylesheet" href="./style.css">
   
   <style>
@@ -149,10 +150,63 @@
       </div>
     </div>
 
+    <div class="recipe-card-modal-backdrop" id="planner-recipe-modal" aria-hidden="true">
+      <div class="recipe-card-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="recipe-title">
+        <article class="frame-16 expanded" id="planner-recipe-card">
+          <div class="recipe-card-loading" id="planner-recipe-loading" hidden>
+            <span class="recipe-card-spinner" aria-hidden="true"></span>
+            <span class="visually-hidden">Загрузка рецепта</span>
+          </div>
+          <img class="rectangle-14" id="recipe-image" src="" alt="Блюдо" />
+          <div class="recipe-inner-content">
+            <div class="div7">
+              <h1 class="recipe-title" id="recipe-title">Загрузка рецепта...</h1>
+              <p class="recipe-desc" id="recipe-description"></p>
+            </div>
+            <div class="recipe-meta-column">
+              <div class="recipe-meta-row">
+                <div class="difficulty-box">
+                  <span class="meta-label">Сложность:</span>
+                  <div class="stars-row" id="recipe-stars"></div>
+                </div>
+                <div class="calories-box" id="recipe-calories"></div>
+              </div>
+              <div class="recipe-meta-row info-row">
+                <span>⏱ <span id="recipe-time"></span> мин</span>
+                <span>⚖️ <span id="recipe-weight"></span> г</span>
+              </div>
+              <div class="recipe-meta-row macros-row">
+                <span>Белки: <strong id="recipe-belki"></strong> г</span>
+                <span>Жиры: <strong id="recipe-fats"></strong> г</span>
+                <span>Углеводы: <strong id="recipe-uglevods"></strong> г</span>
+              </div>
+            </div>
+            <div class="equipment-section">
+              <div class="meta-label">Оборудование:</div>
+              <div class="equipment-container" id="recipe-equipment"></div>
+            </div>
+            <div class="ingredients-section expandable-section">
+              <span class="meta-label">Ингредиенты:</span>
+              <ul class="ingredients-list" id="recipe-ingredients"></ul>
+            </div>
+            <div class="recipe-steps-section expandable-section">
+              <span class="meta-label">Способ приготовления:</span>
+              <div class="recipe-steps-text" id="recipe-hyper-text"></div>
+            </div>
+          </div>
+          <button type="button" class="div5" id="planner-recipe-back-btn">
+            <span class="div6">Назад</span>
+          </button>
+        </article>
+        <p class="recipe-card-modal-error" id="planner-recipe-error" hidden></p>
+      </div>
+    </div>
+
   </div>
   
   <!-- Подключение скриптов -->
   <script src="../api.js"></script>
+  <script src="../recipe-card.js"></script>
   <script src="./scheduler.js"></script>
 </body>
 </html>

@@ -711,6 +711,7 @@ document.addEventListener("DOMContentLoaded", () => {
             saveDaysToCache(days);
         };
 
+        weightWrap.addEventListener("click", (e) => e.stopPropagation());
         weightInput.addEventListener("click", (e) => e.stopPropagation());
         weightInput.addEventListener("input", () => {
             const next = Number(weightInput.value);
@@ -726,6 +727,21 @@ document.addEventListener("DOMContentLoaded", () => {
         row.appendChild(info);
         row.appendChild(weightWrap);
         row.appendChild(removeBtn);
+
+        const openThisRecipe = (e) => {
+            if (e.target.closest(".remove-meal-btn, .meal-weight-wrap, .meal-weight-input")) return;
+            e.preventDefault();
+            openPlannerRecipeCard(recipe);
+        };
+        row.setAttribute("role", "button");
+        row.tabIndex = 0;
+        row.addEventListener("click", openThisRecipe);
+        row.addEventListener("keydown", (e) => {
+            if (e.target.closest(".meal-weight-input")) return;
+            if (e.key === "Enter" || e.key === " ") {
+                openThisRecipe(e);
+            }
+        });
         return row;
     }
 
@@ -1125,6 +1141,177 @@ document.addEventListener("DOMContentLoaded", () => {
         daysListEl.innerHTML = "";
     });
 
+    const plannerRecipeModal = document.getElementById("planner-recipe-modal");
+    const plannerRecipeCard = document.getElementById("planner-recipe-card");
+    const plannerRecipeError = document.getElementById("planner-recipe-error");
+    let plannerRecipeOpenSeq = 0;
+
+    function applyPlannerRecipeOverlayOpen() {
+        if (!plannerRecipeModal) return;
+        plannerRecipeModal.classList.add("is-open");
+        plannerRecipeModal.setAttribute("aria-hidden", "false");
+        plannerRecipeModal.style.cssText = [
+            "position: fixed",
+            "inset: 0",
+            "width: 100vw",
+            "height: 100vh",
+            "background-color: rgba(0, 0, 0, 0.5)",
+            "display: flex",
+            "align-items: flex-start",
+            "justify-content: center",
+            "padding: 20px 12px 32px",
+            "overflow-y: auto",
+            "z-index: 100050"
+        ].join(" !important; ") + " !important;";
+        lockPageScroll();
+    }
+
+    function peekRecipeDetails(id) {
+        if (!recipeDetailsCache.has(id)) return null;
+        const value = recipeDetailsCache.get(id);
+        if (!value || typeof value.then === "function") return null;
+        return value;
+    }
+
+    function isImageCached(url) {
+        const src = String(url || "").trim();
+        if (!src) return true;
+        const img = new Image();
+        img.src = src;
+        return Boolean(img.complete && img.naturalWidth > 0);
+    }
+
+    function preloadRecipeImage(url) {
+        const src = String(url || "").trim();
+        if (!src) return Promise.resolve("");
+        return new Promise((resolve) => {
+            let settled = false;
+            const done = (ok) => {
+                if (settled) return;
+                settled = true;
+                resolve(ok ? src : "");
+            };
+            const img = new Image();
+            img.onload = () => done(img.naturalWidth > 0);
+            img.onerror = () => done(false);
+            img.src = src;
+            if (img.complete) done(img.naturalWidth > 0);
+        });
+    }
+
+    function resetPlannerRecipeCard() {
+        if (!plannerRecipeCard) return;
+        const img = plannerRecipeCard.querySelector("#recipe-image");
+        if (img) {
+            img.onload = null;
+            img.onerror = null;
+            img.removeAttribute("src");
+            img.src = "";
+            img.alt = "";
+            img.style.display = "";
+        }
+        [
+            "recipe-title", "recipe-description", "recipe-calories",
+            "recipe-time", "recipe-weight", "recipe-belki",
+            "recipe-fats", "recipe-uglevods", "recipe-hyper-text"
+        ].forEach((id) => {
+            const el = plannerRecipeCard.querySelector("#" + id);
+            if (el) el.textContent = "";
+        });
+        ["recipe-stars", "recipe-equipment", "recipe-ingredients"].forEach((id) => {
+            const el = plannerRecipeCard.querySelector("#" + id);
+            if (el) el.innerHTML = "";
+        });
+    }
+
+    function setPlannerRecipeLoading(isLoading) {
+        if (!plannerRecipeCard) return;
+        plannerRecipeCard.classList.toggle("is-loading", isLoading);
+        plannerRecipeCard.setAttribute("aria-busy", isLoading ? "true" : "false");
+        const loader = document.getElementById("planner-recipe-loading");
+        if (loader) loader.hidden = !isLoading;
+    }
+
+    function closePlannerRecipeCard() {
+        if (!plannerRecipeModal) return;
+        plannerRecipeOpenSeq += 1;
+        plannerRecipeModal.classList.remove("is-open");
+        plannerRecipeModal.setAttribute("aria-hidden", "true");
+        plannerRecipeModal.style.cssText = "display: none !important;";
+        setPlannerRecipeLoading(false);
+        resetPlannerRecipeCard();
+        if (plannerRecipeError) {
+            plannerRecipeError.hidden = true;
+            plannerRecipeError.textContent = "";
+        }
+        unlockPageScroll();
+    }
+
+    async function fillPlannerRecipeCard(data, seq, skipImage) {
+        if (seq !== plannerRecipeOpenSeq) return false;
+        if (!window.RecipeCard || typeof window.RecipeCard.fill !== "function") {
+            throw new Error("RecipeCard missing");
+        }
+        await window.RecipeCard.fill(plannerRecipeCard, data, {
+            starSrc: "../swipe_recipe/star-10.svg",
+            loadHyperText: true,
+            skipImage: Boolean(skipImage),
+            isStale: () => seq !== plannerRecipeOpenSeq
+        });
+        return seq === plannerRecipeOpenSeq;
+    }
+
+    async function openPlannerRecipeCard(recipe) {
+        const recipeId = recipe && (recipe.recipe_id != null ? recipe.recipe_id : recipe.id);
+        if (recipeId == null || !plannerRecipeModal || !plannerRecipeCard) return;
+        const seq = ++plannerRecipeOpenSeq;
+        if (plannerRecipeError) {
+            plannerRecipeError.hidden = true;
+            plannerRecipeError.textContent = "";
+        }
+        resetPlannerRecipeCard();
+        setPlannerRecipeLoading(true);
+        applyPlannerRecipeOverlayOpen();
+
+        try {
+            const hasFullData = Array.isArray(recipe.ingredients);
+            const cached = peekRecipeDetails(recipeId) || (hasFullData ? recipe : null);
+            const imageReady = cached ? isImageCached(cached.image_url) : false;
+            let data = cached;
+            if (!data) {
+                data = await getRecipeDetailsCached(recipeId);
+            }
+            if (seq !== plannerRecipeOpenSeq) return;
+            if (!data) throw new Error("empty");
+
+            let skipImage = !data.image_url;
+            if (data.image_url && !imageReady) {
+                const loadedUrl = await preloadRecipeImage(data.image_url);
+                if (seq !== plannerRecipeOpenSeq) return;
+                skipImage = !loadedUrl;
+            } else if (seq !== plannerRecipeOpenSeq) {
+                return;
+            }
+
+            const filled = await fillPlannerRecipeCard(data, seq, skipImage);
+            if (!filled) return;
+            setPlannerRecipeLoading(false);
+        } catch (_) {
+            if (seq !== plannerRecipeOpenSeq) return;
+            setPlannerRecipeLoading(false);
+            if (plannerRecipeError) {
+                plannerRecipeError.hidden = false;
+                plannerRecipeError.textContent = "Не удалось загрузить карточку рецепта.";
+            }
+        }
+    }
+
+    plannerRecipeModal?.addEventListener("click", (e) => {
+        if (e.target === plannerRecipeModal || e.target.closest("#planner-recipe-back-btn")) {
+            closePlannerRecipeCard();
+        }
+    });
+
     const shoppingModal = document.getElementById("shopping-modal");
     const shoppingBody = document.getElementById("shopping-list-body");
     const shoppingActions = document.getElementById("shopping-list-actions");
@@ -1354,7 +1541,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
     document.addEventListener("keydown", (e) => {
-        if (e.key === "Escape" && shoppingModal && shoppingModal.classList.contains("is-open")) {
+        if (e.key !== "Escape") return;
+        const recipeModal = document.getElementById("planner-recipe-modal");
+        if (recipeModal && recipeModal.classList.contains("is-open")) {
+            e.preventDefault();
+            closePlannerRecipeCard();
+            return;
+        }
+        if (shoppingModal && shoppingModal.classList.contains("is-open")) {
             e.preventDefault();
             closeShoppingModal();
         }
