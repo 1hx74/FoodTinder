@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/common/base.css" />
+    <link rel="stylesheet" href="/swipe/style.css" />
+
+    <style>
+      a, button, input, select, h1, h2, h3, h4, h5, * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: none;
+        text-decoration: none;
+        background: none;
+        -webkit-font-smoothing: antialiased;
+      }
+      menu, ol, ul { list-style-type: none; margin: 0; padding: 0; }
+    </style>
+    <title>FOODTINDER — Выбор рецептов</title>
+  </head>
+  <body>
+    <div class="div">
+      <!-- 1. АДАПТИВНАЯ ШАПКА -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="/swipe/" class="foodtinder2">FOODTINDER</a>
+      </div>
+      <div class="frame-4">
+        <a href="/account/" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
+          <div class="ellipse-2" style="background: var(--brand-text); border-radius: 50%;"></div>
+          <img id="header-avatar-img" class="header-avatar-img" src="" alt="" style="display: none;">
+          <span class="div2" id="profile-letter">Г</span>
+
+        </a>
+        <div class="div3" id="auth-container">
+           <a href="/login/" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="/registration/" class="div4">Регистрация</a>
+        </div>
+      </div>
+    </header>
+
+      <!-- 2. ОСНОВНОЙ ЭКРАН С КАРТОЧКОЙ И КНОПКАМИ -->
+      <main class="main-content">
+        <!-- Карточка рецепта (управляется классами .expanded для анимации) -->
+        <article class="frame-16" id="recipe-card">
+          <img class="rectangle-14" id="recipe-image" src="" alt="Блюдо" />
+
+          <div class="recipe-inner-content">
+            <div class="div7">
+              <h1 class="recipe-title" id="recipe-title">Загрузка рецепта...</h1>
+              <p class="recipe-desc" id="recipe-description"></p>
+            </div>
+
+            <!-- МЕТАДАННЫЕ -->
+            <div class="recipe-meta-column">
+              <div class="recipe-meta-row">
+                <div class="difficulty-box">
+                  <span class="meta-label">Сложность:</span>
+                  <div class="stars-row" id="recipe-stars"></div>
+                </div>
+                <div class="calories-box" id="recipe-calories"></div>
+              </div>
+
+              <div class="recipe-meta-row info-row">
+                <span>⏱ <span id="recipe-time"></span> мин</span>
+                <span>⚖️ <span id="recipe-weight"></span> г</span>
+              </div>
+
+              <div class="recipe-meta-row macros-row">
+                <span>Белки: <strong id="recipe-belki"></strong> г</span>
+                <span>Жиры: <strong id="recipe-fats"></strong> г</span>
+                <span>Углеводы: <strong id="recipe-uglevods"></strong> г</span>
+              </div>
+            </div>
+
+            <!-- ОБОРУДОВАНИЕ -->
+            <div class="equipment-section">
+              <div class="meta-label">Оборудование:</div>
+              <div class="equipment-container" id="recipe-equipment"></div>
+            </div>
+
+            <!-- ДОП. ПОЛЯ ДЛЯ ПОЛНОГО РЕЦЕПТА (скрыты в сжатом виде, плавно анимируются) -->
+            <div class="ingredients-section expandable-section">
+              <span class="meta-label">Ингредиенты:</span>
+              <ul class="ingredients-list" id="recipe-ingredients"></ul>
+            </div>
+
+            <div class="recipe-steps-section expandable-section">
+              <span class="meta-label">Способ приготовления:</span>
+              <div class="recipe-steps-text" id="recipe-hyper-text"></div>
+            </div>
+          </div>
+
+          <!-- Универсальная кнопка-переключатель вместо ссылки -->
+          <button type="button" class="div5" id="toggle-recipe-btn">
+            <span class="div6" id="toggle-btn-text">Посмотреть рецепт</span>
+          </button>
+        </article>
+
+        <!-- Заглушка, если рецепты закончились -->
+        <div class="empty-state" id="empty-state" style="display: none;">
+          <div class="empty-title">Вы просмотрели все карточки!</div>
+          <div class="empty-subtitle">Попробуйте изменить фильтры в профиле или загляните позже.</div>
+          <a href="/swipe/" class="div5" style="margin-top: 20px;">
+            <span class="div6">На главную</span>
+          </a>
+        </div>
+
+        <!-- Нижние кнопки реакций (скрываются при развернутом рецепте) -->
+        <div class="frame-18" id="reaction-controls">
+            <button type="button" class="reaction-btn" id="btn-dislike" aria-label="Не нравится">
+                <img class="div8" src="/swipe/dislike.svg" alt="Не нравится" />
+            </button>
+
+            <button type="button" class="reaction-btn fav-btn" id="btn-favorite" aria-label="В избранное" title="В избранное">
+                <img class="fav-icon" src="/swipe/favorite.svg" alt="В избранное" />
+            </button>
+
+            <button type="button" class="reaction-btn" id="btn-like" aria-label="Нравится">
+                <img class="div9" src="/swipe/like.svg" alt="Нравится" />
+            </button>
+        </div>
+      </main>
+    </div>
+
+    <script src="/common/api.js"></script>
+    <script src="/common/recipe-card.js"></script>
+    <script src="/swipe/swipe.js"></script>
+  </body>
+</html>

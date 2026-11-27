@@ -60,7 +60,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
             if (!email || !password) {
                 alert("Данные регистрации утеряны. Заполните форму регистрации заново.");
-                window.location.href = '/registration';
+                window.location.href = '/registration/';
                 return;
             }
 
@@ -88,7 +88,7 @@ document.querySelector('.form-container').addEventListener('submit', async funct
 
     if (!email) {
         alert("Сессия регистрации истекла. Заполните форму заново.");
-        window.location.href = '/registration';
+        window.location.href = '/registration/';
         return;
     }
 
@@ -97,7 +97,7 @@ document.querySelector('.form-container').addEventListener('submit', async funct
         clearPendingSession();
 
         alert("✨ Регистрация успешно подтверждена! Добро пожаловать! ✨");
-        window.location.href = '/glavnaya';
+        window.location.href = '/swipe/';
     } catch (error) {
         alert(`Ошибка проверки кода: ${error.message}`);
     }

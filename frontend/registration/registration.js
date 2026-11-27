@@ -40,7 +40,7 @@ document.querySelector('.form-container').addEventListener('submit', async (even
     sessionStorage.setItem("codeSentAt", String(Date.now()));
 
     alert("Код подтверждения отправлен на почту ✨");
-    window.location.href = '/authentication';
+    window.location.href = '/authentication/';
 
   } catch (error) {
     alert(`Ошибка регистрации: ${error.message}`);

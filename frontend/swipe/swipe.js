@@ -1,0 +1,790 @@
+/*
+- НАЗНАЧЕНИЕ СКРИПТА
+ *
+- Скрипт отвечает за работу ленты рецептов FOODTINDER:
+- - получение рецептов с backend;
+- - предварительную загрузку следующих карточек;
+- - хранение временной очереди рецептов;
+- - отображение информации о рецепте;
+- - обработку лайков, дизлайков и добавления в избранное;
+- - обработку свайпов и нажатий на кнопки;
+- - отображение заглушки при окончании рецептов.
+ *
+- ОСОБЕННОСТИ ОБЩЕЙ ЛОГИКИ
+- 1. Рецепты загружаются заранее, чтобы уменьшить ожидание
+-    при переключении карточек.
+- 2. Очередь хранится в sessionStorage и не требует
+-    повторной загрузки уже полученных рецептов в рамках
+-    текущей сессии вкладки.
+- 3. Размер очереди ограничен MAX_QUEUE_SIZE.
+- 4. Если конкретный рецепт больше недоступен (404 при
+-    запросе полного рецепта), скрипт пропускает его
+-    и запрашивает следующий.
+- 5. Конец ленты определяется только после подтверждения
+-    со стороны /recipes/next.
+- 6. Заглушка «Вы просмотрели все карточки!» показывается
+-    только тогда, когда рецепты закончились и очередь пуста.
+ *
+ *
+- QUEUE_STORAGE_KEY — ключ sessionStorage, под которым хранится
+- очередь предварительно загруженных рецептов.
+ *
+- SELECTED_RECIPE_KEY — ключ для хранения выбранного рецепта.
+- В текущей версии скрипта не используется.
+ *
+- MAX_QUEUE_SIZE — максимальное количество рецептов
+- в очереди предварительной загрузки (3).
+ *
+- currentRecipe — объект рецепта, который сейчас отображается
+- пользователю.
+ *
+- isFetchingQueue — флаг, предотвращающий одновременный запуск
+- нескольких процессов заполнения очереди.
+ *
+- noMoreRecipes — флаг, указывающий, что backend подтвердил
+- окончание выдачи рецептов.
+
+*/
+const QUEUE_STORAGE_KEY = "recipeQueue";
+const SELECTED_RECIPE_KEY = "selectedRecipe";
+const VIEWED_RECIPES_KEY = "viewedRecipeIds";
+const MAX_QUEUE_SIZE = 3;
+const MAX_EXCLUDED_RECIPE_IDS = 50;
+
+let currentRecipe = null;
+let currentHyperTextValue = "";
+let loadedHyperTextRecipeId = null;
+let hyperTextLoadPromise = null;
+let isFetchingQueue = false;
+let noMoreRecipes = false;
+let isReacting = false;
+
+function formatIngredientMeasure(rawQuantity, rawCount) {
+    return window.RecipeCard.formatIngredientMeasure(rawQuantity, rawCount);
+}
+
+function getUserPreferences() {
+    try {
+        const cached = localStorage.getItem("global_cache_equipment");
+        if (cached) {
+            return JSON.parse(cached);
+        }
+    } catch (e) {
+        console.error("[swipe.js] Ошибка чтения кеша оборудования:", e);
+    }
+    return { kitchen_equipment: [], allergies: [], diets: [], religions: [] };
+}
+
+async function ensureUserPreferencesLoaded() {
+    try {
+        const cached = localStorage.getItem("global_cache_equipment");
+        if (cached) {
+            return JSON.parse(cached);
+        }
+        if (window.AuthAPI && typeof window.AuthAPI.getCachedEquipment === "function") {
+            return await window.AuthAPI.getCachedEquipment();
+        }
+    } catch (e) {
+        console.error("[swipe.js] Ошибка загрузки настроек пользователя:", e);
+    }
+    return getUserPreferences();
+}
+
+/* 3. getQueue()
+ *
+- Получает очередь рецептов из sessionStorage.
+- Если данные отсутствуют или не удалось разобрать JSON,
+- возвращает пустой массив.
+ *
+- Очередь сохраняется только в рамках текущей вкладки
+- и сессии браузера.
+ */
+function getQueue() {
+    try {
+        return JSON.parse(sessionStorage.getItem(QUEUE_STORAGE_KEY)) || [];
+    } catch (_) {
+        return [];
+    }
+}
+
+/* 4. saveQueue(queue)
+ *
+- Сохраняет переданную очередь рецептов в sessionStorage.
+- Используется при добавлении и извлечении карточек из очереди.
+ */
+function saveQueue(queue) {
+    sessionStorage.setItem(QUEUE_STORAGE_KEY, JSON.stringify(queue));
+}
+
+function getViewedRecipeIds() {
+    try {
+        const ids = JSON.parse(sessionStorage.getItem(VIEWED_RECIPES_KEY));
+        return Array.isArray(ids) ? ids : [];
+    } catch (_) {
+        return [];
+    }
+}
+
+function saveViewedRecipeId(recipeId) {
+    if (recipeId === undefined || recipeId === null) return;
+
+    const ids = getViewedRecipeIds().filter(id => String(id) !== String(recipeId));
+    ids.push(recipeId);
+    sessionStorage.setItem(
+        VIEWED_RECIPES_KEY,
+        JSON.stringify(ids.slice(-MAX_EXCLUDED_RECIPE_IDS))
+    );
+}
+
+/*
+- Собирает массив ID (до 50 штук) для гостя:
+- последние показанные рецепты + рецепты в очереди + текущий рецепт на экране.
+ */
+function getGuestExcludedRecipeIds() {
+    const queueIds = getQueue()
+        .map(recipe => recipe?.recipe_id)
+        .filter(id => id !== undefined && id !== null);
+
+    const currentId = currentRecipe?.recipe_id;
+    const activeIds = [
+        ...queueIds,
+        ...(currentId !== undefined && currentId !== null ? [currentId] : [])
+    ];
+
+    const activeKeys = new Set(activeIds.map(String));
+    const historyIds = getViewedRecipeIds().filter(
+        id => id !== undefined && id !== null && !activeKeys.has(String(id))
+    );
+
+    const uniqueActive = [];
+    const seenActive = new Set();
+    for (const id of activeIds) {
+        const key = String(id);
+        if (!seenActive.has(key)) {
+            seenActive.add(key);
+            uniqueActive.push(id);
+        }
+    }
+
+    const historyLimit = Math.max(0, MAX_EXCLUDED_RECIPE_IDS - uniqueActive.length);
+    const result = [...historyIds.slice(-historyLimit), ...uniqueActive];
+    sessionStorage.setItem(VIEWED_RECIPES_KEY, JSON.stringify(result));
+    return result;
+}
+
+/* 5. loadHyperTextContent(hyperTextValue, containerEl) - мб будет изменена
+ *
+- Загружает и отображает инструкцию по приготовлению.
+ *
+- Поддерживает два варианта данных:
+- - обычный текст — выводится непосредственно в контейнер;
+- - ссылка на HTML-файл — загружает содержимое через fetch().
+ *
+- Если загрузить внешний файл не удалось, отображает сообщение
+- об ошибке.
+ */
+async function loadHyperTextContent(hyperTextValue, containerEl) {
+    return window.RecipeCard.loadHyperTextContent(hyperTextValue, containerEl);
+}
+
+async function loadCurrentRecipeHyperText() {
+    if (!currentRecipe) return;
+
+    const stepsContainer = document.getElementById("recipe-hyper-text");
+    if (!stepsContainer) return;
+
+    const recipeId = currentRecipe.recipe_id;
+    if (loadedHyperTextRecipeId === recipeId) return;
+    if (hyperTextLoadPromise) return hyperTextLoadPromise;
+
+    const valueToLoad = currentHyperTextValue;
+
+    hyperTextLoadPromise = (async () => {
+        await loadHyperTextContent(valueToLoad, stepsContainer);
+        if (currentRecipe?.recipe_id === recipeId) {
+            loadedHyperTextRecipeId = recipeId;
+        }
+    })();
+
+    try {
+        await hyperTextLoadPromise;
+    } finally {
+        hyperTextLoadPromise = null;
+    }
+}
+
+/*
+- 6. renderRecipe(recipe)
+ *
+- Отвечает за отображение карточки рецепта на странице.
+ *
+- Заполняет:
+- - название и описание;
+- - изображение;
+- - калорийность и время приготовления;
+- - вес и пищевую ценность;
+- - рейтинг в виде звёзд;
+- - необходимое кухонное оборудование;
+- - список ингредиентов;
+- - инструкцию по приготовлению.
+ *
+- Также проверяет наличие оборудования у пользователя
+- и визуально отмечает доступные и отсутствующие предметы.
+ *
+- Если вместо рецепта передан null, скрывает карточку
+- и кнопки реакций, показывая заглушку empty-state.
+ */
+async function renderRecipe(recipe) {
+    const cardEl = document.getElementById("recipe-card");
+    const emptyEl = document.getElementById("empty-state");
+    const controlsEl = document.getElementById("reaction-controls");
+
+    if (!recipe) {
+        currentRecipe = null;
+        if (cardEl) cardEl.style.display = "none";
+        if (controlsEl) controlsEl.style.display = "none";
+        if (emptyEl) emptyEl.style.display = "flex";
+        return;
+    }
+
+    currentRecipe = recipe;
+    saveViewedRecipeId(recipe.recipe_id);
+
+    currentHyperTextValue = recipe["hyper-text"] || recipe.hyper_text || "";
+    loadedHyperTextRecipeId = null;
+    hyperTextLoadPromise = null;
+
+    if (cardEl) cardEl.style.display = "flex";
+    if (controlsEl) controlsEl.style.display = "flex";
+    if (emptyEl) emptyEl.style.display = "none";
+
+    if (cardEl && window.RecipeCard && typeof window.RecipeCard.fill === "function") {
+        await window.RecipeCard.fill(cardEl, recipe, {
+            starSrc: "/swipe/star.svg",
+            loadHyperText: false,
+            hyperTextPlaceholder: "Нажмите «Посмотреть рецепт», чтобы загрузить инструкцию."
+        });
+    }
+
+    if (cardEl) {
+        cardEl.classList.remove("swipe-left", "swipe-right");
+
+        cardEl.style.transition = "";
+        cardEl.style.transform = "";
+        cardEl.style.opacity = "";
+    }
+}
+
+/* 7. fetchSingleRecipe()
+ *
+- Получает и возвращает следующий полный рецепт.
+ *
+- Последовательность работы:
+- 1. Отправляет запрос на /api/db/recipes/next.
+- 2. Получает recipe_id следующего рецепта.
+- 3. Запрашивает полный рецепт через /api/db/recipes/{id}.
+- 4. Возвращает полученный объект рецепта.
+ *
+- ОСОБЕННОСТЬ ОБРАБОТКИ 404:
+- - 404 от /recipes/next означает окончание ленты.
+-   Устанавливает noMoreRecipes = true.
+- - 404 от /recipes/{id} означает, что конкретный рецепт
+-   недоступен. Такой рецепт пропускается, после чего функция
+-   повторно запрашивает следующий ID через /recipes/next.
+ *
+- Таким образом, удаление отдельного рецепта не приводит
+- к преждевременному завершению ленты.
+ */
+async function fetchSingleRecipe() {
+    while (!noMoreRecipes) {
+        let nextRes;
+
+        // Получаем следующий ID рецепта
+        try {
+            const excludedRecipeIds = getGuestExcludedRecipeIds();
+            nextRes = await window.AuthAPI.getNextRecipeId(excludedRecipeIds);
+        } catch (error) {
+            error.recipeEndpoint = "next";
+
+            // Только 404 от /recipes/next означает конец ленты
+            if (error.status === 404) {
+                noMoreRecipes = true;
+                return null;
+            }
+
+            throw error;
+        }
+
+        // Поддержка ответа с пустым массивом рецептов
+        if (Array.isArray(nextRes?.recipes) && nextRes.recipes.length === 0) {
+            noMoreRecipes = true;
+            return null;
+        }
+
+        // Проверяем наличие ID
+        if (!nextRes || !nextRes.recipe_id) {
+            const error = new Error("Бэкенд не вернул recipe_id");
+            error.recipeEndpoint = "next";
+            throw error;
+        }
+
+        // Получаем полный рецепт по ID
+        try {
+            return await window.AuthAPI.getRecipeById(nextRes.recipe_id);
+        } catch (error) {
+            // 404 конкретного рецепта — пропускаем его
+            if (error.status === 404) {
+                console.warn(
+                    `[swipe.js] Рецепт ${nextRes.recipe_id} недоступен. Запрашиваем следующий.`
+                );
+
+                continue;
+            }
+
+            // Остальные ошибки передаём обработчику
+            error.recipeEndpoint = "recipe";
+            throw error;
+        }
+    }
+
+    return null;
+}
+
+/* 8. fillQueueInBackground()
+ *
+- Фоновое заполнение очереди рецептами.
+ *
+- Пока в очереди меньше MAX_QUEUE_SIZE рецептов,
+- функция вызывает fetchSingleRecipe() и добавляет
+- полученные рецепты в sessionStorage.
+ *
+- Не допускает одновременного запуска нескольких процессов
+- загрузки благодаря флагу isFetchingQueue.
+ *
+- Если backend подтвердил окончание ленты, заполнение
+- очереди прекращается.
+ */
+async function fillQueueInBackground() {
+    if (isFetchingQueue || noMoreRecipes) return;
+    isFetchingQueue = true;
+
+    try {
+        while (getQueue().length < MAX_QUEUE_SIZE && !noMoreRecipes) {
+            const recipe = await fetchSingleRecipe();
+            if (!recipe) break;
+
+            const queue = getQueue();
+            queue.push(recipe);
+            saveQueue(queue);
+        }
+    } catch (error) {
+        handleLoadError(error);
+    } finally {
+        isFetchingQueue = false;
+    }
+}
+
+/* 9. handleLoadError(error)
+ *
+- Централизованная обработка ошибок при загрузке рецептов.
+ *
+- Обрабатывает основные HTTP-статусы:
+- - 500 и 0 — техническая ошибка, показывает уведомление;
+- - 401 — предлагает авторизоваться и перенаправляет
+-   пользователя на страницу входа;
+- - 404 — завершает выдачу только в случае, если ошибка
+-   относится к endpoint /recipes/next.
+ *
+- 404 отдельного рецепта обрабатывается непосредственно
+- в fetchSingleRecipe() и не завершает ленту.
+ */
+function handleLoadError(error) {
+    if (error.status === 500 || error.status === 0) {
+        alert("Технические шоколадки, уже чиним! Попробуйте обновить страницу чуть позже.");
+
+    } else if (error.status === 401) {
+        alert("Вы не авторизованы. Пожалуйста, войдите в аккаунт!");
+        window.location.href = "/login/";
+
+    } else if (error.status === 404) {
+        // Конец ленты подтверждается только ответом
+        // 404 от /recipes/next
+        if (error.recipeEndpoint === "next") {
+            noMoreRecipes = true;
+
+            if (!currentRecipe && getQueue().length === 0) {
+                renderRecipe(null);
+            }
+        }
+
+        // 404 от /recipes/{id} здесь не завершает ленту:
+        // такой рецепт уже пропускается в fetchSingleRecipe()
+
+    } else {
+        console.error("[swipe.js] Ошибка загрузки рецепта:", error);
+    }
+}
+
+/* 10. showNextFromQueue()
+ *
+- Переключает пользователя на следующую карточку.
+ *
+- Порядок работы:
+- 1. Если очередь не пуста — извлекает первый рецепт
+-    и отображает его.
+- 2. После отображения запускает фоновое пополнение очереди.
+- 3. Если очередь пуста, но рецепты ещё могут быть,
+-    запрашивает следующий рецепт напрямую.
+- 4. Если очередь пуста и backend подтвердил окончание ленты,
+-    отображает empty-state.
+ */
+async function showNextFromQueue() {
+    const queue = getQueue();
+
+    if (queue.length > 0) {
+        const nextCard = queue.shift();
+        saveQueue(queue);
+        await renderRecipe(nextCard);
+        fillQueueInBackground();
+    } else if (!noMoreRecipes) {
+        try {
+            const freshCard = await fetchSingleRecipe();
+            await renderRecipe(freshCard);
+            fillQueueInBackground();
+        } catch (err) {
+            handleLoadError(err);
+        }
+    } else {
+        currentRecipe = null;
+        renderRecipe(null);
+    }
+}
+
+/* 11. handleReaction(action)
+ *
+- Обрабатывает реакцию пользователя на текущий рецепт.
+ *
+- Поддерживаемые действия:
+- - like — лайк;
+- - dislike — дизлайк;
+- - favorite — добавление в избранное.
+ *
+- Передаёт реакцию в AuthAPI.sendRecipeReaction().
+- Для добавления в избранное требуется авторизация.
+ *
+- После успешной обработки реакции запускает анимацию
+- карточки и через небольшую задержку переключает
+- пользователя на следующий рецепт.
+ */
+async function handleReaction(action) {
+    if (!currentRecipe || isReacting) return;
+
+    if (
+        action === "favorite" &&
+        (!window.AuthAPI || !window.AuthAPI.isAuthenticated())
+    ) {
+        const goLogin = confirm(
+            "Добавление в избранное доступно только авторизованным пользователям. Перейти на страницу входа?"
+        );
+
+        if (goLogin) {
+            window.location.href = "/login/";
+        }
+
+        return;
+    }
+
+    isReacting = true;
+
+    const reactedRecipeId = currentRecipe.recipe_id;
+    const cardEl = document.getElementById("recipe-card");
+
+    try {
+        await window.AuthAPI.sendRecipeReaction(reactedRecipeId, action);
+    } catch (error) {
+        if (error.status === 401) {
+            if (confirm("Вы не авторизованы! Хотите перейти на страницу входа?")) {
+                window.location.href = "/login/";
+            }
+
+            isReacting = false;
+            return;
+        }
+
+        if (error.status === 404 && action === "favorite") {
+            alert("Этот рецепт больше недоступен.");
+        } else if (error.status === 500 || error.status === 0) {
+            alert("Технические шоколадки, уже чиним!");
+            isReacting = false;
+            return;
+        }
+    }
+
+    if (!cardEl) {
+        isReacting = false;
+        await showNextFromQueue();
+        return;
+    }
+
+    const direction = action === "dislike" ? -1 : 1;
+    const distance = window.innerWidth + cardEl.offsetWidth;
+
+    cardEl.style.transition = "transform 0.35s ease, opacity 0.35s ease";
+    cardEl.style.transform =
+        `translate3d(${direction * distance}px, 0, 0) rotate(${direction * 15}deg)`;
+    cardEl.style.opacity = "0";
+
+    let finished = false;
+
+    const finishAnimation = async () => {
+        if (finished) return;
+        finished = true;
+
+        cardEl.removeEventListener("transitionend", onTransitionEnd);
+
+        await showNextFromQueue();
+        isReacting = false;
+    };
+
+    const onTransitionEnd = (event) => {
+        if (event.target === cardEl && event.propertyName === "transform") {
+            finishAnimation();
+        }
+    };
+
+    cardEl.addEventListener("transitionend", onTransitionEnd);
+
+    // Запасной вариант, если transitionend не сработает
+    setTimeout(finishAnimation, 500);
+}
+
+/* 12. initTouchSwipe()
+ *
+- Подключает обработку свайпов на карточке рецепта.
+ *
+- Определяет горизонтальное перемещение пальца:
+- - движение вправо более чем на 60 пикселей — like;
+- - движение влево более чем на 60 пикселей — dislike.
+ *
+- Для обработки используется touchstart и touchend.
+ */
+
+function initTouchSwipe() {
+    const cardEl = document.getElementById("recipe-card");
+    if (!cardEl) return;
+
+    let startX = 0;
+    let currentX = 0;
+    let isDragging = false;
+    let activePointerId = null;
+
+    cardEl.style.touchAction = "pan-y";
+
+    function resetCardInstantly() {
+        cardEl.style.transition = "none";
+        cardEl.style.transform = "";
+        cardEl.style.opacity = "";
+
+        void cardEl.offsetWidth;
+
+        cardEl.style.transition = "";
+    }
+
+    cardEl.addEventListener("pointerdown", (event) => {
+        // Не запускаем свайп, если рецепт развернут (есть класс .expanded)
+        if (cardEl.classList.contains("expanded")) {
+            return;
+        }
+
+        // Не запускаем свайп при нажатии на кнопки и другие элементы управления
+        if (event.target.closest(
+            "button, a, input, textarea, select, #toggle-recipe-btn"
+        )) {
+            return;
+        }
+
+        if (isReacting || !currentRecipe) return;
+        if (event.button !== 0) return;
+
+        startX = event.clientX;
+        currentX = startX;
+        isDragging = true;
+        activePointerId = event.pointerId;
+
+        cardEl.style.transition = "none";
+        cardEl.setPointerCapture(event.pointerId);
+    });
+
+    cardEl.addEventListener("pointermove", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+        if (isReacting || cardEl.classList.contains("expanded")) return;
+
+        currentX = event.clientX;
+
+        const diffX = currentX - startX;
+        const rotation = diffX * 0.04;
+
+        cardEl.style.transform =
+            `translate3d(${diffX}px, 0, 0) rotate(${rotation}deg)`;
+    });
+
+    cardEl.addEventListener("pointerup", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+
+        const diffX = event.clientX - startX;
+
+        isDragging = false;
+        activePointerId = null;
+
+        const swipeThreshold = Math.max(90, cardEl.offsetWidth * 0.22);
+
+        if (Math.abs(diffX) >= swipeThreshold) {
+            handleReaction(diffX > 0 ? "like" : "dislike");
+        } else {
+            resetCardInstantly();
+        }
+    });
+
+    cardEl.addEventListener("pointercancel", (event) => {
+        if (!isDragging || event.pointerId !== activePointerId) return;
+
+        isDragging = false;
+        activePointerId = null;
+
+        resetCardInstantly();
+    });
+}
+
+
+/* 13. Обработчик DOMContentLoaded (инициализация ленты)
+ *
+- Выполняется после загрузки HTML-документа.
+ *
+- Выполняет первоначальную настройку:
+- - определяет статус авторизации;
+- - настраивает кнопку избранного;
+- - подключает обработчики кнопок like и dislike;
+- - инициализирует свайпы;
+- - загружает настройки пользователя (из кеша);
+- - отображает первую карточку из очереди или запрашивает
+-   первый рецепт с backend;
+- - запускает фоновое заполнение очереди.
+ */
+document.addEventListener("DOMContentLoaded", async () => {
+    const favBtn = document.getElementById("btn-favorite");
+    const isAuth = window.AuthAPI && window.AuthAPI.isAuthenticated();
+
+    if (favBtn) {
+        if (!isAuth) {
+            favBtn.disabled = true;
+            favBtn.style.opacity = "0.4";
+            favBtn.style.cursor = "not-allowed";
+            favBtn.title = "Войдите в аккаунт, чтобы добавлять в избранное";
+        } else {
+            favBtn.disabled = false;
+            favBtn.addEventListener("click", () => handleReaction("favorite"));
+        }
+    }
+
+    document.getElementById("btn-dislike")?.addEventListener("click", () => handleReaction("dislike"));
+    document.getElementById("btn-like")?.addEventListener("click", () => handleReaction("like"));
+
+    initTouchSwipe();
+    await ensureUserPreferencesLoaded();
+
+    const queue = getQueue();
+    if (queue.length > 0) {
+        const firstCard = queue.shift();
+        saveQueue(queue);
+        await renderRecipe(firstCard);
+        fillQueueInBackground();
+    } else {
+        try {
+            const firstRecipe = await fetchSingleRecipe();
+            await renderRecipe(firstRecipe);
+            fillQueueInBackground();
+        } catch (error) {
+            handleLoadError(error);
+        }
+    }
+});
+
+/* 14. Обработчик DOMContentLoaded (раскрытие карточки)
+ *
+- Подключает кнопку раскрытия рецепта.
+ *
+- При нажатии переключает класс expanded у карточки
+- и меняет текст кнопки:
+- - «Посмотреть рецепт»;
+- - «Назад».
+ *
+- При сворачивании карточки прокручивает страницу
+- к началу.
+ */
+document.addEventListener("DOMContentLoaded", () => {
+    const toggleBtn = document.getElementById("toggle-recipe-btn");
+    const btnText = document.getElementById("toggle-btn-text");
+    const cardEl = document.getElementById("recipe-card");
+
+    if (!cardEl) return;
+
+    function withTimeout(promise, ms = 1200) {
+        return Promise.race([
+            promise,
+            new Promise((resolve) => setTimeout(resolve, ms))
+        ]);
+    }
+
+    function waitForImagesInContainer(containerEl) {
+        const imgs = Array.from(containerEl?.querySelectorAll("img") || []);
+        if (imgs.length === 0) return Promise.resolve();
+
+        const loadPromises = imgs.map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+                const done = () => resolve();
+                img.addEventListener("load", done, { once: true });
+                img.addEventListener("error", done, { once: true });
+            });
+        });
+
+        return withTimeout(Promise.all(loadPromises), 1200);
+    }
+
+    if (toggleBtn) {
+        toggleBtn.addEventListener("click", async (e) => {
+            e.preventDefault();
+            if (toggleBtn.dataset.loading === "true") return;
+
+            const isCurrentlyExpanded = cardEl.classList.contains("expanded");
+
+            if (!isCurrentlyExpanded) {
+                toggleBtn.dataset.loading = "true";
+                toggleBtn.disabled = true;
+                if (btnText) btnText.innerText = "Загрузка...";
+
+                try {
+                    if (typeof loadCurrentRecipeHyperText === "function") {
+                        await withTimeout(loadCurrentRecipeHyperText(), 1500);
+                    }
+                    const stepsContainer = document.getElementById("recipe-hyper-text");
+                    await waitForImagesInContainer(stepsContainer);
+                } catch (err) {
+                    console.error("[swipe.js] Ошибка при раскрытии рецепта:", err);
+                } finally {
+                    toggleBtn.dataset.loading = "false";
+                    toggleBtn.disabled = false;
+                    cardEl.classList.add("expanded");
+                    if (btnText) btnText.innerText = "Назад";
+                }
+            } else {
+                cardEl.classList.remove("expanded");
+                if (btnText) btnText.innerText = "Посмотреть рецепт";
+                window.scrollTo({
+                    top: 0,
+                    behavior: "smooth"
+                });
+            }
+        });
+    }
+});

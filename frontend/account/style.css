@@ -1,0 +1,151 @@
+@import url('/common/base.css');
+
+/* Основной контейнер */
+.div {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* =========================================================
+   ЦЕНТРАЛЬНЫЙ КРУГ (Адаптивный)
+   ========================================================= */
+.frame-15 {
+  width: clamp(80px, 18vh, 150px); 
+  aspect-ratio: 1 / 1; 
+  position: relative;
+  margin: clamp(10px, 3vh, 30px) auto clamp(10px, 1.5vh, 20px) auto; 
+  flex-shrink: 0; 
+  overflow: hidden; /* Чтобы картинка не вылезала за края круга */
+}
+
+.ellipse-3 {
+  background: #d9d9d9;
+  border-radius: 50%;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Картинка заполняет круг, не искажаясь */
+  display: block;
+}
+
+/* Буква внутри большого круга (для тех, у кого нет аватарки) */
+.big-avatar-letter {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #ffffff; 
+  font-family: var(--main-font);
+  font-size: clamp(32px, 8vh, 64px); /* Большой шрифт для большого круга */
+  font-weight: 700;
+  pointer-events: none;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   ИМЯ ПОЛЬЗОВАТЕЛЯ И ВХОД/ВЫЙТИ
+   ========================================================= */
+
+/* Имя */
+.div5 {
+  text-align: center;
+  font-family: var(--main-font);
+  font-size: clamp(18px, 2.5vh, 24px); 
+  font-weight: 700;
+  color: #000000;
+  margin-bottom: clamp(8px, 1.5vh, 15px);
+  flex-shrink: 0;
+}
+
+/* Ссылки Вход/Регистрация/Выйти */
+.div6 {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: clamp(15px, 3vh, 30px); 
+  flex-shrink: 0;
+}
+
+.div7, .div9, .logout-link {
+  display: flex;
+  align-items: center;
+}
+
+.div7 .div4, .div9 .div4, .logout-link .div4 {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: clamp(16px, 2.5vh, 20px);
+  font-weight: 700;
+  position: relative;
+  text-align: center;
+}
+
+.div8 {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: clamp(16px, 2.5vh, 20px);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* =========================================================
+   БЛОК С КНОПКАМИ-ВКЛАДКАМИ
+   ========================================================= */
+.div10 {
+  flex: 1; 
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 328px;
+  margin: 0 auto;
+  padding: 0 clamp(10px, 3vw, 14px) clamp(10px, 2vh, 20px) clamp(10px, 3vw, 14px);
+  gap: clamp(4px, 1vh, 10px); 
+}
+
+/* Кнопки */
+.rectangle-6, .rectangle-7, .rectangle-8, .rectangle-9,
+.rectangle-10, .rectangle-11, .rectangle-12, .rectangle-13 {
+  background: var(--primary-color);
+  border-radius: 12px;
+  flex: 1; 
+  min-height: 30px; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  transition: transform 0.1s ease, opacity 0.2s ease;
+  box-shadow: 0px 2px 8px rgba(120, 27, 27, 0.2);
+}
+
+.rectangle-6:hover, .rectangle-7:hover, .rectangle-8:hover, .rectangle-9:hover,
+.rectangle-10:hover, .rectangle-11:hover, .rectangle-12:hover, .rectangle-13:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+/* Текст внутри кнопок */
+.tab-text {
+  color: #ffffff;
+  font-family: var(--main-font);
+  font-size: clamp(13px, 2vh, 16px); 
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Заблокированные кнопки */
+.tab-link.is-locked {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+  filter: grayscale(30%);
+}

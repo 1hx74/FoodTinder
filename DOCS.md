@@ -1,3 +1,29 @@
+# FoodTinder
+
+## Запуск
+
+В корне репозитория (нужны файлы `.env` у сервисов и `backend/auth/secrets/jwt_private.pem`):
+
+```bash
+docker compose up -d --build
+```
+
+Сайт откроется на порту 80:
+
+- локально: http://localhost/
+- на сервере: `http://<IP или домен>/` (тот же адрес, что в `PUBLIC_BASE_URL` корневого `.env`)
+
+`/` сразу открывает свайпы (`/swipe/`). Другие страницы — `/login/`, `/planner/`, `/account/` и т.д. Папка `frontend/home/` в репозитории есть, но сайт её не отдаёт: `/home/` отвечает 301 на свайпы.
+
+Фронт отдаёт контейнер `ft-nginx`: папка `frontend/` монтируется в `/usr/share/nginx/html`.
+Общие ассеты лежат в `frontend/common/` (`base.css` / `vars.css`, `api.js`, `auth-guard.js`, `recipe-card.css`, `recipe-card.js`).
+`frontend/common/api.js` ходит к API относительно текущего хоста (`/api/...`), поэтому IP сервера в JS прописывать не нужно.
+Не открывайте `index.html` как `file://` — запросы к API не уйдут.
+
+`PUBLIC_BASE_URL` в корневом `.env` нужен бэку: из него собираются абсолютные ссылки `avatar_url`, `image_url` и `hyper-text`.
+На CORS фронта он не влияет (сайт и API — один origin на порту 80; на бэке CORS и так `*`).
+Письма с кодами подтверждения почты ссылок на фронт не содержат.
+
 # Swagger (/docs) сервисов
 
 Адреса для локального запуска (`docker compose up --build -d`).
@@ -22,6 +48,7 @@ MinIO (S3 для fileloud) и Postgres наружу не опубликован�
 (шаблон в `.env.example`). Можно IP или домен: `http://203.0.113.10`, `https://foodtinder.ru`.
 От него собираются ссылки `avatar_url`, `image_url`, `hyper-text`, которые отдаёт бэк
 (media — при загрузке, recipes — при первом сиде демо-рецептов).
+Фронт этот адрес не хардкодит: запросы идут на `/api/...` того же хоста, с которого открыт сайт.
 После изменения: `docker compose up -d --force-recreate media recipes`.
 
 ## Демо-рецепты

@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/achievements/style.css">
+  <title>Достижения</title>
+  <!-- Скрываем страницу до проверки авторизации -->
+  <style>
+    html.auth-checking body {
+      visibility: hidden;
+    }
+  </style>
+  <!-- Проверка авторизации -->
+  <script>
+    document.documentElement.classList.add("auth-checking");
+  </script>
+  <script src="/common/api.js" defer></script>
+  <script src="/common/auth-guard.js" defer></script>
+</head>
+<body>
+  <div class="div">
+    
+    <!-- ГЛОБАЛЬНАЯ ШАПКА -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="/swipe/" class="foodtinder2">FOODTINDER</a>
+      </div>
+      <div class="frame-4">
+        <div class="div3" id="auth-container">
+           <a href="/login/" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="/registration/" class="div4">Регистрация</a>
+        </div>
+        <a href="/account/" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
+          <img class="ellipse-2" src="/common/default-avatar.svg" alt="Профиль" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+          <img id="header-avatar-img" src="" alt="Аватар" style="display: none; position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />
+          <div class="div2" id="profile-letter" style="position: relative; z-index: 1;">Г</div>
+        </a>
+      </div>
+    </header>
+
+    <!-- КОНТЕНТ -->
+    <main class="main-content">
+      <h1 class="page-title">ДОСТИЖЕНИЯ</h1>
+      
+      <div class="achievements-grid" id="achievements-container">
+          <div style="text-align: center; width: 100%; color: gray; grid-column: span 2;">Загрузка...</div>
+      </div>
+    </main>
+
+  </div>
+  
+  <script src="/common/api.js"></script>
+  <script src="/achievements/achievements.js"></script>
+</body>
+</html>

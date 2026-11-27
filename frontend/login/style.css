@@ -1,0 +1,138 @@
+@import url('/common/base.css');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Основной контейнер */
+.div {
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Рабочая область: форма по центру */
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 24px;
+  width: 100%;
+}
+
+.form-title {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 26px;
+  font-weight: 700;
+  margin-bottom: 4vh;
+}
+
+.form-container {
+  width: 100%;
+  max-width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 2.5vh;
+}
+
+.input-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.input-label {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 14px;
+  font-weight: 700;
+  padding-left: 4px;
+}
+
+.custom-input {
+  width: 100%;
+  height: clamp(44px, 6vh, 55px);
+  background: #ffffff;
+  border: 1px solid #000000;
+  border-radius: 8px;
+  padding: 0 16px;
+  font-family: var(--main-font);
+  font-size: 14px;
+  color: #000000;
+  outline: none;
+}
+
+.custom-input:focus {
+  border-color: var(--brand-text);
+  border-width: 2px;
+}
+
+.submit-btn {
+  width: 100%;
+  height: clamp(44px, 6vh, 55px);
+  background: var(--primary-color);
+  border-radius: 12px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 1.5vh;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.submit-btn:hover {
+  opacity: 0.9;
+}
+
+.submit-btn .div7 {
+  color: #ffffff;
+  font-family: var(--main-font);
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.form-links {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-top: 1.5vh;
+}
+
+.form-link {
+  color: #000000;
+  font-family: var(--main-font);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-height: 650px) {
+  .form-title { font-size: 22px; margin-bottom: 15px; }
+  .form-container { gap: 12px; }
+  .custom-input, .submit-btn { height: 44px; }
+}
+
+/* Для очень низких экранов (например, телефоны в альбомной ориентации) */
+@media (max-height: 550px) {
+  .form-title { 
+    font-size: 20px; 
+    margin-bottom: 10px; 
+  }
+  .form-container { 
+    gap: 10px; 
+  }
+  .custom-input, .submit-btn { 
+    height: 40px; 
+  }
+  .form-links { 
+    margin-top: 10px; 
+    font-size: 12px;
+  }
+}

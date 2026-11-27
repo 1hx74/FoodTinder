@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="/common/base.css" />
+    <link rel="stylesheet" href="/favorites/style.css" />
+
+    <style>
+      a, button, input, select, h1, h2, h3, h4, h5, * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        border: none;
+        text-decoration: none;
+        background: none;
+        -webkit-font-smoothing: antialiased;
+      }
+      menu, ol, ul { list-style-type: none; margin: 0; padding: 0; }
+    </style>
+    <title>FOODTINDER — Избранное</title>
+    <!-- Скрываем страницу до проверки авторизации -->
+  <style>
+    html.auth-checking body {
+      visibility: hidden;
+    }
+  </style>
+  <!-- Проверка авторизации -->
+  <script>
+    document.documentElement.classList.add("auth-checking");
+  </script>
+  <script src="/common/api.js" defer></script>
+  <script src="/common/auth-guard.js" defer></script>
+  </head>
+  
+  <body>
+    <div class="div">
+      <!-- 1. АДАПТИВНАЯ ШАПКА -->
+      <header class="header-wrapper">
+        <div class="foodtinder">
+          <a href="/swipe/" class="foodtinder2">FOODTINDER</a>
+        </div>
+        <div class="frame-4">
+          <a href="/account/" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
+            <div class="ellipse-2" style="background: var(--brand-text); border-radius: 50%;"></div>
+            <img id="header-avatar-img" class="header-avatar-img" src="" alt="" style="display: none;">
+            <span class="div2" id="profile-letter">Г</span>
+          </a>
+          <div class="div3" id="auth-container">
+            <a href="/login/" class="div4">Вход</a>
+            <span class="slash-separator">/</span>
+            <a href="/registration/" class="div4">Регистрация</a>
+          </div>
+        </div>
+      </header>
+
+      <!-- 2. ОСНОВНОЙ КОНТЕНТ -->
+      <main class="main-content">
+        <h1 class="page-title">Избранное</h1>
+
+        <!-- Контейнер карточек с разделением строго 15px -->
+        <div id="favorites-list" class="favorites-list"></div>
+
+        <!-- Индикатор подгрузки следующей пачки по 5 рецептов -->
+        <div id="loading-sentinel" class="loading-sentinel" style="display: none;">
+          Загрузка рецептов...
+        </div>
+
+        <!-- Заглушка, если в избранном пусто -->
+        <div id="empty-state" class="empty-state" style="display: none;">
+          <div class="empty-title">В избранном пока пусто</div>
+          <div class="empty-subtitle">
+            Добавляйте понравившиеся блюда на странице свайпов, чтобы не потерять их.
+          </div>
+          <a href="/swipe/" class="div5" style="margin-top: 8px;">
+            <span class="div6">Перейти к рецептам</span>
+          </a>
+        </div>
+      </main>
+    </div>
+
+    <script src="/common/api.js"></script>
+    <script src="/favorites/favorites.js"></script>
+  </body>
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/account/style.css">
+
+  <style>
+   a, button, input, select, h1, h2, h3, h4, h5, * {
+       box-sizing: border-box;
+       margin: 0;
+       padding: 0;
+       border: none;
+       text-decoration: none;
+       background: none;
+       -webkit-font-smoothing: antialiased;
+   }
+   menu, ol, ul {
+       list-style-type: none;
+       margin: 0;
+       padding: 0;
+   }
+  </style>
+  <title>FOODTINDER</title>
+</head>
+<body>
+  <div class="div">
+    
+    <!-- ГЛОБАЛЬНАЯ ШАПКА -->
+    <header class="header-wrapper">
+      <div class="foodtinder">
+        <a href="/swipe/" class="foodtinder2">FOODTINDER</a>
+      </div>
+      
+      <div class="frame-4">
+        <div class="div3" id="auth-container">
+           <a href="/login/" class="div4">Вход</a>
+           <span class="slash-separator">/</span>
+           <a href="/registration/" class="div4">Регистрация</a>
+        </div>
+        
+        <!-- Аватар в шапке -->
+        <a href="/account/" class="frame-5">
+          <img class="ellipse-2" src="/common/default-avatar.svg" alt="Профиль" />
+          <div class="div2" id="profile-letter">Г</div>
+        </a>
+      </div>
+    </header>
+
+    <!-- ЦЕНТРАЛЬНЫЙ БОЛЬШОЙ КРУГ -->
+    <div class="frame-15">
+      <!-- Добавлен id="big-avatar" для подгрузки картинки через JS -->
+      <img class="ellipse-3" id="big-avatar" src="/common/default-avatar.svg" alt="Аватар" />
+      <!-- Добавлен div для буквы в большом круге -->
+      <div class="big-avatar-letter" id="big-avatar-letter">Г</div>
+    </div>
+
+    <!-- ИМЯ И ВХОД/ВЫЙТИ -->
+    <div class="div5" id="profile-name">Гость</div>
+    
+    <div class="div6" id="auth-links">
+      <a href="/login/" class="div7">
+        <div class="div4">Вход</div>
+      </a>
+      <div class="div8">/</div>
+      <a href="/registration/" class="div9">
+        <div class="div4">Регистрация</div>
+      </a>
+    </div>
+
+    <!-- БЛОК С КНОПКАМИ-ВКЛАДКАМИ -->
+    <div class="div10">
+      <a href="/filter/" class="tab-link rectangle-6"><span class="tab-text">Фильтр</span></a>
+      <a href="/liked/" class="tab-link rectangle-7"><span class="tab-text">Понравившиеся рецепты</span></a>
+      <a href="/disliked/" class="tab-link rectangle-8"><span class="tab-text">Непонравившиеся рецепты</span></a>
+      <a href="/profile/" class="tab-link rectangle-9"><span class="tab-text">Основная информация</span></a>
+      <a href="/favorites/" class="tab-link rectangle-10"><span class="tab-text">Избранное</span></a>
+      
+      <a href="/achievements/" class="tab-link rectangle-13"><span class="tab-text">Достижения</span></a>
+
+      <a href="/planner/" class="tab-link rectangle-11"><span class="tab-text">Планировщик недели</span></a>
+      <a href="/shopping-list/" class="tab-link rectangle-12"><span class="tab-text">Список покупок</span></a>
+    </div>
+
+  </div>
+  
+  <script src="/common/api.js"></script>
+  <script src="/account/account.js"></script>
+</body>
+</html>

@@ -4,8 +4,8 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link rel="stylesheet" href="../vars.css" />
-    <link rel="stylesheet" href="./filter.css" />
+    <link rel="stylesheet" href="/common/base.css" />
+    <link rel="stylesheet" href="/filter/filter.css" />
     <style>
       a, button, input, select, h1, h2, h3, h4, h5, * {
         box-sizing: border-box;
@@ -26,18 +26,18 @@
       <!-- 1. АДАПТИВНАЯ ГЛОБАЛЬНАЯ ШАПКА -->
       <header class="header-wrapper">
         <div class="foodtinder">
-          <a href="../glavnaya/index.html" class="foodtinder2">FOODTINDER</a>
+          <a href="/swipe/" class="foodtinder2">FOODTINDER</a>
         </div>
         <div class="frame-4">
-          <a href="../katalog_vkladok/index.html" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
+          <a href="/account/" class="frame-5" style="position: relative; width: 36px; height: 36px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items: center; justify-content: center;">
             <div class="ellipse-2" style="background: var(--brand-text); border-radius: 50%;"></div>
             <img id="header-avatar-img" class="header-avatar-img" src="" alt="" style="display: none;">
             <span class="div2" id="profile-letter">Г</span>
           </a>
           <div class="div3" id="auth-container">
-            <a href="../vxod/index.html" class="div4">Вход</a>
+            <a href="/login/" class="div4">Вход</a>
             <span class="slash-separator">/</span>
-            <a href="../registration/index.html" class="div4">Регистрация</a>
+            <a href="/registration/" class="div4">Регистрация</a>
           </div>
         </div>
       </header>
@@ -194,7 +194,7 @@
       </main>
     </div>
 
-    <script src="../api.js"></script>
-    <script src="./filter.js"></script>
+    <script src="/common/api.js"></script>
+    <script src="/filter/filter.js"></script>
   </body>
 </html>
