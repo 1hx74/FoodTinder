@@ -780,7 +780,7 @@ document.addEventListener("DOMContentLoaded", () => {
         const input = document.createElement("input");
         input.type = "search";
         input.className = "recipe-search-input";
-        input.placeholder = "Найти рецепт в избранном";
+        input.placeholder = "Добавить рецепт из избраного";
         input.setAttribute("aria-label", "Поиск рецепта в избранном");
         input.autocomplete = "off";
 
