@@ -143,7 +143,6 @@ async function getRecipeDetailsCached(id) {
     return pending;
 }
 
-
 function normalizePlannedRecipe(raw) {
     if (!raw || typeof raw !== "object") return null;
     const kalories = Number(raw.kalories ?? raw.calories ?? 0) || 0;
@@ -181,89 +180,6 @@ function portionOf(recipe) {
 
 function formatKbjuLine(totals) {
     return `${Math.round(totals.calories)} ккал · Б ${Math.round(totals.protein)} · Ж ${Math.round(totals.fat)} · У ${Math.round(totals.carbs)}`;
-}
-
-
-const SHOPPING_CHECKED_KEY = "foodtinder_shopping_checked_v1";
-const UNIT_LABELS = { gramm: "г", milliliter: "мл", item: "шт" };
-
-function normalizeIngredientUnit(quantity) {
-    const q = String(quantity || "").trim().toLowerCase();
-    if (q === "gramm" || q === "g" || q === "гр" || q === "г") return "gramm";
-    if (q === "milliliter" || q === "ml" || q === "мл") return "milliliter";
-    if (q === "item" || q === "шт" || q === "шт." || q === "pcs") return "item";
-    return q;
-}
-
-function unitLabel(unit) {
-    return UNIT_LABELS[unit] || unit || "";
-}
-
-function formatAmount(value) {
-    if (!Number.isFinite(value)) return "";
-    const abs = Math.abs(value);
-    let rounded;
-    if (abs >= 100) rounded = Math.round(value);
-    else if (abs >= 10) rounded = Math.round(value * 10) / 10;
-    else rounded = Math.round(value * 100) / 100;
-    if (Number.isInteger(rounded)) return String(rounded);
-    return String(parseFloat(rounded.toFixed(2)));
-}
-
-function formatShoppingLine(item) {
-    if (!item) return "";
-    if (item.qualitative || !Number.isFinite(item.amount)) {
-        return `• ${item.name} — по вкусу`;
-    }
-    const amount = formatAmount(item.amount);
-    const unit = unitLabel(item.unit);
-    return unit ? `• ${item.name} — ${amount} ${unit}` : `• ${item.name} — ${amount}`;
-}
-
-function loadShoppingChecked() {
-    try {
-        const raw = JSON.parse(localStorage.getItem(SHOPPING_CHECKED_KEY) || "[]");
-        return new Set(Array.isArray(raw) ? raw.map(String) : []);
-    } catch (_) {
-        return new Set();
-    }
-}
-
-function saveShoppingChecked(keys) {
-    localStorage.setItem(SHOPPING_CHECKED_KEY, JSON.stringify([...keys]));
-}
-
-function aggregateShoppingItems(entries) {
-    const numeric = new Map();
-    const qualitative = new Map();
-    (entries || []).forEach((entry) => {
-        const details = entry && entry.details;
-        if (!details) return;
-        const finalWeight = Math.max(1, Number(details.final_weight ?? entry.final_weight) || 100);
-        const planned = Number(entry.weight) > 0 ? Number(entry.weight) : finalWeight;
-        const scale = planned / finalWeight;
-        const ingredients = Array.isArray(details.ingredients) ? details.ingredients : [];
-        ingredients.forEach((ing) => {
-            const name = String(ing && (ing.name || ing.title) || "").trim();
-            if (!name) return;
-            const unit = normalizeIngredientUnit(ing.quantity ?? ing.unit);
-            const rawAmount = ing.count ?? ing.amount;
-            const amount = Number(rawAmount);
-            const nameKey = name.toLocaleLowerCase("ru-RU");
-            if (rawAmount !== undefined && rawAmount !== null && rawAmount !== "" && Number.isFinite(amount) && amount > 0) {
-                const key = `${nameKey}|${unit}`;
-                const prev = numeric.get(key);
-                if (prev) prev.amount += amount * scale;
-                else numeric.set(key, { key, name, unit, amount: amount * scale });
-            } else {
-                const key = `${nameKey}|taste`;
-                if (!qualitative.has(key)) qualitative.set(key, { key, name, qualitative: true });
-            }
-        });
-    });
-    const items = [...numeric.values(), ...qualitative.values()];
-    items.sort((a, b) => a.name.localeCompare(b.name, "ru", { sensitivity: "base" }));
-    return items;
 }
 
 function recipeFromApi(data) {
@@ -434,7 +350,6 @@ document.addEventListener("DOMContentLoaded", () => {
         return Boolean(norm);
     }
 
-
     let pageScrollY = 0;
     let pageScrollLocked = false;
 
@@ -563,7 +478,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const daysListEl = document.getElementById("days-list");
     const addDayBtn = document.getElementById("add-day-btn");
     const clearWeekBtn = document.getElementById("clear-week-btn");
-    const shoppingListBtn = document.getElementById("shopping-list-btn");
 
     if (!daysListEl) return;
 
@@ -891,7 +805,6 @@ document.addEventListener("DOMContentLoaded", () => {
             const key = searchKey(query);
             if (showCachedOrExisting(key)) return;
             const seq = ++requestSeq;
-            // Не чистим уже открытый список — оставляем его, пока не придут новые результаты.
             if (results.hidden || !results.childElementCount) {
                 showStatus("Ищем…");
             }
@@ -941,8 +854,6 @@ document.addEventListener("DOMContentLoaded", () => {
         };
         input.addEventListener("click", (e) => {
             e.stopPropagation();
-            // Клик по уже сфокусированному полю (после закрытия снаружи) не даёт focus,
-            // поэтому открываем список и отсюда — без повторного запроса, если кэш есть.
             openSearchIfNeeded();
         });
         input.addEventListener("focus", openSearchIfNeeded);
@@ -986,7 +897,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     function buildDayElement(dayData, index, animateEnter = false) {
-
         const card = document.createElement("div");
         card.className = `day-card${dayData.open ? " open" : ""}${animateEnter ? " is-entering" : ""}`;
         card.dataset.dayId = dayData.id;
@@ -1312,245 +1222,12 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 
-    const shoppingModal = document.getElementById("shopping-modal");
-    const shoppingBody = document.getElementById("shopping-list-body");
-    const shoppingActions = document.getElementById("shopping-list-actions");
-    const shoppingShareBtn = document.getElementById("shopping-share-btn");
-    const shoppingCopyBtn = document.getElementById("shopping-copy-btn");
-    let shoppingItems = [];
-    let shoppingCopyTimer = null;
-
-    function applyShoppingOverlayOpen() {
-        if (!shoppingModal) return;
-        shoppingModal.classList.add("is-open");
-        shoppingModal.setAttribute("aria-hidden", "false");
-        shoppingModal.style.cssText = [
-            "position: fixed",
-            "inset: 0",
-            "width: 100vw",
-            "height: 100vh",
-            "background-color: rgba(0, 0, 0, 0.5)",
-            "display: flex",
-            "align-items: center",
-            "justify-content: center",
-            "padding: 20px",
-            "z-index: 99999"
-        ].join(" !important; ") + " !important;";
-        const card = shoppingModal.querySelector(".shopping-modal");
-        if (card) {
-            card.style.cssText = [
-                "background-color: #ffffff",
-                "border-radius: 12px",
-                "padding: 16px",
-                "width: 100%",
-                "max-width: 352px",
-                "max-height: min(88vh, 640px)",
-                "display: flex",
-                "flex-direction: column",
-                "gap: 12px",
-                "box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25)",
-                "position: relative",
-                "z-index: 100000"
-            ].join(" !important; ") + " !important;";
-        }
-        lockPageScroll();
-    }
-
-    function closeShoppingModal() {
-        if (!shoppingModal) return;
-        shoppingModal.classList.remove("is-open");
-        shoppingModal.setAttribute("aria-hidden", "true");
-        shoppingModal.style.cssText = "display: none !important;";
-        if (shoppingCopyBtn) shoppingCopyBtn.textContent = "Скопировать";
-        if (shoppingCopyTimer) {
-            clearTimeout(shoppingCopyTimer);
-            shoppingCopyTimer = null;
-        }
-        unlockPageScroll();
-    }
-
-    function shoppingListText() {
-        return shoppingItems.map(formatShoppingLine).join("\n");
-    }
-
-    function renderShoppingItems(items) {
-        shoppingItems = items || [];
-        if (!shoppingBody) return;
-        shoppingBody.innerHTML = "";
-        if (!shoppingItems.length) {
-            const empty = document.createElement("p");
-            empty.className = "shopping-empty";
-            empty.textContent = "В плане пока нет рецептов.";
-            shoppingBody.appendChild(empty);
-            if (shoppingActions) shoppingActions.hidden = true;
-            return;
-        }
-        const checked = loadShoppingChecked();
-        const kept = new Set();
-        shoppingItems.forEach((item) => {
-            const label = document.createElement("label");
-            label.className = "shopping-item" + (checked.has(item.key) ? " is-checked" : "");
-            const box = document.createElement("input");
-            box.type = "checkbox";
-            box.className = "shopping-item-check";
-            box.checked = checked.has(item.key);
-            box.addEventListener("change", () => {
-                if (box.checked) checked.add(item.key);
-                else checked.delete(item.key);
-                label.classList.toggle("is-checked", box.checked);
-                const current = new Set();
-                shoppingItems.forEach((row) => {
-                    if (checked.has(row.key)) current.add(row.key);
-                });
-                saveShoppingChecked(current);
-            });
-            if (checked.has(item.key)) kept.add(item.key);
-            const name = document.createElement("span");
-            name.className = "shopping-item-name";
-            name.textContent = item.name;
-            const amount = document.createElement("span");
-            amount.className = "shopping-item-amount";
-            amount.textContent = item.qualitative || !Number.isFinite(item.amount)
-                ? "по вкусу"
-                : [formatAmount(item.amount), unitLabel(item.unit)].filter(Boolean).join(" ");
-            label.appendChild(box);
-            label.appendChild(name);
-            label.appendChild(amount);
-            shoppingBody.appendChild(label);
-        });
-        saveShoppingChecked(kept);
-        if (shoppingActions) shoppingActions.hidden = false;
-    }
-
-    async function openShoppingModal() {
-        if (!shoppingModal || !shoppingBody) return;
-        applyShoppingOverlayOpen();
-        shoppingBody.innerHTML = "";
-        const status = document.createElement("p");
-        status.className = "shopping-status";
-        status.textContent = "Собираем список…";
-        shoppingBody.appendChild(status);
-        if (shoppingActions) shoppingActions.hidden = true;
-
-        const planned = [];
-        (days || []).forEach((day) => {
-            (day.recipes || []).forEach((recipe) => {
-                const norm = normalizePlannedRecipe(recipe);
-                if (norm && norm.recipe_id != null) planned.push(norm);
-            });
-        });
-        if (!planned.length) {
-            renderShoppingItems([]);
-            return;
-        }
-        if (!window.AuthAPI || typeof window.AuthAPI.getRecipeById !== "function") {
-            shoppingBody.innerHTML = "";
-            const err = document.createElement("p");
-            err.className = "shopping-status";
-            err.textContent = "Не удалось загрузить ингредиенты.";
-            shoppingBody.appendChild(err);
-            return;
-        }
-        try {
-            const uniqueIds = [...new Set(planned.map((r) => r.recipe_id))];
-            const detailsList = await mapPool(uniqueIds, RECIPE_FETCH_CONCURRENCY, (id) => getRecipeDetailsCached(id));
-            const byId = new Map();
-            uniqueIds.forEach((id, idx) => { byId.set(id, detailsList[idx]); });
-            const entries = planned.map((recipe) => ({
-                weight: recipe.weight,
-                final_weight: recipe.final_weight,
-                details: byId.get(recipe.recipe_id)
-            }));
-            renderShoppingItems(aggregateShoppingItems(entries));
-        } catch (_) {
-            shoppingBody.innerHTML = "";
-            const err = document.createElement("p");
-            err.className = "shopping-status";
-            err.textContent = "Не удалось загрузить ингредиенты.";
-            shoppingBody.appendChild(err);
-        }
-    }
-
-    async function copyShoppingList() {
-        const text = shoppingListText();
-        if (!text) return;
-        let copied = false;
-        try {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                await navigator.clipboard.writeText(text);
-                copied = true;
-            }
-        } catch (_) {}
-        if (!copied) {
-            const ta = document.createElement("textarea");
-            ta.value = text;
-            ta.setAttribute("readonly", "");
-            ta.style.cssText = "position:fixed;left:-9999px;top:0;";
-            document.body.appendChild(ta);
-            ta.select();
-            try {
-                copied = document.execCommand("copy");
-            } catch (_) {
-                copied = false;
-            }
-            ta.remove();
-        }
-        if (copied && shoppingCopyBtn) {
-            shoppingCopyBtn.textContent = "Скопировано";
-            if (shoppingCopyTimer) clearTimeout(shoppingCopyTimer);
-            shoppingCopyTimer = setTimeout(() => {
-                shoppingCopyBtn.textContent = "Скопировать";
-                shoppingCopyTimer = null;
-            }, 1600);
-        }
-    }
-
-    async function shareShoppingList() {
-        const text = shoppingListText();
-        if (!text) return;
-        const title = "Список покупок";
-        if (typeof navigator.share === "function") {
-            try {
-                await navigator.share({ title, text });
-                return;
-            } catch (err) {
-                if (err && err.name === "AbortError") return;
-            }
-        }
-        const pageUrl = (window.location.protocol === "http:" || window.location.protocol === "https:")
-            ? `${window.location.origin}${window.location.pathname}`
-            : "";
-        const shareUrl = `https://t.me/share/url?url=${encodeURIComponent(pageUrl)}&text=${encodeURIComponent(text)}`;
-        window.open(shareUrl, "_blank", "noopener,noreferrer");
-    }
-
-    shoppingListBtn?.addEventListener("click", () => {
-        openShoppingModal();
-    });
-    shoppingShareBtn?.addEventListener("click", (e) => {
-        e.preventDefault();
-        shareShoppingList();
-    });
-    shoppingCopyBtn?.addEventListener("click", (e) => {
-        e.preventDefault();
-        copyShoppingList();
-    });
-    shoppingModal?.addEventListener("click", (e) => {
-        if (e.target === shoppingModal || e.target.closest("#close-shopping-modal")) {
-            closeShoppingModal();
-        }
-    });
     document.addEventListener("keydown", (e) => {
         if (e.key !== "Escape") return;
         const recipeModal = document.getElementById("planner-recipe-modal");
         if (recipeModal && recipeModal.classList.contains("is-open")) {
             e.preventDefault();
             closePlannerRecipeCard();
-            return;
-        }
-        if (shoppingModal && shoppingModal.classList.contains("is-open")) {
-            e.preventDefault();
-            closeShoppingModal();
         }
     });
 
